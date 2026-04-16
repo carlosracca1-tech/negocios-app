@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isAdmin } from "@/lib/api-helpers";
+import { computeProjectFinancials, safe } from "@/lib/financial";
+import { rethrowNextError } from "@/lib/route-utils";
+
+export const dynamic = "force-dynamic";
 
 interface Alert {
   id: string;
@@ -9,7 +13,8 @@ interface Alert {
   type: string;
   message: string;
   priority: 1 | 2;
-  data?: Record<string, any>;
+  color: string;
+  data?: Record<string, string | number | Date>;
 }
 
 export async function GET(request: NextRequest) {
@@ -50,12 +55,10 @@ export async function GET(request: NextRequest) {
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
     for (const project of projects) {
-      const totalCosts = project.costs.reduce((sum, cost) => sum + cost.amount, 0);
-      const investment = project.buyPrice + totalCosts;
-      const result = project.salePrice ? project.salePrice - investment : 0;
-      const estimatedMargin = project.listingPrice
-        ? (((project.listingPrice - investment) / project.listingPrice) * 100)
-        : 0;
+      const { totalCosts, investment, result, estimatedMargin } =
+        computeProjectFinancials(project, project.costs);
+      const bp = safe(project.buyPrice);
+      const sp = safe(project.salePrice);
 
       // Alert 1: Projects with loss (sold, result < 0)
       if (project.status === "vendido" && result < 0) {
@@ -66,25 +69,28 @@ export async function GET(request: NextRequest) {
           type: "loss",
           message: `Proyecto vendido con pérdida: $${Math.abs(result).toFixed(2)}`,
           priority: 1,
-          data: { result, margin: ((result / project.salePrice!) * 100).toFixed(2) },
+          color: "#ef4444",
+          data: { result, margin: sp > 0 ? ((result / sp) * 100).toFixed(2) : "0" },
         });
       }
 
       // Alert 2: Costs > 40% of buyPrice on active projects
       if (
         project.status === "activo" &&
-        totalCosts > project.buyPrice * 0.4
+        bp > 0 &&
+        totalCosts > bp * 0.4
       ) {
         alerts.push({
           id: `high-costs-${project.id}`,
           projectId: project.id,
           projectName: project.name,
           type: "high_costs",
-          message: `Costos muy altos: $${totalCosts.toFixed(2)} (${((totalCosts / project.buyPrice) * 100).toFixed(1)}% del precio de compra)`,
+          message: `Costos muy altos: $${totalCosts.toFixed(2)} (${((totalCosts / bp) * 100).toFixed(1)}% del precio de compra)`,
           priority: 1,
+          color: "#f59e0b",
           data: {
             totalCosts,
-            percentageOfBuyPrice: ((totalCosts / project.buyPrice) * 100).toFixed(2),
+            percentageOfBuyPrice: ((totalCosts / bp) * 100).toFixed(2),
           },
         });
       }
@@ -101,6 +107,7 @@ export async function GET(request: NextRequest) {
           type: "stale",
           message: `Proyecto sin actualizar hace ${daysWithoutUpdate} días`,
           priority: 2,
+          color: "#a1a1aa",
           data: { daysWithoutUpdate, lastUpdate: project.lastUpdate },
         });
       }
@@ -114,6 +121,7 @@ export async function GET(request: NextRequest) {
           type: "low_margin",
           message: `Margen estimado muy bajo: ${estimatedMargin.toFixed(2)}%`,
           priority: 2,
+          color: "#f59e0b",
           data: { estimatedMargin: estimatedMargin.toFixed(2), listingPrice: project.listingPrice },
         });
       }
@@ -124,6 +132,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: alerts });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error generating alerts:", error);
     return NextResponse.json(
       { error: "Internal server error" },

@@ -1,11 +1,10 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { checkRateLimit } from "./rate-limit";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -18,18 +17,25 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
+        // Rate limiting por email
+        const { allowed, retryAfterMs } = checkRateLimit(credentials.email);
+        if (!allowed) {
+          const mins = Math.ceil(retryAfterMs / 60000);
+          throw new Error(`Demasiados intentos. Reintenta en ${mins} minutos.`);
+        }
+
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
 
         if (!user) {
-          throw new Error("User not found");
+          throw new Error("Credenciales invalidas");
         }
 
         const passwordMatch = await bcrypt.compare(credentials.password, user.password);
 
         if (!passwordMatch) {
-          throw new Error("Invalid password");
+          throw new Error("Credenciales invalidas");
         }
 
         return {
@@ -56,14 +62,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role || "user";
+        token.role = (user.role as "admin" | "colaborador" | "vista") || "vista";
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
+        session.user.id = token.id as string;
+        session.user.role = token.role;
       }
       return session;
     },

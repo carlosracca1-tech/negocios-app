@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, checkProjectAccess } from "@/lib/api-helpers";
+import { rethrowNextError } from "@/lib/route-utils";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
@@ -30,6 +33,7 @@ export async function GET(
 
     return NextResponse.json({ data: timeline });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error fetching timeline:", error);
     return NextResponse.json(
       { error: "Internal server error" },

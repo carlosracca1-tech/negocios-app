@@ -6,6 +6,10 @@ import {
   checkProjectAccess,
   createProjectSchema,
 } from "@/lib/api-helpers";
+import { computeProjectFinancials, safe } from "@/lib/financial";
+import { rethrowNextError } from "@/lib/route-utils";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,7 +26,18 @@ export async function GET(request: NextRequest) {
       projects = await prisma.project.findMany({
         include: {
           costs: true,
-          investors: true,
+          expenses: true,
+          investors: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
           access: { include: { user: true } },
         },
         orderBy: {
@@ -41,7 +56,18 @@ export async function GET(request: NextRequest) {
         },
         include: {
           costs: true,
-          investors: true,
+          expenses: true,
+          investors: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
           access: { include: { user: true } },
         },
         orderBy: {
@@ -50,24 +76,22 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Add computed fields
+    // Add computed fields using centralized financial logic
+    const userIsAdmin = isAdmin(user);
     const projectsWithComputed = projects.map((project) => {
-      const totalCosts = project.costs.reduce((sum, cost) => sum + cost.amount, 0);
-      const investment = project.buyPrice + totalCosts;
-      const result = project.salePrice ? project.salePrice - investment : 0;
-      const margin = project.salePrice ? ((result / project.salePrice) * 100) : 0;
-      const estimatedMargin = project.listingPrice
-        ? (((project.listingPrice - investment) / project.listingPrice) * 100)
-        : 0;
+      const financials = computeProjectFinancials(project, project.costs, project.expenses);
+
+      // Filtrar inversores para no-admin: solo muestra los vinculados al usuario
+      const filteredInvestors = userIsAdmin
+        ? project.investors
+        : project.investors.filter((inv) => inv.userId === user.id);
 
       return {
         ...project,
-        totalCosts,
-        investment,
-        result,
-        margin,
-        estimatedMargin,
-        investorCount: project.investors.length,
+        buyPrice: safe(project.buyPrice),
+        ...financials,
+        investors: filteredInvestors,
+        investorCount: project.investors.length, // Count real para KPI
         costCount: project.costs.length,
       };
     });
@@ -76,6 +100,7 @@ export async function GET(request: NextRequest) {
       data: projectsWithComputed,
     });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error fetching projects:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -141,6 +166,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: project }, { status: 201 });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error creating project:", error);
     return NextResponse.json(
       { error: "Internal server error" },

@@ -1,16 +1,31 @@
-import { Project, Cost, Investor, ProjectAccess, TimelineEvent, User } from "@/types";
+import { Project, Cost, Investor, ProjectAccess, TimelineEvent, User, Expense, ParsedReceipt } from "@/types";
 
 // ============================================================================
 // BASE API HELPERS
 // ============================================================================
 
-export async function apiGet<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+/**
+ * Unwrap API responses: our API wraps all responses in { data: ... }
+ * This helper extracts the inner data automatically.
+ */
+function unwrap<T>(json: { data?: T } | T): T {
+  if (json && typeof json === "object" && "data" in json) {
+    return (json as { data: T }).data;
+  }
+  return json as T;
 }
 
-export async function apiPost<T>(url: string, body: any): Promise<T> {
+export async function apiGet<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || error.message || `API error: ${res.status}`);
+  }
+  const json = await res.json();
+  return unwrap<T>(json);
+}
+
+export async function apiPost<T>(url: string, body: Record<string, unknown>): Promise<T> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -18,12 +33,13 @@ export async function apiPost<T>(url: string, body: any): Promise<T> {
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || `API error: ${res.status}`);
+    throw new Error(error.error || error.message || `API error: ${res.status}`);
   }
-  return res.json();
+  const json = await res.json();
+  return unwrap<T>(json);
 }
 
-export async function apiPatch<T>(url: string, body: any): Promise<T> {
+export async function apiPatch<T>(url: string, body: Record<string, unknown>): Promise<T> {
   const res = await fetch(url, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -31,12 +47,13 @@ export async function apiPatch<T>(url: string, body: any): Promise<T> {
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || `API error: ${res.status}`);
+    throw new Error(error.error || error.message || `API error: ${res.status}`);
   }
-  return res.json();
+  const json = await res.json();
+  return unwrap<T>(json);
 }
 
-export async function apiDelete(url: string, body?: any): Promise<void> {
+export async function apiDelete(url: string, body?: Record<string, unknown>): Promise<void> {
   const res = await fetch(url, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
@@ -44,7 +61,7 @@ export async function apiDelete(url: string, body?: any): Promise<void> {
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || `API error: ${res.status}`);
+    throw new Error(error.error || error.message || `API error: ${res.status}`);
   }
 }
 
@@ -111,9 +128,11 @@ export const costsApi = {
     data: {
       concept: string;
       amount: number;
-      category: "Obra" | "Mecánica" | "Estética" | "Profesionales" | "Servicios";
-      costType: "material" | "mano_de_obra";
+      category: string;
+      costType: string;
       date: string;
+      currency?: "ARS" | "USD";
+      exchangeRate?: number | null;
     }
   ): Promise<Cost> {
     return apiPost(`/api/projects/${projectId}/costs`, data);
@@ -125,9 +144,11 @@ export const costsApi = {
     data: Partial<{
       concept: string;
       amount: number;
-      category: "Obra" | "Mecánica" | "Estética" | "Profesionales" | "Servicios";
-      costType: "material" | "mano_de_obra";
+      category: string;
+      costType: string;
       date: string;
+      currency: "ARS" | "USD";
+      exchangeRate: number | null;
     }>
   ): Promise<Cost> {
     return apiPatch(`/api/projects/${projectId}/costs/${costId}`, data);
@@ -151,10 +172,27 @@ export const investorsApi = {
     projectId: string,
     data: {
       name: string;
-      percentage: number;
+      capitalPercentage: number;
+      profitPercentage: number;
+      amountInvested?: number;
+      userId?: string | null;
     }
   ): Promise<Investor> {
     return apiPost(`/api/projects/${projectId}/investors`, data);
+  },
+
+  async update(
+    projectId: string,
+    investorId: string,
+    data: Partial<{
+      name: string;
+      capitalPercentage: number;
+      profitPercentage: number;
+      amountInvested: number;
+      userId: string | null;
+    }>
+  ): Promise<Investor> {
+    return apiPatch(`/api/projects/${projectId}/investors/${investorId}`, data);
   },
 
   async delete(projectId: string, investorId: string): Promise<void> {
@@ -181,8 +219,8 @@ export const accessApi = {
     return apiPost(`/api/projects/${projectId}/access`, data);
   },
 
-  async revoke(projectId: string, accessId: string): Promise<void> {
-    return apiDelete(`/api/projects/${projectId}/access/${accessId}`);
+  async revoke(projectId: string, userId: string): Promise<void> {
+    return apiDelete(`/api/projects/${projectId}/access/${userId}`);
   },
 };
 
@@ -197,16 +235,81 @@ export const timelineApi = {
 };
 
 // ============================================================================
+// EXPENSES API
+// ============================================================================
+
+export const expensesApi = {
+  async list(projectId: string): Promise<Expense[]> {
+    return apiGet(`/api/projects/${projectId}/expenses`);
+  },
+
+  async create(
+    projectId: string,
+    data: {
+      concept: string;
+      amount: number;
+      currency?: "ARS" | "USD";
+      exchangeRate?: number | null;
+      amountUsd?: number | null;
+      period: string;
+      paidDate?: string | null;
+      receiptUrl?: string | null;
+      receiptName?: string | null;
+      notes?: string | null;
+    }
+  ): Promise<Expense> {
+    return apiPost(`/api/projects/${projectId}/expenses`, data);
+  },
+
+  async update(
+    projectId: string,
+    expenseId: string,
+    data: Partial<{
+      concept: string;
+      amount: number;
+      currency: "ARS" | "USD";
+      exchangeRate: number | null;
+      period: string;
+      paidDate: string | null;
+      notes: string | null;
+    }>
+  ): Promise<Expense> {
+    return apiPatch(`/api/projects/${projectId}/expenses/${expenseId}`, data);
+  },
+
+  async delete(projectId: string, expenseId: string): Promise<void> {
+    return apiDelete(`/api/projects/${projectId}/expenses/${expenseId}`);
+  },
+
+  async parseReceipt(projectId: string, file: File): Promise<ParsedReceipt> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`/api/projects/${projectId}/expenses/parse-receipt`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.error || `API error: ${res.status}`);
+    }
+    const json = await res.json();
+    return json.data;
+  },
+};
+
+// ============================================================================
 // ALERTS API
 // ============================================================================
 
 export interface Alert {
   id: string;
   projectId: string;
-  type: "loss" | "high_costs" | "stale";
+  projectName?: string;
+  type: "loss" | "high_costs" | "stale" | "low_margin";
   priority: number;
   message: string;
   color: string;
+  data?: Record<string, string | number | Date>;
 }
 
 export const alertsApi = {
@@ -222,5 +325,22 @@ export const alertsApi = {
 export const usersApi = {
   async current(): Promise<User> {
     return apiGet("/api/users/me");
+  },
+
+  async updateProfile(data: {
+    name?: string;
+    email?: string;
+    currentPassword?: string;
+    newPassword?: string;
+  }): Promise<User> {
+    return apiPatch("/api/users/me", data);
+  },
+
+  async list(): Promise<User[]> {
+    return apiGet("/api/users");
+  },
+
+  async updateRole(userId: string, role: "admin" | "colaborador" | "vista"): Promise<User> {
+    return apiPatch("/api/users", { userId, role });
   },
 };

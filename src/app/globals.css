@@ -1,3 +1,42 @@
+:root {
+  /* === Celeste + Arena Dark Theme === */
+  --bg-primary: #060b14;
+  --bg-surface-1: #0c1524;
+  --bg-surface-2: #111d30;
+  --bg-glass: rgba(12, 21, 36, 0.7);
+  --bg-glass-hover: rgba(17, 29, 48, 0.85);
+
+  --border-default: rgba(56, 189, 248, 0.08);
+  --border-hover: rgba(56, 189, 248, 0.18);
+  --border-glow: rgba(56, 189, 248, 0.3);
+
+  --text-primary: #e8edf5;
+  --text-secondary: #8899b0;
+  --text-tertiary: #5a6b82;
+
+  --accent: #38bdf8;
+  --accent-hover: #7dd3fc;
+  --accent-soft: rgba(56, 189, 248, 0.1);
+  --accent-glow: rgba(56, 189, 248, 0.2);
+
+  --warm: #d4a574;
+  --warm-light: #e8d5b7;
+  --warm-soft: rgba(212, 165, 116, 0.1);
+  --warm-glow: rgba(212, 165, 116, 0.2);
+
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.1);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.1);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.1);
+
+  --glow-celeste: 0 0 20px rgba(56, 189, 248, 0.15), 0 0 60px rgba(56, 189, 248, 0.05);
+  --glow-arena: 0 0 20px rgba(212, 165, 116, 0.15), 0 0 60px rgba(212, 165, 116, 0.05);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(56, 189, 248, 0.06);
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(56, 189, 248, 0.12), var(--glow-celeste);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -6,15 +45,18 @@
 
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 body {
-  background-color: #f8f9fa;
-  color: #333;
+  background-color: var(--bg-primary) !important;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(56, 189, 248, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(212, 165, 116, 0.03) 0%, transparent 50%);
+  background-attachment: fixed;
+  color: var(--text-primary);
   line-height: 1.6;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -26,29 +68,308 @@ a {
 
 button {
   font-family: inherit;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 input,
 select,
 textarea {
   font-family: inherit;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Selection colors */
+::selection {
+  background-color: var(--accent);
+  color: white;
+}
+
+::-moz-selection {
+  background-color: var(--accent);
+  color: white;
 }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.15);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #888;
+  background: rgba(56, 189, 248, 0.25);
+}
+
+/* Input and form elements */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  background-color: rgba(12, 21, 36, 0.8);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  backdrop-filter: blur(8px);
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder,
+input[type="date"]::placeholder,
+input[type="time"]::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--glow-celeste);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(56, 189, 248, 0.1); }
+  50% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.2); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================
+   RESPONSIVE DESIGN SYSTEM
+   ============================ */
+
+/* Mobile-first responsive utilities */
+
+/* Scrollable tabs container */
+.tabs-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---- Tablet (max-width: 768px) ---- */
+@media (max-width: 768px) {
+  /* Header */
+  .header-root {
+    padding: 0 12px !important;
+    height: 56px !important;
+    gap: 0 !important;
+  }
+  .header-logo {
+    font-size: 17px !important;
+    margin-right: 12px !important;
+  }
+  .header-kpis {
+    display: none !important;
+  }
+
+  /* Main content padding */
+  .page-container {
+    padding: 12px !important;
+  }
+
+  /* KPI grids */
+  .kpi-grid-6 {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+  .kpi-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Section tabs */
+  .section-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .section-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .section-tab {
+    white-space: nowrap;
+    min-width: fit-content !important;
+    padding: 10px 14px !important;
+    flex: none !important;
+    font-size: 12px !important;
+  }
+
+  /* Breadcrumb + actions */
+  .breadcrumb-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+  .breadcrumb-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px !important;
+  }
+  .breadcrumb-actions button {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px !important;
+    padding: 7px 10px !important;
+  }
+
+  /* Project header info */
+  .project-header-meta {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Project cards grid */
+  .projects-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    gap: 8px !important;
+  }
+  .filter-bar .filter-spacer {
+    display: none !important;
+  }
+  .filter-bar input[type="text"] {
+    width: 100% !important;
+    order: -1;
+  }
+
+  /* Section content padding */
+  .section-content {
+    padding: 16px !important;
+  }
+
+  /* Tables responsive */
+  .responsive-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .responsive-table table {
+    min-width: 500px;
+  }
+
+  /* Monthly expense items */
+  .expense-item {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+  .expense-item-amounts {
+    align-self: flex-end;
+  }
+
+  /* Modal adjustments */
+  .modal-content {
+    width: 95% !important;
+    max-width: 95% !important;
+    padding: 16px !important;
+    margin: 8px;
+  }
+
+  /* Financial summary table */
+  .financial-table td {
+    font-size: 12px !important;
+  }
+}
+
+/* ---- Small mobile (max-width: 480px) ---- */
+@media (max-width: 480px) {
+  .kpi-grid-6 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+  .kpi-grid-4 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  /* KPI card compact */
+  .kpi-card {
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+  }
+  .kpi-card .kpi-value {
+    font-size: 16px !important;
+  }
+  .kpi-card .kpi-label {
+    font-size: 9px !important;
+  }
+
+  /* Project header name */
+  .project-name {
+    font-size: 18px !important;
+  }
+
+  /* Breadcrumb hide path */
+  .breadcrumb-path {
+    display: none !important;
+  }
+
+  /* Cost breakdown compact */
+  .cost-breakdown-item {
+    padding: 10px !important;
+  }
+  .cost-breakdown-amounts {
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  /* Header */
+  .header-logo {
+    font-size: 15px !important;
+    margin-right: 8px !important;
+  }
+
+  /* Monthly view header */
+  .month-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+  .month-totals {
+    align-self: flex-end;
+  }
 }

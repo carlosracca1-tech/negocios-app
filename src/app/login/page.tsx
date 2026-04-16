@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -30,7 +31,7 @@ export default function LoginPage() {
         router.push("/");
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      setError("Ocurrió un error inesperado");
     } finally {
       setIsLoading(false);
     }
@@ -40,7 +41,7 @@ export default function LoginPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <h1 className={styles.title}>Negocios App</h1>
-        <p className={styles.subtitle}>Sign in to your account</p>
+        <p className={styles.subtitle}>Sistema de gestión de inversiones</p>
 
         {error && <div className={styles.error}>{error}</div>}
 
@@ -56,13 +57,13 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className={styles.input}
-              placeholder="admin@negocios.com"
+              placeholder="tu@email.com"
             />
           </div>
 
           <div className={styles.formGroup}>
             <label htmlFor="password" className={styles.label}>
-              Password
+              Contraseña
             </label>
             <input
               id="password"
@@ -80,14 +81,12 @@ export default function LoginPage() {
             disabled={isLoading}
             className={styles.button}
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
 
         <div className={styles.hint}>
-          <p>Demo credentials:</p>
-          <p>Email: admin@negocios.com</p>
-          <p>Password: admin123</p>
+          <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Contacta al administrador para obtener una cuenta</p>
         </div>
       </div>
     </div>

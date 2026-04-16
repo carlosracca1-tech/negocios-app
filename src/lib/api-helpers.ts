@@ -23,12 +23,11 @@ export async function getCurrentUser(
     return null;
   }
 
-  const user = session.user as any;
   return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role || "user",
+    id: session.user.id,
+    email: session.user.email || "",
+    name: session.user.name || "",
+    role: session.user.role || "vista",
   };
 }
 
@@ -36,6 +35,20 @@ export async function getCurrentUser(
  * Check if user is admin
  */
 export function isAdmin(user: AuthUser | null): boolean {
+  return user?.role === "admin";
+}
+
+/**
+ * Check if user is admin or colaborador (can edit)
+ */
+export function canEdit(user: AuthUser | null): boolean {
+  return user?.role === "admin" || user?.role === "colaborador";
+}
+
+/**
+ * Check if user is admin (can manage access, capital, roles)
+ */
+export function canManage(user: AuthUser | null): boolean {
   return user?.role === "admin";
 }
 
@@ -100,37 +113,57 @@ export const updateProjectSchema = z.object({
   salePrice: z.number().positive().optional().nullable(),
   listingPrice: z.number().positive().optional().nullable(),
   address: z.string().optional().nullable(),
+  saleDate: z.string().datetime().optional().nullable(),
+  buyerName: z.string().optional().nullable(),
 });
+
+const allCategories = [
+  "Obra", "Mecánica", "Estética", "Profesionales", "Servicios",
+  "Estructura", "Terminaciones", "Equipamiento", "Exterior",
+  "Motor", "Carrocería", "Interior", "Electrónica", "Neumáticos", "Documentación",
+] as const;
+
+const allCostTypes = ["material", "mano_de_obra", "servicio", "tramite", "repuesto"] as const;
 
 export const createCostSchema = z.object({
   concept: z.string().min(1, "Concept is required"),
   amount: z.number().positive("Amount must be positive"),
-  category: z.enum(
-    ["Obra", "Mecánica", "Estética", "Profesionales", "Servicios"],
-    { errorMap: () => ({ message: "Invalid category" }) }
-  ),
-  costType: z.enum(["material", "mano_de_obra"], {
+  category: z.enum(allCategories, {
+    errorMap: () => ({ message: "Invalid category" }),
+  }),
+  costType: z.enum(allCostTypes, {
     errorMap: () => ({ message: "Invalid cost type" }),
   }),
   date: z.string().datetime("Invalid date format"),
+  currency: z.enum(["ARS", "USD"]).optional().default("USD"),
+  exchangeRate: z.number().positive().optional().nullable(),
 });
 
 export const updateCostSchema = z.object({
   concept: z.string().min(1).optional(),
   amount: z.number().positive().optional(),
-  category: z
-    .enum(["Obra", "Mecánica", "Estética", "Profesionales", "Servicios"])
-    .optional(),
-  costType: z.enum(["material", "mano_de_obra"]).optional(),
+  category: z.enum(allCategories).optional(),
+  costType: z.enum(allCostTypes).optional(),
   date: z.string().datetime().optional(),
+  currency: z.enum(["ARS", "USD"]).optional(),
+  exchangeRate: z.number().positive().optional().nullable(),
 });
 
 export const addInvestorSchema = z.object({
   name: z.string().min(1, "Investor name is required"),
-  percentage: z
-    .number()
-    .min(0, "Percentage must be >= 0")
-    .max(100, "Percentage must be <= 100"),
+  capitalPercentage: z.number().min(0).max(100),
+  profitPercentage: z.number().min(0).max(100),
+  amountInvested: z.number().min(0).optional().default(0),
+  userId: z.string().optional().nullable(),
+});
+
+export const updateInvestorSchema = z.object({
+  investorId: z.string().min(1, "investorId is required"),
+  name: z.string().min(1).optional(),
+  capitalPercentage: z.number().min(0).max(100).optional(),
+  profitPercentage: z.number().min(0).max(100).optional(),
+  amountInvested: z.number().min(0).optional(),
+  userId: z.string().optional().nullable(),
 });
 
 export const grantAccessSchema = z.object({
@@ -144,5 +177,5 @@ export const createUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["admin", "user"]).optional().default("user"),
+  role: z.enum(["admin", "colaborador", "vista"]).optional().default("vista"),
 });

@@ -11,18 +11,25 @@ export default function Timeline({ events }: TimelineProps) {
 
   return (
     <div>
-      <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 20 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "#e8edf5", marginBottom: 20 }}>
         Timeline ({events.length})
       </div>
 
       {sortedEvents.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "32px 16px", color: "#999" }}>
+        <div style={{ textAlign: "center", padding: "32px 16px", color: "#5a6b82" }}>
           Sin eventos registrados
         </div>
       ) : (
         <div style={{ position: "relative", paddingLeft: 24 }}>
           {/* Vertical line */}
-          <div style={{ position: "absolute", left: 3, top: 0, bottom: 0, width: 1, background: "#e0e0e0" }} />
+          <div style={{
+            position: "absolute",
+            left: 3,
+            top: 0,
+            bottom: 0,
+            width: 1,
+            background: "linear-gradient(180deg, rgba(56, 189, 248, 0.2), rgba(212, 165, 116, 0.1), transparent)",
+          }} />
 
           {sortedEvents.map((event, i) => (
             <div key={event.id} style={{ marginBottom: 20, position: "relative" }}>
@@ -35,21 +42,21 @@ export default function Timeline({ events }: TimelineProps) {
                   width: 8,
                   height: 8,
                   borderRadius: "50%",
-                  background: "#2E75B6",
-                  border: "3px solid #fff",
-                  boxShadow: "0 0 0 1px #e0e0e0",
+                  background: "#38bdf8",
+                  border: "3px solid #0c1524",
+                  boxShadow: "0 0 8px rgba(56, 189, 248, 0.35)",
                 }}
               />
 
               {/* Content */}
               <div style={{ paddingTop: 0 }}>
-                <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>
+                <div style={{ fontSize: 11, color: "#5a6b82", marginBottom: 4 }}>
                   {new Date(event.date).toLocaleDateString("es-AR")}
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a", marginBottom: 2 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#e8edf5", marginBottom: 2 }}>
                   {event.action}
                 </div>
-                <div style={{ fontSize: 12, color: "#666" }}>
+                <div style={{ fontSize: 12, color: "#8899b0" }}>
                   {event.detail}
                 </div>
               </div>

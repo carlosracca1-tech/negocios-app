@@ -3,32 +3,38 @@
   "version": "1.0.0",
   "description": "Real estate and auto project management system",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node --require esbuild-register prisma/seed.ts",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "next": "^14.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "prisma": "^5.7.0",
-    "@prisma/client": "^5.7.0",
-    "next-auth": "^5.0.0",
-    "@auth/prisma-adapter": "^1.0.0",
-    "bcryptjs": "^2.4.3",
-    "zod": "^3.22.4"
+    "@prisma/client": "5.22.0",
+    "bcryptjs": "2.4.3",
+    "next": "14.2.23",
+    "next-auth": "4.24.11",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "zod": "3.22.4"
   },
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "@types/node": "^20.10.0",
-    "@types/react": "^18.2.42",
-    "@types/react-dom": "^18.2.17",
-    "esbuild-register": "^3.5.0"
+    "@types/bcryptjs": "2.4.6",
+    "@types/node": "20.11.5",
+    "@types/react": "18.2.48",
+    "@types/react-dom": "18.2.18",
+    "esbuild-register": "3.5.0",
+    "eslint": "8.56.0",
+    "eslint-config-next": "14.2.23",
+    "prisma": "5.22.0",
+    "typescript": "5.3.3"
   }
 }

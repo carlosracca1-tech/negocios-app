@@ -6,6 +6,10 @@ import {
   checkProjectAccess,
   createCostSchema,
 } from "@/lib/api-helpers";
+import { rethrowNextError } from "@/lib/route-utils";
+import { notifyProjectUsers } from "@/lib/notifications";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
@@ -35,6 +39,7 @@ export async function GET(
 
     return NextResponse.json({ data: costs });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error fetching costs:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -86,6 +91,14 @@ export async function POST(
 
     const data = validation.data;
 
+    // Calcular amountUsd para normalizar a moneda base
+    let amountUsd: number | null = null;
+    if (data.currency === "ARS" && data.exchangeRate && data.exchangeRate > 0) {
+      amountUsd = data.amount / data.exchangeRate;
+    } else if (data.currency === "USD") {
+      amountUsd = data.amount;
+    }
+
     // Create cost and timeline event in transaction, also update project lastUpdate
     const cost = await prisma.$transaction(async (tx) => {
       const newCost = await tx.cost.create({
@@ -93,6 +106,9 @@ export async function POST(
           projectId,
           concept: data.concept,
           amount: data.amount,
+          currency: data.currency || "USD",
+          exchangeRate: data.exchangeRate ?? null,
+          amountUsd,
           category: data.category,
           costType: data.costType,
           date: new Date(data.date),
@@ -100,11 +116,14 @@ export async function POST(
       });
 
       // Auto-create timeline event
+      const currencyLabel = data.currency === "ARS" ? "AR$" : "$";
+      const usdNote = data.currency === "ARS" && amountUsd ? ` (USD ${amountUsd.toFixed(2)})` : "";
+      const postSaleNote = project.status === "vendido" ? " [post-venta]" : "";
       await tx.timelineEvent.create({
         data: {
           projectId,
           action: "Costo agregado",
-          detail: `${data.concept} - $${data.amount}`,
+          detail: `${data.concept} - ${currencyLabel}${data.amount}${usdNote}${postSaleNote}`,
         },
       });
 
@@ -119,8 +138,17 @@ export async function POST(
       return newCost;
     });
 
+    // Send notifications to project users
+    await notifyProjectUsers(
+      projectId,
+      "cost_added",
+      `Nuevo costo: ${data.concept} ($${data.amount})`,
+      user.id
+    );
+
     return NextResponse.json({ data: cost }, { status: 201 });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error creating cost:", error);
     return NextResponse.json(
       { error: "Internal server error" },

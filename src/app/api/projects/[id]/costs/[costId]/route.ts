@@ -6,6 +6,9 @@ import {
   checkProjectAccess,
   updateCostSchema,
 } from "@/lib/api-helpers";
+import { rethrowNextError } from "@/lib/route-utils";
+
+export const dynamic = "force-dynamic";
 
 export async function PATCH(
   request: NextRequest,
@@ -51,6 +54,18 @@ export async function PATCH(
 
     const data = validation.data;
 
+    // Recalcular amountUsd si cambian amount, currency o exchangeRate
+    const newAmount = data.amount ?? cost.amount;
+    const newCurrency = data.currency ?? (cost as any).currency ?? "USD";
+    const newRate = data.exchangeRate !== undefined ? data.exchangeRate : (cost as any).exchangeRate;
+
+    let amountUsd: number | null = null;
+    if (newCurrency === "ARS" && newRate && newRate > 0) {
+      amountUsd = newAmount / newRate;
+    } else if (newCurrency === "USD") {
+      amountUsd = newAmount;
+    }
+
     // Update cost and project lastUpdate in transaction
     const updatedCost = await prisma.$transaction(async (tx) => {
       const updated = await tx.cost.update({
@@ -58,6 +73,9 @@ export async function PATCH(
         data: {
           concept: data.concept,
           amount: data.amount,
+          currency: data.currency,
+          exchangeRate: data.exchangeRate,
+          amountUsd,
           category: data.category,
           costType: data.costType,
           date: data.date ? new Date(data.date) : undefined,
@@ -77,6 +95,7 @@ export async function PATCH(
 
     return NextResponse.json({ data: updatedCost });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error updating cost:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -142,6 +161,7 @@ export async function DELETE(
 
     return NextResponse.json({ data: { success: true } });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error deleting cost:", error);
     return NextResponse.json(
       { error: "Internal server error" },

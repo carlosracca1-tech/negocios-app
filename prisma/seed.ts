@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
@@ -19,7 +20,7 @@ const mockProjects = [
       { concept: "Pintura interior", amount: 2000, category: "Estética", costType: "material" },
       { concept: "Reparación de pisos", amount: 4500, category: "Obra", costType: "material" },
     ],
-    investors: [{ name: "Roberto Racca", percentage: 100 }],
+    investors: [{ name: "Roberto Racca", capitalPercentage: 100, profitPercentage: 100 }],
   },
   {
     name: "Casa Quilmes",
@@ -35,7 +36,7 @@ const mockProjects = [
       { concept: "Remodelación baños", amount: 6000, category: "Estética", costType: "material" },
       { concept: "Electricista", amount: 3500, category: "Profesionales", costType: "mano_de_obra" },
     ],
-    investors: [{ name: "Roberto Racca", percentage: 100 }],
+    investors: [{ name: "Roberto Racca", capitalPercentage: 100, profitPercentage: 100 }],
   },
   {
     name: "Casa Avellaneda",
@@ -51,7 +52,7 @@ const mockProjects = [
       { concept: "Pisos y revestimientos", amount: 8000, category: "Estética", costType: "material" },
       { concept: "Plomería", amount: 4000, category: "Profesionales", costType: "mano_de_obra" },
     ],
-    investors: [{ name: "Roberto Racca", percentage: 100 }],
+    investors: [{ name: "Roberto Racca", capitalPercentage: 100, profitPercentage: 100 }],
   },
   {
     name: "Casa Temperley",
@@ -66,7 +67,7 @@ const mockProjects = [
       { concept: "Pintura fachada", amount: 2500, category: "Estética", costType: "material" },
       { concept: "Reparación ventanas", amount: 1500, category: "Obra", costType: "material" },
     ],
-    investors: [{ name: "Roberto Racca", percentage: 100 }],
+    investors: [{ name: "Roberto Racca", capitalPercentage: 100, profitPercentage: 100 }],
   },
   {
     name: "Auto Hilux 2010",
@@ -85,8 +86,8 @@ const mockProjects = [
       { concept: "Neumáticos nuevos", amount: 800, category: "Mecánica", costType: "material" },
     ],
     investors: [
-      { name: "Roberto Racca", percentage: 60 },
-      { name: "Martín López", percentage: 40 },
+      { name: "Roberto Racca", capitalPercentage: 60, profitPercentage: 60 },
+      { name: "Martín López", capitalPercentage: 40, profitPercentage: 40 },
     ],
   },
   {
@@ -104,8 +105,8 @@ const mockProjects = [
       { concept: "Acabados premium", amount: 8000, category: "Estética", costType: "material" },
     ],
     investors: [
-      { name: "Roberto Racca", percentage: 50 },
-      { name: "Ana García", percentage: 50 },
+      { name: "Roberto Racca", capitalPercentage: 50, profitPercentage: 50 },
+      { name: "Ana García", capitalPercentage: 50, profitPercentage: 50 },
     ],
   },
   {
@@ -122,7 +123,7 @@ const mockProjects = [
       { concept: "Pintura parcial", amount: 1000, category: "Estética", costType: "mano_de_obra" },
       { concept: "Nuevos neumáticos", amount: 600, category: "Mecánica", costType: "material" },
     ],
-    investors: [{ name: "Roberto Racca", percentage: 100 }],
+    investors: [{ name: "Roberto Racca", capitalPercentage: 100, profitPercentage: 100 }],
   },
   {
     name: "Casa San Justo",
@@ -137,15 +138,25 @@ const mockProjects = [
       { concept: "Reconstrucción parcial", amount: 12000, category: "Obra", costType: "material" },
       { concept: "Nuevas instalaciones", amount: 5000, category: "Profesionales", costType: "mano_de_obra" },
     ],
-    investors: [{ name: "Roberto Racca", percentage: 100 }],
+    investors: [{ name: "Roberto Racca", capitalPercentage: 100, profitPercentage: 100 }],
   },
 ];
 
 async function main() {
   console.log("Seeding database...");
 
-  const hashedAdminPassword = await bcrypt.hash("admin123", 10);
-  const hashedUserPassword = await bcrypt.hash("user123", 10);
+  // Usar passwords de env vars o generar aleatorias (NUNCA hardcoded en produccion)
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || crypto.randomUUID().slice(0, 12);
+  const userPassword = process.env.SEED_USER_PASSWORD || crypto.randomUUID().slice(0, 12);
+
+  const hashedAdminPassword = await bcrypt.hash(adminPassword, 10);
+  const hashedUserPassword = await bcrypt.hash(userPassword, 10);
+
+  console.log("=== CREDENCIALES DE SEED ===");
+  console.log(`Admin:  admin@negocios.com  / ${adminPassword}`);
+  console.log(`Martin: martin@negocios.com / ${userPassword}`);
+  console.log(`Ana:    ana@negocios.com    / ${userPassword}`);
+  console.log("============================");
 
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@negocios.com" },
@@ -165,7 +176,7 @@ async function main() {
       email: "martin@negocios.com",
       name: "Martín López",
       password: hashedUserPassword,
-      role: "user",
+      role: "vista",
     },
   });
 
@@ -176,7 +187,7 @@ async function main() {
       email: "ana@negocios.com",
       name: "Ana García",
       password: hashedUserPassword,
-      role: "user",
+      role: "vista",
     },
   });
 
@@ -216,7 +227,8 @@ async function main() {
         data: {
           projectId: project.id,
           name: investorData.name,
-          percentage: investorData.percentage,
+          capitalPercentage: investorData.capitalPercentage,
+          profitPercentage: investorData.profitPercentage,
         },
       });
     }

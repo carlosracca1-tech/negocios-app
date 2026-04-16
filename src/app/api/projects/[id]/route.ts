@@ -6,6 +6,11 @@ import {
   checkProjectAccess,
   updateProjectSchema,
 } from "@/lib/api-helpers";
+import { computeProjectFinancials, safe } from "@/lib/financial";
+import { rethrowNextError } from "@/lib/route-utils";
+import { notifyProjectUsers } from "@/lib/notifications";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
@@ -34,7 +39,22 @@ export async function GET(
             date: "desc",
           },
         },
-        investors: true,
+        expenses: {
+          orderBy: {
+            period: "desc",
+          },
+        },
+        investors: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
         access: {
           include: {
             user: {
@@ -58,26 +78,33 @@ export async function GET(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // Add computed fields
-    const totalCosts = project.costs.reduce((sum, cost) => sum + cost.amount, 0);
-    const investment = project.buyPrice + totalCosts;
-    const result = project.salePrice ? project.salePrice - investment : 0;
-    const margin = project.salePrice ? ((result / project.salePrice) * 100) : 0;
-    const estimatedMargin = project.listingPrice
-      ? (((project.listingPrice - investment) / project.listingPrice) * 100)
-      : 0;
+    // Add computed fields using centralized financial logic
+    const financials = computeProjectFinancials(project, project.costs, project.expenses);
+
+    // Filtrar datos sensibles segun rol del usuario
+    const userRecord = await prisma.user.findUnique({ where: { id: user.id } });
+    const userIsAdmin = userRecord?.role === "admin";
+
+    // Inversores: admin ve todos, inversor ve solo su info, vista ve array vacio
+    let filteredInvestors = project.investors;
+    if (!userIsAdmin) {
+      filteredInvestors = project.investors.filter(
+        (inv) => inv.userId === user.id
+      );
+    }
 
     const projectWithComputed = {
       ...project,
-      totalCosts,
-      investment,
-      result,
-      margin,
-      estimatedMargin,
+      buyPrice: safe(project.buyPrice),
+      ...financials,
+      investors: filteredInvestors,
+      // Solo admin ve la lista de accesos
+      access: userIsAdmin ? project.access : [],
     };
 
     return NextResponse.json({ data: projectWithComputed });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error fetching project:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -130,7 +157,7 @@ export async function PATCH(
     const data = validation.data;
 
     // Prepare timeline events
-    const timelineEvents = [];
+    const timelineEvents: { projectId: string; action: string; detail: string }[] = [];
 
     // Check for status change
     if (data.status && data.status !== currentProject.status) {
@@ -147,10 +174,11 @@ export async function PATCH(
       (data.salePrice !== currentProject.salePrice ||
         (data.status === "vendido" && currentProject.status !== "vendido"))
     ) {
+      const buyerInfo = data.buyerName ? ` a ${data.buyerName}` : "";
       timelineEvents.push({
         projectId,
         action: "Venta registrada",
-        detail: `Proyecto vendido por $${data.salePrice}`,
+        detail: `Proyecto vendido por $${data.salePrice}${buyerInfo}`,
       });
     }
 
@@ -174,8 +202,19 @@ export async function PATCH(
       return updated;
     });
 
+    // Send notification if sale status is updated
+    if (data.status === "vendido" && currentProject.status !== "vendido") {
+      await notifyProjectUsers(
+        projectId,
+        "sale_registered",
+        `Proyecto ${currentProject.name} vendido`,
+        user.id
+      );
+    }
+
     return NextResponse.json({ data: updatedProject });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error updating project:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -219,6 +258,7 @@ export async function DELETE(
 
     return NextResponse.json({ data: { success: true } });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error deleting project:", error);
     return NextResponse.json(
       { error: "Internal server error" },

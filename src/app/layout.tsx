@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "Negocios App",
-  description: "Real estate and auto project management system",
+  title: "Negocios | Dashboard de Inversiones",
+  description: "Sistema de gestión de inversiones en bienes raíces y automóviles",
 };
 
 export default function RootLayout({
@@ -16,8 +13,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="es">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        />
+      </head>
+      <body>
         <Providers>
           {children}
         </Providers>

@@ -6,6 +6,9 @@ import {
   checkProjectAccess,
   grantAccessSchema,
 } from "@/lib/api-helpers";
+import { rethrowNextError } from "@/lib/route-utils";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
@@ -52,6 +55,7 @@ export async function GET(
 
     return NextResponse.json({ data: access });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error fetching project access:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -165,6 +169,7 @@ export async function POST(
 
     return NextResponse.json({ data: access }, { status: 201 });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error granting access:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -222,6 +227,7 @@ export async function DELETE(
 
     return NextResponse.json({ data: { success: true } });
   } catch (error) {
+    rethrowNextError(error);
     console.error("Error revoking access:", error);
     return NextResponse.json(
       { error: "Internal server error" },
