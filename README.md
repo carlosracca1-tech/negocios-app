@@ -1,4 +1,4 @@
-# Negocios App
+# Negocios App 
 
 Sistema de seguimiento de inversiones en casas y autos. Next.js 14 + PostgreSQL + Prisma + NextAuth.
 
