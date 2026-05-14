@@ -11,12 +11,12 @@ export default function Timeline({ events }: TimelineProps) {
 
   return (
     <div>
-      <div style={{ fontSize: 14, fontWeight: 600, color: "#e8edf5", marginBottom: 20 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 20 }}>
         Timeline ({events.length})
       </div>
 
       {sortedEvents.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "32px 16px", color: "#5a6b82" }}>
+        <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--text-tertiary)" }}>
           Sin eventos registrados
         </div>
       ) : (
@@ -42,21 +42,21 @@ export default function Timeline({ events }: TimelineProps) {
                   width: 8,
                   height: 8,
                   borderRadius: "50%",
-                  background: "#38bdf8",
-                  border: "3px solid #0c1524",
+                  background: "var(--text-primary)",
+                  border: "3px solid var(--surface-solid)",
                   boxShadow: "0 0 8px rgba(56, 189, 248, 0.35)",
                 }}
               />
 
               {/* Content */}
               <div style={{ paddingTop: 0 }}>
-                <div style={{ fontSize: 11, color: "#5a6b82", marginBottom: 4 }}>
+                <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 4 }}>
                   {new Date(event.date).toLocaleDateString("es-AR")}
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#e8edf5", marginBottom: 2 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>
                   {event.action}
                 </div>
-                <div style={{ fontSize: 12, color: "#8899b0" }}>
+                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                   {event.detail}
                 </div>
               </div>

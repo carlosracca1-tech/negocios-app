@@ -43,3 +43,9 @@ prisma/*.db-journal
 *.swp
 *.swo
 *~
+
+# Claude local settings
+.claude/
+
+# TypeScript incremental build info
+tsconfig.tsbuildinfo

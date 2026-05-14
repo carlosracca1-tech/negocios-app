@@ -52,15 +52,41 @@ export const costTypesByProjectType: Record<string, { value: string; label: stri
   Casa: [
     { value: "material", label: "Material" },
     { value: "mano_de_obra", label: "Mano de obra" },
-    { value: "servicio", label: "Servicio profesional" },
-    { value: "tramite", label: "Trámite / Documento" },
+    { value: "servicio", label: "Servicio" },
+    { value: "tramite", label: "Trámite" },
   ],
   Auto: [
     { value: "repuesto", label: "Repuesto" },
     { value: "mano_de_obra", label: "Mano de obra" },
-    { value: "servicio", label: "Service / Revisión" },
-    { value: "tramite", label: "Trámite / Documento" },
+    { value: "servicio", label: "Service" },
+    { value: "tramite", label: "Trámite" },
   ],
+};
+
+/**
+ * Tipos de costo permitidos por categoría — usa la cabeza.
+ * "Profesionales" siempre es servicio, "Documentación" siempre es trámite, etc.
+ * Cuando solo hay un tipo permitido, el modal lo selecciona automáticamente y oculta el selector.
+ */
+export const allowedCostTypesByCategory: Record<string, string[]> = {
+  // === Casa ===
+  Obra: ["material", "mano_de_obra"],
+  Estructura: ["material", "mano_de_obra"],
+  Terminaciones: ["material", "mano_de_obra"],
+  Equipamiento: ["material", "mano_de_obra"],
+  Exterior: ["material", "mano_de_obra"],
+  Profesionales: ["servicio"],
+  Servicios: ["servicio"],
+  Documentación: ["tramite"],
+
+  // === Auto ===
+  Mecánica: ["repuesto", "mano_de_obra"],
+  Motor: ["repuesto", "mano_de_obra"],
+  Carrocería: ["repuesto", "mano_de_obra"],
+  Interior: ["repuesto", "mano_de_obra"],
+  Electrónica: ["repuesto", "mano_de_obra"],
+  Neumáticos: ["repuesto", "mano_de_obra"],
+  Estética: ["repuesto", "mano_de_obra"],
 };
 
 export const statusConfig: Record<
@@ -91,11 +117,11 @@ export const modalInputStyle: React.CSSProperties = {
   width: "100%",
   padding: "12px 14px",
   borderRadius: 10,
-  border: "1px solid rgba(56, 189, 248, 0.1)",
-  backgroundColor: "rgba(6, 11, 20, 0.6)",
+  border: "1px solid var(--border-default)",
+  backgroundColor: "var(--surface-2)",
   fontSize: 13,
   outline: "none",
-  color: "#e8edf5",
+  color: "var(--text-primary)",
   transition: "all 0.25s",
   backdropFilter: "blur(8px)",
 };
@@ -103,14 +129,13 @@ export const modalInputStyle: React.CSSProperties = {
 export const focusInput = (
   e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>
 ) => {
-  e.currentTarget.style.borderColor = "#38bdf8";
-  e.currentTarget.style.boxShadow =
-    "0 0 0 3px rgba(56, 189, 248, 0.1), 0 0 15px rgba(56, 189, 248, 0.08)";
+  e.currentTarget.style.borderColor = "var(--accent)";
+  e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-soft)";
 };
 
 export const blurInput = (
   e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>
 ) => {
-  e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.1)";
+  e.currentTarget.style.borderColor = "var(--border-default)";
   e.currentTarget.style.boxShadow = "none";
 };

@@ -196,14 +196,17 @@ async function main() {
   for (const mockProject of mockProjects) {
     const { costs, investors, ...projectData } = mockProject;
 
-    const project = await prisma.project.upsert({
+    let project = await prisma.project.findFirst({
       where: { name: projectData.name },
-      update: {},
-      create: {
-        ...projectData,
-        buyDate: projectData.buyDate,
-      },
     });
+    if (!project) {
+      project = await prisma.project.create({
+        data: {
+          ...projectData,
+          buyDate: projectData.buyDate,
+        },
+      });
+    }
 
     for (const costData of costs) {
       await prisma.cost.upsert({

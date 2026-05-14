@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useSharedProjects } from "@/contexts/ProjectsContext";
 import { fmt, safeNum } from "@/lib/format";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   const { data: session } = useSession();
@@ -35,16 +36,12 @@ export default function Header() {
       .catch(() => {});
   }, []);
 
-  // Use pre-computed fields from API (computed by lib/financial.ts on the server)
   const activosProjects = projects.filter((p) => p.status === "activo");
   const vendidosProjects = projects.filter((p) => p.status === "vendido");
   const activos = activosProjects.length;
   const vendidos = vendidosProjects.length;
-  // Invertido: solo proyectos activos (lo vendido ya no está invertido)
   const invertido = activosProjects.reduce((sum, p) => sum + safeNum(p.investment), 0);
-  // Resultado: suma de ganancias/pérdidas de operaciones vendidas
   const resultado = vendidosProjects.reduce((sum, p) => sum + safeNum(p.result), 0);
-  // Margen promedio: promedio de márgenes individuales de vendidos
   const margenProm = (() => {
     if (vendidosProjects.length === 0) return 0;
     const totalMargin = vendidosProjects.reduce((sum, p) => sum + safeNum(p.margin), 0);
@@ -55,9 +52,9 @@ export default function Header() {
     <div
       className="header-root"
       style={{
-        background: "rgba(6, 11, 20, 0.85)",
+        background: "var(--surface-glass)",
         backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(56, 189, 248, 0.08)",
+        borderBottom: "1px solid var(--border-default)",
         padding: "0 24px",
         height: 64,
         display: "flex",
@@ -72,34 +69,54 @@ export default function Header() {
       <a
         href="/"
         className="header-logo"
+        aria-label="N$ — Inicio"
         style={{
-          fontSize: 20,
-          fontWeight: 800,
-          background: "linear-gradient(135deg, #38bdf8 0%, #7dd3fc 40%, #d4a574 100%)",
-          backgroundClip: "text",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 10,
           whiteSpace: "nowrap",
-          letterSpacing: "-0.5px",
-          marginRight: 40,
+          marginRight: 32,
           textDecoration: "none",
+          transition: "filter 0.2s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.filter = "drop-shadow(0 0 12px var(--accent-glow))";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.filter = "none";
         }}
       >
-        Seguimiento
+        <svg width="32" height="26" viewBox="0 0 120 100" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+          <g stroke="var(--text-primary)" strokeWidth="15" strokeLinecap="square">
+            <line x1="20" y1="14" x2="20" y2="86" />
+            <line x1="20" y1="14" x2="76" y2="86" />
+            <line x1="76" y1="14" x2="76" y2="86" />
+          </g>
+          <g stroke="var(--warning)" strokeLinecap="round" fill="none">
+            <line x1="82" y1="6" x2="82" y2="94" strokeWidth="6" />
+            <path
+              d="M 104 28 Q 104 18 94 18 L 74 18 Q 64 18 64 28 Q 64 38 74 42 L 94 58 Q 104 62 104 72 Q 104 82 94 82 L 74 82 Q 64 82 64 72"
+              strokeWidth="8"
+            />
+          </g>
+        </svg>
+        <span style={{ fontSize: 17, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.3px" }}>
+          Seguimiento
+        </span>
       </a>
 
-      {/* Global KPIs - hidden on mobile via CSS */}
-      <div className="header-kpis" style={{ display: "flex", gap: 4, flex: 1 }}>
+      {/* KPIs globales (hidden en mobile) */}
+      <div className="header-kpis" style={{ display: "flex", gap: 4, flex: 1, minWidth: 0 }}>
         {projectsLoading ? (
-          <div style={{ fontSize: 12, color: "#5a6b82" }}>Cargando...</div>
+          <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>Cargando...</div>
         ) : (
           <>
             {[
-              { label: "ACTIVOS", value: String(activos), color: "#38bdf8" },
-              { label: "VENDIDOS", value: String(vendidos), color: "#34d399" },
-              { label: "INVERTIDO", value: fmt(invertido), color: "#e8d5b7", sublabel: "en activos" },
-              { label: "RESULTADO", value: fmt(resultado), color: resultado >= 0 ? "#34d399" : "#f87171", sublabel: "en vendidos" },
-              { label: "MARGEN PROM.", value: `${margenProm.toFixed(1)}%`, color: margenProm >= 0 ? "#34d399" : "#f87171", sublabel: "en vendidos" },
+              { label: "ACTIVOS", value: String(activos), color: "var(--text-primary)" },
+              { label: "VENDIDOS", value: String(vendidos), color: "var(--success)" },
+              { label: "INVERTIDO", value: fmt(invertido), color: "var(--text-primary)", sublabel: "en activos" },
+              { label: "RESULTADO", value: fmt(resultado), color: resultado >= 0 ? "var(--success)" : "var(--danger)", sublabel: "en vendidos" },
+              { label: "MARGEN PROM.", value: `${margenProm.toFixed(1)}%`, color: margenProm >= 0 ? "var(--success)" : "var(--danger)", sublabel: "en vendidos" },
             ].map((kpi, i) => (
               <div
                 key={i}
@@ -107,30 +124,31 @@ export default function Header() {
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  padding: "6px 14px",
+                  padding: "6px 12px",
                   borderRadius: 10,
-                  background: "rgba(56, 189, 248, 0.04)",
-                  border: "1px solid rgba(56, 189, 248, 0.06)",
+                  background: "var(--surface-1)",
+                  border: "1px solid var(--border-faint)",
                   transition: "all 0.2s",
                   cursor: "default",
+                  minWidth: 0,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(56, 189, 248, 0.08)";
-                  e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.12)";
+                  e.currentTarget.style.background = "var(--surface-2)";
+                  e.currentTarget.style.borderColor = "var(--border-default)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(56, 189, 248, 0.04)";
-                  e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.06)";
+                  e.currentTarget.style.background = "var(--surface-1)";
+                  e.currentTarget.style.borderColor = "var(--border-faint)";
                 }}
               >
-                <div>
-                  <div style={{ fontSize: 9, color: "#5a6b82", textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 600, lineHeight: 1 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 9, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 600, lineHeight: 1 }}>
                     {kpi.label}
                     {"sublabel" in kpi && kpi.sublabel && (
                       <span style={{ fontWeight: 400, opacity: 0.7, marginLeft: 3, textTransform: "lowercase", letterSpacing: 0 }}>{kpi.sublabel}</span>
                     )}
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: kpi.color, lineHeight: 1.3 }}>{kpi.value}</div>
+                  <div className="tabular" style={{ fontSize: 14, fontWeight: 700, color: kpi.color, lineHeight: 1.3 }}>{kpi.value}</div>
                 </div>
               </div>
             ))}
@@ -138,16 +156,16 @@ export default function Header() {
         )}
       </div>
 
-      {/* Spacer for mobile to push right items */}
       <div style={{ flex: 1 }} className="header-kpis" />
 
-      {/* Alerts bell + User */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: "auto" }}>
+      {/* Right side: theme toggle + alerts + user */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+        <ThemeToggle />
+
         <div ref={alertsRef} style={{ position: "relative" }}>
           <button
             onClick={() => {
               setShowAlerts(!showAlerts);
-              // Mark notifications as read when opening
               if (!showAlerts && notifications.length > 0) {
                 fetch("/api/notifications", { method: "PATCH", body: JSON.stringify({}) })
                   .then(() => setNotifications([]))
@@ -155,8 +173,8 @@ export default function Header() {
               }
             }}
             style={{
-              background: showAlerts ? "rgba(56, 189, 248, 0.1)" : "none",
-              border: "none",
+              background: showAlerts ? "var(--surface-3)" : "var(--surface-2)",
+              border: "1px solid var(--border-default)",
               cursor: "pointer",
               position: "relative",
               width: 36,
@@ -165,19 +183,19 @@ export default function Header() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#8899b0",
+              color: "var(--text-secondary)",
               transition: "all 0.15s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(56, 189, 248, 0.1)";
-              e.currentTarget.style.color = "#e8edf5";
+              e.currentTarget.style.borderColor = "var(--border-strong)";
+              e.currentTarget.style.color = "var(--text-primary)";
             }}
             onMouseLeave={(e) => {
-              if (!showAlerts) e.currentTarget.style.background = "none";
-              e.currentTarget.style.color = "#8899b0";
+              e.currentTarget.style.borderColor = "var(--border-default)";
+              e.currentTarget.style.color = "var(--text-secondary)";
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
@@ -187,11 +205,11 @@ export default function Header() {
                   position: "absolute",
                   top: 4,
                   right: 4,
-                  background: "#ef4444",
+                  background: "var(--danger)",
                   borderRadius: "50%",
                   width: 8,
                   height: 8,
-                  boxShadow: "0 0 6px rgba(239, 68, 68, 0.5)",
+                  boxShadow: "0 0 6px var(--danger)",
                 }}
               />
             )}
@@ -203,11 +221,11 @@ export default function Header() {
                 position: "absolute",
                 top: 44,
                 right: 0,
-                background: "rgba(12, 21, 36, 0.95)",
+                background: "var(--surface-glass)",
                 backdropFilter: "blur(20px)",
-                border: "1px solid rgba(56, 189, 248, 0.12)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 14,
-                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(56, 189, 248, 0.06)",
+                boxShadow: "var(--shadow-elevated)",
                 width: 340,
                 maxWidth: "90vw",
                 maxHeight: 400,
@@ -216,8 +234,8 @@ export default function Header() {
                 animation: "fadeIn 0.2s ease",
               }}
             >
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(56, 189, 248, 0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#e8edf5" }}>
+              <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-faint)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
                   Alertas
                 </div>
                 {alerts.filter(a => !dismissedAlerts.has(a.id)).length > 0 && (
@@ -230,20 +248,20 @@ export default function Header() {
                       background: "transparent",
                       border: "none",
                       fontSize: 11,
-                      color: "#5a6b82",
+                      color: "var(--text-tertiary)",
                       cursor: "pointer",
                       fontWeight: 500,
                       padding: 0,
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "#8899b0"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = "#5a6b82"; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-tertiary)"; }}
                   >
                     Descartar todo
                   </button>
                 )}
               </div>
               {alerts.filter(a => !dismissedAlerts.has(a.id)).length === 0 && notifications.length === 0 ? (
-                <div style={{ padding: 16, fontSize: 12, color: "#5a6b82" }}>Sin alertas</div>
+                <div style={{ padding: 16, fontSize: 12, color: "var(--text-tertiary)" }}>Sin alertas</div>
               ) : (
                 <>
                   {alerts.filter(a => !dismissedAlerts.has(a.id)).map((alert) => (
@@ -251,27 +269,21 @@ export default function Header() {
                       key={alert.id}
                       style={{
                         padding: "10px 16px",
-                        borderBottom: "1px solid rgba(56, 189, 248, 0.04)",
+                        borderBottom: "1px solid var(--border-faint)",
                         fontSize: 12,
-                        color: "#8899b0",
+                        color: "var(--text-secondary)",
                         display: "flex",
                         gap: 10,
                         alignItems: "flex-start",
                         transition: "background 0.15s",
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(56, 189, 248, 0.04)"; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-2)"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     >
-                      <div
-                        style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: "50%",
-                          background: alert.color,
-                          flexShrink: 0,
-                          marginTop: 4,
-                        }}
-                      />
+                      <div style={{
+                        width: 7, height: 7, borderRadius: "50%",
+                        background: alert.color, flexShrink: 0, marginTop: 4,
+                      }} />
                       <div style={{ flex: 1 }}>{alert.message}</div>
                       <button
                         onClick={(e) => {
@@ -279,12 +291,12 @@ export default function Header() {
                           setDismissedAlerts(prev => new Set([...prev, alert.id]));
                         }}
                         style={{
-                          background: "none", border: "none", color: "#3d4f63",
+                          background: "none", border: "none", color: "var(--text-quaternary)",
                           cursor: "pointer", padding: 2, borderRadius: 4, flexShrink: 0,
                           lineHeight: 1,
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = "#8899b0"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = "#3d4f63"; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-quaternary)"; }}
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
                       </button>
@@ -295,26 +307,20 @@ export default function Header() {
                       key={notification.id}
                       style={{
                         padding: "10px 16px",
-                        borderBottom: "1px solid rgba(192, 132, 252, 0.04)",
+                        borderBottom: "1px solid var(--border-faint)",
                         fontSize: 12,
-                        color: "#c084fc",
+                        color: "var(--info)",
                         display: "flex",
                         gap: 10,
                         transition: "background 0.15s",
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(192, 132, 252, 0.04)"; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--info-soft)"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     >
-                      <div
-                        style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: "50%",
-                          background: "#c084fc",
-                          flexShrink: 0,
-                          marginTop: 4,
-                        }}
-                      />
+                      <div style={{
+                        width: 7, height: 7, borderRadius: "50%",
+                        background: "var(--info)", flexShrink: 0, marginTop: 4,
+                      }} />
                       <div>{notification.message}</div>
                     </div>
                   ))}
@@ -328,29 +334,28 @@ export default function Header() {
           <Link
             href="/profile"
             style={{
-              width: 34,
-              height: 34,
+              width: 36,
+              height: 36,
               borderRadius: 10,
-              background: "linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(212, 165, 116, 0.15))",
-              border: "1px solid rgba(56, 189, 248, 0.2)",
+              background: "var(--surface-2)",
+              border: "1px solid var(--border-default)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 13,
               fontWeight: 700,
-              color: "#38bdf8",
-              boxShadow: "0 0 12px rgba(56, 189, 248, 0.1)",
+              color: "var(--text-primary)",
               cursor: "pointer",
               transition: "all 0.2s",
               textDecoration: "none",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(212, 165, 116, 0.25))";
-              e.currentTarget.style.boxShadow = "0 0 16px rgba(56, 189, 248, 0.2)";
+              e.currentTarget.style.background = "var(--surface-3)";
+              e.currentTarget.style.borderColor = "var(--border-strong)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(212, 165, 116, 0.15))";
-              e.currentTarget.style.boxShadow = "0 0 12px rgba(56, 189, 248, 0.1)";
+              e.currentTarget.style.background = "var(--surface-2)";
+              e.currentTarget.style.borderColor = "var(--border-default)";
             }}
           >
             {session.user.name?.charAt(0) || "U"}

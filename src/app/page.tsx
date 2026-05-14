@@ -30,21 +30,14 @@ export default function Home() {
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        color: "#5a6b82",
-        background: "#060b14",
+        color: "var(--text-tertiary)",
+        background: "var(--bg)",
       }}>
-        <div style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 12,
-        }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
           <div style={{
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            border: "3px solid rgba(56, 189, 248, 0.15)",
-            borderTopColor: "#38bdf8",
+            width: 40, height: 40, borderRadius: "50%",
+            border: "3px solid var(--border-default)",
+            borderTopColor: "var(--text-primary)",
             animation: "spin 1s linear infinite",
           }} />
           <span>Cargando...</span>
@@ -62,7 +55,7 @@ export default function Home() {
   filtered.sort((a, b) => (order[a.status] || 0) - (order[b.status] || 0));
 
   return (
-    <main style={{ minHeight: "100vh", background: "#060b14" }}>
+    <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Header />
 
       <div className="page-container" style={{ padding: "24px", maxWidth: 1400, margin: "0 auto" }}>
@@ -70,10 +63,10 @@ export default function Home() {
         <div className="filter-bar" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
           <div style={{
             display: "flex",
-            background: "rgba(12, 21, 36, 0.6)",
+            background: "var(--surface-1)",
             backdropFilter: "blur(12px)",
             borderRadius: 12,
-            border: "1px solid rgba(56, 189, 248, 0.08)",
+            border: "1px solid var(--border-default)",
             overflow: "hidden",
           }}>
             {["Todos", "Casa", "Auto"].map((t) => (
@@ -83,18 +76,18 @@ export default function Home() {
                 style={{
                   padding: "8px 18px",
                   fontSize: 13,
-                  fontWeight: typeFilter === t ? 600 : 400,
-                  background: typeFilter === t ? "rgba(56, 189, 248, 0.12)" : "transparent",
-                  color: typeFilter === t ? "#7dd3fc" : "#5a6b82",
+                  fontWeight: typeFilter === t ? 600 : 500,
+                  background: typeFilter === t ? "var(--surface-3)" : "transparent",
+                  color: typeFilter === t ? "var(--text-primary)" : "var(--text-tertiary)",
                   border: "none",
                   cursor: "pointer",
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
-                  if (typeFilter !== t) e.currentTarget.style.color = "#8899b0";
+                  if (typeFilter !== t) e.currentTarget.style.color = "var(--text-secondary)";
                 }}
                 onMouseLeave={(e) => {
-                  if (typeFilter !== t) e.currentTarget.style.color = "#5a6b82";
+                  if (typeFilter !== t) e.currentTarget.style.color = "var(--text-tertiary)";
                 }}
               >
                 {t === "Todos" ? "Todos" : t === "Casa" ? "Casas" : "Autos"}
@@ -108,11 +101,11 @@ export default function Home() {
             style={{
               padding: "8px 12px",
               fontSize: 13,
-              border: "1px solid rgba(56, 189, 248, 0.08)",
+              border: "1px solid var(--border-default)",
               borderRadius: 12,
-              background: "rgba(12, 21, 36, 0.6)",
+              background: "var(--surface-1)",
               backdropFilter: "blur(12px)",
-              color: "#e8edf5",
+              color: "var(--text-primary)",
               cursor: "pointer",
               outline: "none",
             }}
@@ -132,22 +125,14 @@ export default function Home() {
             style={{
               padding: "8px 14px",
               fontSize: 13,
-              border: "1px solid rgba(56, 189, 248, 0.08)",
+              border: "1px solid var(--border-default)",
               borderRadius: 12,
               outline: "none",
               width: 200,
               minWidth: 0,
-              background: "rgba(12, 21, 36, 0.6)",
+              background: "var(--surface-1)",
               backdropFilter: "blur(12px)",
-              color: "#e8edf5",
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.3)";
-              e.currentTarget.style.boxShadow = "0 0 12px rgba(56, 189, 248, 0.1)";
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.08)";
-              e.currentTarget.style.boxShadow = "none";
+              color: "var(--text-primary)",
             }}
           />
 
@@ -160,9 +145,9 @@ export default function Home() {
               }}
               style={{
                 fontSize: 12,
-                color: "#7dd3fc",
+                color: "var(--text-secondary)",
                 background: "transparent",
-                border: "1px solid rgba(56, 189, 248, 0.15)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 12,
                 padding: "6px 14px",
                 cursor: "pointer",
@@ -176,29 +161,27 @@ export default function Home() {
 
         {/* Cards grid */}
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px", color: "#5a6b82" }}>
+          <div style={{ textAlign: "center", padding: "60px", color: "var(--text-tertiary)" }}>
             <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              border: "3px solid rgba(56, 189, 248, 0.15)",
-              borderTopColor: "#38bdf8",
+              width: 40, height: 40, borderRadius: "50%",
+              border: "3px solid var(--border-default)",
+              borderTopColor: "var(--text-primary)",
               animation: "spin 1s linear infinite",
               margin: "0 auto 12px",
             }} />
             Cargando proyectos...
           </div>
         ) : (
-          <div className="projects-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+          <div className="projects-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {/* Add new project card - only for admin */}
             {session?.user?.role === "admin" && (
               <div
                 onClick={() => setShowAddModal(true)}
                 style={{
-                  background: "rgba(12, 21, 36, 0.4)",
+                  background: "var(--surface-1)",
                   backdropFilter: "blur(8px)",
                   borderRadius: 16,
-                  border: "2px dashed rgba(56, 189, 248, 0.12)",
+                  border: "2px dashed var(--border-default)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -207,29 +190,24 @@ export default function Home() {
                   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.35)";
+                  e.currentTarget.style.borderColor = "var(--border-strong)";
                   e.currentTarget.style.borderStyle = "solid";
-                  e.currentTarget.style.background = "rgba(56, 189, 248, 0.04)";
-                  e.currentTarget.style.boxShadow = "0 0 30px rgba(56, 189, 248, 0.08)";
+                  e.currentTarget.style.background = "var(--surface-2)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.12)";
+                  e.currentTarget.style.borderColor = "var(--border-default)";
                   e.currentTarget.style.borderStyle = "dashed";
-                  e.currentTarget.style.background = "rgba(12, 21, 36, 0.4)";
-                  e.currentTarget.style.boxShadow = "none";
+                  e.currentTarget.style.background = "var(--surface-1)";
                 }}
               >
                 <div style={{ textAlign: "center" }}>
                   <div style={{
                     fontSize: 36,
                     marginBottom: 8,
-                    background: "linear-gradient(135deg, #38bdf8, #d4a574)",
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    color: "var(--text-secondary)",
                     fontWeight: 300,
                   }}>+</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#7dd3fc" }}>Nuevo proyecto</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>Nuevo proyecto</div>
                 </div>
               </div>
             )}
@@ -246,8 +224,8 @@ export default function Home() {
         )}
 
         {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "#5a6b82" }}>
-            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: "#e8edf5" }}>
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-tertiary)" }}>
+            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: "var(--text-primary)" }}>
               No se encontraron proyectos
             </div>
             <div style={{ fontSize: 14, marginBottom: 20 }}>
@@ -257,15 +235,15 @@ export default function Home() {
               <button
                 onClick={() => setShowAddModal(true)}
                 style={{
-                  background: "linear-gradient(135deg, #38bdf8, #7dd3fc)",
-                  border: "none",
+                  background: "var(--accent)",
+                  border: "1px solid var(--accent)",
                   borderRadius: 12,
                   padding: "10px 24px",
                   fontSize: 14,
-                  fontWeight: 600,
-                  color: "#060b14",
+                  fontWeight: 700,
+                  color: "var(--accent-on)",
                   cursor: "pointer",
-                  boxShadow: "0 4px 16px rgba(56, 189, 248, 0.25)",
+                  boxShadow: "var(--shadow-button)",
                 }}
               >
                 + Crear proyecto

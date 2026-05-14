@@ -40,7 +40,31 @@ export default function LoginPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Negocios App</h1>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+          <svg
+            width="84"
+            height="70"
+            viewBox="0 0 120 100"
+            fill="none"
+            aria-label="N$"
+            role="img"
+            style={{ filter: "drop-shadow(0 0 24px var(--accent-glow))" }}
+          >
+            <g stroke="var(--text-primary)" strokeWidth="15" strokeLinecap="square">
+              <line x1="20" y1="14" x2="20" y2="86" />
+              <line x1="20" y1="14" x2="76" y2="86" />
+              <line x1="76" y1="14" x2="76" y2="86" />
+            </g>
+            <g stroke="var(--warning)" strokeLinecap="round" fill="none">
+              <line x1="82" y1="6" x2="82" y2="94" strokeWidth="6" />
+              <path
+                d="M 104 28 Q 104 18 94 18 L 74 18 Q 64 18 64 28 Q 64 38 74 42 L 94 58 Q 104 62 104 72 Q 104 82 94 82 L 74 82 Q 64 82 64 72"
+                strokeWidth="8"
+              />
+            </g>
+          </svg>
+        </div>
+        <h1 className={styles.title}>N$ — Seguimiento</h1>
         <p className={styles.subtitle}>Sistema de gestión de inversiones</p>
 
         {error && <div className={styles.error}>{error}</div>}
@@ -86,7 +110,7 @@ export default function LoginPage() {
         </form>
 
         <div className={styles.hint}>
-          <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Contacta al administrador para obtener una cuenta</p>
+          <p>Contacta al administrador para obtener una cuenta</p>
         </div>
       </div>
     </div>

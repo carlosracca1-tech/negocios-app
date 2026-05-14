@@ -10,26 +10,26 @@ interface AccessPanelProps {
 export default function AccessPanel({ access, onShareClick }: AccessPanelProps) {
 
   const roleConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-    ver: { label: "Solo ver", color: "#8899b0", bgColor: "rgba(136, 153, 176, 0.1)" },
-    interactuar: { label: "Ver + Interactuar", color: "#7dd3fc", bgColor: "rgba(56, 189, 248, 0.1)" },
+    ver: { label: "Solo ver", color: "var(--text-secondary)", bgColor: "rgba(136, 153, 176, 0.1)" },
+    interactuar: { label: "Ver + Interactuar", color: "var(--text-primary)", bgColor: "rgba(56, 189, 248, 0.1)" },
   };
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#e8edf5" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
           Acceso ({access.length})
         </div>
         <button
           onClick={onShareClick}
           style={{
-            background: "linear-gradient(135deg, #38bdf8, #7dd3fc)",
+            background: "var(--accent)",
             border: "none",
             borderRadius: 10,
             padding: "8px 14px",
             fontSize: 12,
             fontWeight: 600,
-            color: "#060b14",
+            color: "var(--accent-on)",
             cursor: "pointer",
             boxShadow: "0 2px 12px rgba(56, 189, 248, 0.2)",
           }}
@@ -41,7 +41,7 @@ export default function AccessPanel({ access, onShareClick }: AccessPanelProps) 
       </div>
 
       {access.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "32px 16px", color: "#5a6b82" }}>
+        <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--text-tertiary)" }}>
           <div style={{ fontSize: 14, marginBottom: 12 }}>Sin comparticiones</div>
           <button
             onClick={onShareClick}
@@ -52,17 +52,17 @@ export default function AccessPanel({ access, onShareClick }: AccessPanelProps) 
               padding: "8px 14px",
               fontSize: 12,
               fontWeight: 600,
-              color: "#7dd3fc",
+              color: "var(--text-primary)",
               cursor: "pointer",
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(56, 189, 248, 0.08)";
+              e.currentTarget.style.backgroundColor = "var(--surface-2)";
               e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.35)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.2)";
+              e.currentTarget.style.borderColor = "var(--border-strong)";
             }}
           >
             + Compartir proyecto
@@ -77,9 +77,9 @@ export default function AccessPanel({ access, onShareClick }: AccessPanelProps) 
               <div
                 key={a.id}
                 style={{
-                  background: "rgba(6, 11, 20, 0.5)",
+                  background: "var(--surface-1)",
                   borderRadius: 10,
-                  border: "1px solid rgba(56, 189, 248, 0.06)",
+                  border: "1px solid var(--border-faint)",
                   padding: "12px 14px",
                   display: "flex",
                   justifyContent: "space-between",
@@ -87,19 +87,19 @@ export default function AccessPanel({ access, onShareClick }: AccessPanelProps) 
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.12)";
-                  e.currentTarget.style.background = "rgba(12, 21, 36, 0.6)";
+                  e.currentTarget.style.borderColor = "var(--surface-3)";
+                  e.currentTarget.style.background = "var(--surface-1)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.06)";
-                  e.currentTarget.style.background = "rgba(6, 11, 20, 0.5)";
+                  e.currentTarget.style.borderColor = "var(--surface-1)";
+                  e.currentTarget.style.background = "var(--surface-1)";
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#e8edf5" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                     {user?.name || "Usuario"}
                   </div>
-                  <div style={{ fontSize: 11, color: "#5a6b82", marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
                     {user?.email}
                   </div>
                 </div>

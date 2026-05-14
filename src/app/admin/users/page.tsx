@@ -101,8 +101,8 @@ export default function AdminUsersPage() {
           justifyContent: "center",
           alignItems: "center",
           minHeight: "100vh",
-          color: "#5a6b82",
-          background: "#060b14",
+          color: "var(--text-tertiary)",
+          background: "var(--bg)",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
@@ -112,7 +112,7 @@ export default function AdminUsersPage() {
               height: 40,
               borderRadius: "50%",
               border: "3px solid rgba(56, 189, 248, 0.15)",
-              borderTopColor: "#38bdf8",
+              borderTopColor: "var(--text-primary)",
               animation: "spin 1s linear infinite",
             }}
           />
@@ -134,7 +134,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <main style={{ minHeight: "100vh", background: "#060b14" }}>
+    <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Header />
 
       <div style={{ padding: "24px", maxWidth: 1200, margin: "0 auto" }}>
@@ -148,7 +148,7 @@ export default function AdminUsersPage() {
             borderRadius: 12,
             padding: "8px 16px",
             fontSize: 13,
-            color: "#7dd3fc",
+            color: "var(--text-primary)",
             cursor: "pointer",
             fontWeight: 500,
             transition: "all 0.2s",
@@ -167,7 +167,7 @@ export default function AdminUsersPage() {
 
         {/* Title and stats */}
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e8edf5", marginBottom: 12 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)", marginBottom: 12 }}>
             Gestión de Usuarios
           </h1>
 
@@ -180,17 +180,17 @@ export default function AdminUsersPage() {
             }}
           >
             {[
-              { role: "admin", label: "Admins", count: roleCounts.admin, color: "#38bdf8" },
-              { role: "colaborador", label: "Colaboradores", count: roleCounts.colaborador, color: "#34d399" },
-              { role: "vista", label: "Solo Lectura", count: roleCounts.vista, color: "#5a6b82" },
+              { role: "admin", label: "Admins", count: roleCounts.admin, color: "var(--text-primary)" },
+              { role: "colaborador", label: "Colaboradores", count: roleCounts.colaborador, color: "var(--success)" },
+              { role: "vista", label: "Solo Lectura", count: roleCounts.vista, color: "var(--text-tertiary)" },
             ].map((item) => (
               <div
                 key={item.role}
                 style={{
-                  background: "rgba(12, 21, 36, 0.6)",
+                  background: "var(--surface-1)",
                   backdropFilter: "blur(12px)",
                   borderRadius: 12,
-                  border: "1px solid rgba(56, 189, 248, 0.08)",
+                  border: "1px solid var(--border-default)",
                   padding: "12px 16px",
                   display: "flex",
                   alignItems: "center",
@@ -207,7 +207,7 @@ export default function AdminUsersPage() {
                   }}
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: "#5a6b82", fontWeight: 600 }}>
+                  <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontWeight: 600 }}>
                     {item.label}
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: item.color }}>
@@ -221,14 +221,14 @@ export default function AdminUsersPage() {
 
         {/* Users table */}
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "#5a6b82" }}>
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-tertiary)" }}>
             <div
               style={{
                 width: 40,
                 height: 40,
                 borderRadius: "50%",
                 border: "3px solid rgba(56, 189, 248, 0.15)",
-                borderTopColor: "#38bdf8",
+                borderTopColor: "var(--text-primary)",
                 animation: "spin 1s linear infinite",
                 margin: "0 auto 12px",
               }}
@@ -236,7 +236,7 @@ export default function AdminUsersPage() {
             Cargando usuarios...
           </div>
         ) : users.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "#5a6b82" }}>
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-tertiary)" }}>
             <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
               No hay usuarios
             </div>
@@ -244,10 +244,10 @@ export default function AdminUsersPage() {
         ) : (
           <div
             style={{
-              background: "rgba(12, 21, 36, 0.6)",
+              background: "var(--surface-1)",
               backdropFilter: "blur(12px)",
               borderRadius: 16,
-              border: "1px solid rgba(56, 189, 248, 0.08)",
+              border: "1px solid var(--border-default)",
               overflow: "hidden",
             }}
           >
@@ -258,20 +258,20 @@ export default function AdminUsersPage() {
                 gridTemplateColumns: "1fr 1fr 150px 150px",
                 gap: 16,
                 padding: "16px 20px",
-                borderBottom: "1px solid rgba(56, 189, 248, 0.08)",
+                borderBottom: "1px solid var(--border-default)",
                 background: "rgba(6, 11, 20, 0.4)",
               }}
             >
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#8899b0", textTransform: "uppercase" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>
                 Nombre
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#8899b0", textTransform: "uppercase" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>
                 Email
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#8899b0", textTransform: "uppercase" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>
                 Rol
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#8899b0", textTransform: "uppercase" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>
                 Miembro desde
               </div>
             </div>
@@ -296,11 +296,11 @@ export default function AdminUsersPage() {
                   e.currentTarget.style.background = "transparent";
                 }}
               >
-                <div style={{ fontSize: 14, fontWeight: 500, color: "#e8edf5" }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)" }}>
                   {user.name}
                 </div>
 
-                <div style={{ fontSize: 13, color: "#8899b0", wordBreak: "break-all" }}>
+                <div style={{ fontSize: 13, color: "var(--text-secondary)", wordBreak: "break-all" }}>
                   {user.email}
                 </div>
 
@@ -322,7 +322,7 @@ export default function AdminUsersPage() {
                       border: "1px solid rgba(56, 189, 248, 0.15)",
                       borderRadius: 8,
                       background: "rgba(12, 21, 36, 0.4)",
-                      color: user.role === "admin" ? "#38bdf8" : user.role === "colaborador" ? "#34d399" : "#5a6b82",
+                      color: user.role === "admin" ? "var(--text-primary)" : user.role === "colaborador" ? "var(--success)" : "var(--text-tertiary)",
                       cursor: updatingUserId === user.id ? "not-allowed" : "pointer",
                       fontWeight: 600,
                       opacity: updatingUserId === user.id ? 0.6 : 1,
@@ -346,7 +346,7 @@ export default function AdminUsersPage() {
                 </div>
 
                 {/* Member since */}
-                <div style={{ fontSize: 13, color: "#5a6b82" }}>
+                <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
                   {new Date(user.createdAt).toLocaleDateString("es-AR", {
                     year: "numeric",
                     month: "short",
@@ -388,8 +388,8 @@ export default function AdminUsersPage() {
               fontSize: 13,
               color:
                 toast.type === "success"
-                  ? "#34d399"
-                  : "#f87171",
+                  ? "var(--success)"
+                  : "var(--danger)",
               fontWeight: 600,
               backdropFilter: "blur(12px)",
               boxShadow:

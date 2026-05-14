@@ -110,7 +110,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
     <div
       style={{
         position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-        background: "rgba(6, 11, 20, 0.7)", backdropFilter: "blur(8px)",
+        background: "rgba(0, 0, 0, 0.55)", backdropFilter: "blur(8px)",
         display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
       }}
       onClick={onClose}
@@ -127,17 +127,17 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
       <div
         className="modal-content"
         style={{
-          background: "rgba(12, 21, 36, 0.95)", backdropFilter: "blur(20px)",
+          background: "var(--surface-glass)", backdropFilter: "blur(20px)",
           borderRadius: 16, padding: 24, width: 480, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto",
           boxShadow: "0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 189, 248, 0.1), 0 0 40px rgba(56, 189, 248, 0.05)",
-          border: "1px solid rgba(56, 189, 248, 0.12)",
+          border: "1px solid var(--border-default)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e8edf5", marginBottom: 6 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
           Agregar gasto mensual
         </h2>
-        <p style={{ fontSize: 12, color: "#5a6b82", marginBottom: 20 }}>
+        <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 20 }}>
           Subí un comprobante para completar automáticamente, o cargá los datos manualmente.
         </p>
 
@@ -147,7 +147,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
           style={{
             border: "2px dashed rgba(212, 165, 116, 0.2)", borderRadius: 12, padding: "20px 16px",
             textAlign: "center", cursor: "pointer", marginBottom: 20,
-            background: parsing ? "rgba(212, 165, 116, 0.08)" : dataExtracted ? "rgba(16, 185, 129, 0.05)" : "rgba(6, 11, 20, 0.4)",
+            background: parsing ? "rgba(212, 165, 116, 0.08)" : dataExtracted ? "rgba(16, 185, 129, 0.05)" : "var(--surface-1)",
             transition: "all 0.2s",
           }}
           onMouseEnter={(e) => {
@@ -158,7 +158,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.borderColor = "rgba(212, 165, 116, 0.2)";
-            e.currentTarget.style.background = parsing ? "rgba(212, 165, 116, 0.08)" : dataExtracted ? "rgba(16, 185, 129, 0.05)" : "rgba(6, 11, 20, 0.4)";
+            e.currentTarget.style.background = parsing ? "rgba(212, 165, 116, 0.08)" : dataExtracted ? "rgba(16, 185, 129, 0.05)" : "var(--surface-1)";
           }}
         >
           <input
@@ -172,11 +172,11 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
             <div>
               <div className="upload-spinner" style={{
                 width: 28, height: 28, borderRadius: "50%",
-                border: "3px solid rgba(212, 165, 116, 0.2)", borderTopColor: "#d4a574",
+                border: "3px solid rgba(212, 165, 116, 0.2)", borderTopColor: "var(--text-primary)",
                 margin: "0 auto 8px",
               }} />
-              <div style={{ fontSize: 13, color: "#d4a574", fontWeight: 500 }}>Interpretando documento...</div>
-              <div style={{ fontSize: 11, color: "#5a6b82", marginTop: 4 }}>Extrayendo monto, concepto y período</div>
+              <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>Interpretando documento...</div>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>Extrayendo monto, concepto y período</div>
             </div>
           ) : receiptFile ? (
             <div>
@@ -185,8 +185,8 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
                   <img src={receiptPreview} alt="preview" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, border: "1px solid rgba(212, 165, 116, 0.2)" }} />
                 )}
                 <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: 13, color: "#e8edf5", fontWeight: 500 }}>{receiptFile.name}</div>
-                  <div style={{ fontSize: 11, color: dataExtracted ? "#10b981" : "#7dd3fc" }}>
+                  <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{receiptFile.name}</div>
+                  <div style={{ fontSize: 11, color: dataExtracted ? "#10b981" : "var(--text-primary)" }}>
                     {dataExtracted ? "Datos extraídos automáticamente" : "Comprobante cargado — Hacé click para cambiar"}
                   </div>
                 </div>
@@ -205,10 +205,10 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
           ) : (
             <div>
               <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.4 }}>📎</div>
-              <div style={{ fontSize: 13, color: "#d4a574", fontWeight: 500 }}>
+              <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
                 Subí una imagen o PDF de tu gasto
               </div>
-              <div style={{ fontSize: 11, color: "#5a6b82", marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>
                 Ej: expensas, factura, recibo
               </div>
             </div>
@@ -216,24 +216,24 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
         </div>
 
         {parseError && (
-          <div style={{ fontSize: 12, color: "#fbbf24", background: "rgba(251, 191, 36, 0.08)", padding: "8px 12px", borderRadius: 8, marginBottom: 12, border: "1px solid rgba(251, 191, 36, 0.15)" }}>
+          <div style={{ fontSize: 12, color: "var(--warning)", background: "var(--warning-soft)", padding: "8px 12px", borderRadius: 8, marginBottom: 12, border: "1px solid var(--warning-border)" }}>
             No se pudo leer el comprobante automáticamente. Completá los datos manualmente.
           </div>
         )}
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "#5a6b82", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Concepto</label>
+            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Concepto</label>
             <input type="text" value={concept} onChange={(e) => setConcept(e.target.value)} placeholder="Ej: Expensas, Seguro, Patente" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "#5a6b82", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Monto</label>
+              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Monto</label>
               <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" step="0.01" min="0" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "#5a6b82", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Moneda</label>
+              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Moneda</label>
               <select value={currency} onChange={(e) => setCurrency(e.target.value as "ARS" | "USD")} style={{ ...inputStyle, cursor: "pointer" }} onFocus={focusInput} onBlur={blurInput}>
                 <option value="ARS">ARS (Pesos)</option>
                 <option value="USD">USD (Dólares)</option>
@@ -243,13 +243,13 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
 
           {currency === "ARS" && (
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "#5a6b82", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>
+              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>
                 Tipo de cambio (Dólar Blue)
                 <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}> — opcional, para calcular USD</span>
               </label>
               <input type="number" value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} placeholder="Ej: 1200" step="0.01" min="0" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
               {exchangeRate && amount && (
-                <div style={{ fontSize: 11, color: "#7dd3fc", marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4 }}>
                   ≈ U$D {(parseFloat(amount) / parseFloat(exchangeRate)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               )}
@@ -258,22 +258,22 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "#5a6b82", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Período (mes)</label>
+              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Período (mes)</label>
               <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "#5a6b82", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Fecha de pago</label>
+              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Fecha de pago</label>
               <input type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "#5a6b82", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Notas (opcional)</label>
+            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Notas (opcional)</label>
             <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej: Incluye multa por velocidad" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           {createError && (
-            <div style={{ fontSize: 12, color: "#f87171", background: "rgba(248, 113, 113, 0.08)", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(248, 113, 113, 0.15)" }}>
+            <div style={{ fontSize: 12, color: "var(--danger)", background: "var(--danger-soft)", padding: "10px 12px", borderRadius: 8, border: "1px solid var(--danger-border)" }}>
               {createError}
             </div>
           )}
@@ -281,18 +281,18 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
           <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
             <button type="button" onClick={() => { resetForm(); onClose(); }} style={{
               flex: 1, padding: "10px 16px", borderRadius: 10,
-              border: "1px solid rgba(56, 189, 248, 0.12)", background: "transparent",
-              fontSize: 13, fontWeight: 600, color: "#8899b0", cursor: "pointer", transition: "all 0.2s",
+              border: "1px solid var(--border-default)", background: "transparent",
+              fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", cursor: "pointer", transition: "all 0.2s",
             }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(56, 189, 248, 0.06)"; e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.2)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--surface-1)"; e.currentTarget.style.borderColor = "var(--border-strong)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.12)"; }}
             >
               Cancelar
             </button>
             <button type="submit" disabled={creating || parsing} style={{
               flex: 1, padding: "10px 16px", borderRadius: 10, border: "none",
-              background: "linear-gradient(135deg, #38bdf8, #7dd3fc)",
-              fontSize: 13, fontWeight: 600, color: "#060b14",
+              background: "var(--accent)",
+              fontSize: 13, fontWeight: 600, color: "var(--accent-on)",
               cursor: creating || parsing ? "not-allowed" : "pointer",
               opacity: creating || parsing ? 0.6 : 1,
               boxShadow: "0 2px 12px rgba(56, 189, 248, 0.2)",

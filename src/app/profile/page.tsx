@@ -177,21 +177,21 @@ export default function ProfilePage() {
       return {
         ...baseStyle,
         background: "rgba(56, 189, 248, 0.15)",
-        color: "#38bdf8",
+        color: "var(--text-primary)",
         border: "1px solid rgba(56, 189, 248, 0.3)",
       };
     } else if (role === "colaborador") {
       return {
         ...baseStyle,
         background: "rgba(52, 211, 153, 0.15)",
-        color: "#34d399",
+        color: "var(--success)",
         border: "1px solid rgba(52, 211, 153, 0.3)",
       };
     } else {
       return {
         ...baseStyle,
         background: "rgba(90, 107, 130, 0.15)",
-        color: "#8899b0",
+        color: "var(--text-secondary)",
         border: "1px solid rgba(90, 107, 130, 0.3)",
       };
     }
@@ -205,7 +205,7 @@ export default function ProfilePage() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#060b14" }}>
+      <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
         <Header />
         <div
           style={{
@@ -213,7 +213,7 @@ export default function ProfilePage() {
             justifyContent: "center",
             alignItems: "center",
             minHeight: "calc(100vh - 64px)",
-            color: "#5a6b82",
+            color: "var(--text-tertiary)",
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
@@ -223,7 +223,7 @@ export default function ProfilePage() {
                 height: 40,
                 borderRadius: "50%",
                 border: "3px solid rgba(56, 189, 248, 0.15)",
-                borderTopColor: "#38bdf8",
+                borderTopColor: "var(--text-primary)",
                 animation: "spin 1s linear infinite",
               }}
             />
@@ -236,7 +236,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div style={{ minHeight: "100vh", background: "#060b14" }}>
+      <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
         <Header />
         <div
           style={{
@@ -244,7 +244,7 @@ export default function ProfilePage() {
             justifyContent: "center",
             alignItems: "center",
             minHeight: "calc(100vh - 64px)",
-            color: "#f87171",
+            color: "var(--danger)",
           }}
         >
           Error al cargar el perfil
@@ -260,16 +260,16 @@ export default function ProfilePage() {
   });
 
   return (
-    <main style={{ minHeight: "100vh", background: "#060b14" }}>
+    <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Header />
 
       <div style={{ padding: "32px 24px", maxWidth: 900, margin: "0 auto" }}>
         {/* Page title */}
         <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e8edf5", marginBottom: 8 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>
             Mi Perfil
           </h1>
-          <p style={{ fontSize: 14, color: "#8899b0" }}>
+          <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
             Administra tu información personal y seguridad
           </p>
         </div>
@@ -277,22 +277,22 @@ export default function ProfilePage() {
         {/* User Info Card */}
         <div
           style={{
-            background: "rgba(12, 21, 36, 0.6)",
+            background: "var(--surface-1)",
             backdropFilter: "blur(12px)",
             borderRadius: 16,
-            border: "1px solid rgba(56, 189, 248, 0.08)",
+            border: "1px solid var(--border-default)",
             padding: 32,
             marginBottom: 24,
           }}
         >
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e8edf5", marginBottom: 24 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 24 }}>
             Información Básica
           </h2>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 24 }}>
             {/* User Avatar */}
             <div>
-              <label style={{ fontSize: 12, color: "#8899b0", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
+              <label style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
                 Avatar
               </label>
               <div
@@ -307,7 +307,7 @@ export default function ProfilePage() {
                   justifyContent: "center",
                   fontSize: 40,
                   fontWeight: 700,
-                  color: "#38bdf8",
+                  color: "var(--text-primary)",
                   boxShadow: "0 0 12px rgba(56, 189, 248, 0.1)",
                 }}
               >
@@ -318,7 +318,7 @@ export default function ProfilePage() {
             {/* Role & Member Since */}
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 16 }}>
               <div>
-                <label style={{ fontSize: 12, color: "#8899b0", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
+                <label style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
                   Rol
                 </label>
                 <div style={getRoleBadgeStyle(user.role)}>
@@ -326,10 +326,10 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 12, color: "#8899b0", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
+                <label style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
                   Miembro desde
                 </label>
-                <div style={{ fontSize: 14, color: "#e8edf5" }}>
+                <div style={{ fontSize: 14, color: "var(--text-primary)" }}>
                   {createdDate}
                 </div>
               </div>
@@ -341,7 +341,7 @@ export default function ProfilePage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               {/* Name */}
               <div>
-                <label style={{ fontSize: 12, color: "#8899b0", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
+                <label style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
                   Nombre
                 </label>
                 <input
@@ -353,9 +353,9 @@ export default function ProfilePage() {
                     padding: "12px 14px",
                     fontSize: 14,
                     background: "rgba(12, 21, 36, 0.8)",
-                    border: "1px solid rgba(56, 189, 248, 0.08)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 10,
-                    color: "#e8edf5",
+                    color: "var(--text-primary)",
                     outline: "none",
                     transition: "all 0.2s",
                   }}
@@ -364,7 +364,7 @@ export default function ProfilePage() {
                     e.currentTarget.style.boxShadow = "0 0 12px rgba(56, 189, 248, 0.1)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.08)";
+                    e.currentTarget.style.borderColor = "var(--surface-2)";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
@@ -372,7 +372,7 @@ export default function ProfilePage() {
 
               {/* Email */}
               <div>
-                <label style={{ fontSize: 12, color: "#8899b0", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
+                <label style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
                   Email
                 </label>
                 <input
@@ -384,9 +384,9 @@ export default function ProfilePage() {
                     padding: "12px 14px",
                     fontSize: 14,
                     background: "rgba(12, 21, 36, 0.8)",
-                    border: "1px solid rgba(56, 189, 248, 0.08)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 10,
-                    color: "#e8edf5",
+                    color: "var(--text-primary)",
                     outline: "none",
                     transition: "all 0.2s",
                   }}
@@ -395,7 +395,7 @@ export default function ProfilePage() {
                     e.currentTarget.style.boxShadow = "0 0 12px rgba(56, 189, 248, 0.1)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.08)";
+                    e.currentTarget.style.borderColor = "var(--surface-2)";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
@@ -410,7 +410,7 @@ export default function ProfilePage() {
                   background: "rgba(248, 113, 113, 0.1)",
                   border: "1px solid rgba(248, 113, 113, 0.3)",
                   borderRadius: 10,
-                  color: "#f87171",
+                  color: "var(--danger)",
                   fontSize: 13,
                 }}
               >
@@ -424,7 +424,7 @@ export default function ProfilePage() {
                   background: "rgba(52, 211, 153, 0.1)",
                   border: "1px solid rgba(52, 211, 153, 0.3)",
                   borderRadius: 10,
-                  color: "#34d399",
+                  color: "var(--success)",
                   fontSize: 13,
                 }}
               >
@@ -438,10 +438,10 @@ export default function ProfilePage() {
               disabled={saving}
               style={{
                 padding: "12px 24px",
-                background: saving ? "rgba(56, 189, 248, 0.5)" : "linear-gradient(135deg, #38bdf8, #7dd3fc)",
+                background: saving ? "rgba(56, 189, 248, 0.5)" : "var(--accent)",
                 border: "none",
                 borderRadius: 10,
-                color: "#060b14",
+                color: "var(--bg)",
                 fontSize: 14,
                 fontWeight: 600,
                 cursor: saving ? "not-allowed" : "pointer",
@@ -468,15 +468,15 @@ export default function ProfilePage() {
         {/* Password Change Card */}
         <div
           style={{
-            background: "rgba(12, 21, 36, 0.6)",
+            background: "var(--surface-1)",
             backdropFilter: "blur(12px)",
             borderRadius: 16,
-            border: "1px solid rgba(56, 189, 248, 0.08)",
+            border: "1px solid var(--border-default)",
             padding: 32,
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e8edf5" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
               Seguridad
             </h2>
             {!showPasswordForm && (
@@ -485,9 +485,9 @@ export default function ProfilePage() {
                 style={{
                   padding: "8px 16px",
                   background: "transparent",
-                  border: "1px solid rgba(56, 189, 248, 0.2)",
+                  border: "1px solid var(--border-strong)",
                   borderRadius: 8,
-                  color: "#38bdf8",
+                  color: "var(--text-primary)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -495,7 +495,7 @@ export default function ProfilePage() {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.4)";
-                  e.currentTarget.style.background = "rgba(56, 189, 248, 0.08)";
+                  e.currentTarget.style.background = "var(--surface-2)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.2)";
@@ -511,7 +511,7 @@ export default function ProfilePage() {
             <form onSubmit={handleSavePassword} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Current Password */}
               <div>
-                <label style={{ fontSize: 12, color: "#8899b0", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
+                <label style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
                   Contraseña Actual
                 </label>
                 <input
@@ -523,9 +523,9 @@ export default function ProfilePage() {
                     padding: "12px 14px",
                     fontSize: 14,
                     background: "rgba(12, 21, 36, 0.8)",
-                    border: "1px solid rgba(56, 189, 248, 0.08)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 10,
-                    color: "#e8edf5",
+                    color: "var(--text-primary)",
                     outline: "none",
                     transition: "all 0.2s",
                   }}
@@ -534,7 +534,7 @@ export default function ProfilePage() {
                     e.currentTarget.style.boxShadow = "0 0 12px rgba(56, 189, 248, 0.1)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.08)";
+                    e.currentTarget.style.borderColor = "var(--surface-2)";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
@@ -542,7 +542,7 @@ export default function ProfilePage() {
 
               {/* New Password */}
               <div>
-                <label style={{ fontSize: 12, color: "#8899b0", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
+                <label style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
                   Nueva Contraseña
                 </label>
                 <input
@@ -554,9 +554,9 @@ export default function ProfilePage() {
                     padding: "12px 14px",
                     fontSize: 14,
                     background: "rgba(12, 21, 36, 0.8)",
-                    border: "1px solid rgba(56, 189, 248, 0.08)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 10,
-                    color: "#e8edf5",
+                    color: "var(--text-primary)",
                     outline: "none",
                     transition: "all 0.2s",
                   }}
@@ -565,7 +565,7 @@ export default function ProfilePage() {
                     e.currentTarget.style.boxShadow = "0 0 12px rgba(56, 189, 248, 0.1)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.08)";
+                    e.currentTarget.style.borderColor = "var(--surface-2)";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
@@ -573,7 +573,7 @@ export default function ProfilePage() {
 
               {/* Confirm Password */}
               <div>
-                <label style={{ fontSize: 12, color: "#8899b0", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
+                <label style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 600, display: "block", marginBottom: 8 }}>
                   Confirmar Contraseña
                 </label>
                 <input
@@ -585,9 +585,9 @@ export default function ProfilePage() {
                     padding: "12px 14px",
                     fontSize: 14,
                     background: "rgba(12, 21, 36, 0.8)",
-                    border: "1px solid rgba(56, 189, 248, 0.08)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 10,
-                    color: "#e8edf5",
+                    color: "var(--text-primary)",
                     outline: "none",
                     transition: "all 0.2s",
                   }}
@@ -596,7 +596,7 @@ export default function ProfilePage() {
                     e.currentTarget.style.boxShadow = "0 0 12px rgba(56, 189, 248, 0.1)";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.08)";
+                    e.currentTarget.style.borderColor = "var(--surface-2)";
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
@@ -610,7 +610,7 @@ export default function ProfilePage() {
                     background: "rgba(248, 113, 113, 0.1)",
                     border: "1px solid rgba(248, 113, 113, 0.3)",
                     borderRadius: 10,
-                    color: "#f87171",
+                    color: "var(--danger)",
                     fontSize: 13,
                   }}
                 >
@@ -625,10 +625,10 @@ export default function ProfilePage() {
                   disabled={saving}
                   style={{
                     padding: "12px 24px",
-                    background: saving ? "rgba(56, 189, 248, 0.5)" : "linear-gradient(135deg, #38bdf8, #7dd3fc)",
+                    background: saving ? "rgba(56, 189, 248, 0.5)" : "var(--accent)",
                     border: "none",
                     borderRadius: 10,
-                    color: "#060b14",
+                    color: "var(--bg)",
                     fontSize: 14,
                     fontWeight: 600,
                     cursor: saving ? "not-allowed" : "pointer",
@@ -661,9 +661,9 @@ export default function ProfilePage() {
                   style={{
                     padding: "12px 24px",
                     background: "transparent",
-                    border: "1px solid rgba(56, 189, 248, 0.2)",
+                    border: "1px solid var(--border-strong)",
                     borderRadius: 10,
-                    color: "#8899b0",
+                    color: "var(--text-secondary)",
                     fontSize: 14,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -671,11 +671,11 @@ export default function ProfilePage() {
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.4)";
-                    e.currentTarget.style.color = "#e8edf5";
+                    e.currentTarget.style.color = "var(--text-primary)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.2)";
-                    e.currentTarget.style.color = "#8899b0";
+                    e.currentTarget.style.color = "var(--text-secondary)";
                   }}
                 >
                   Cancelar
@@ -684,7 +684,7 @@ export default function ProfilePage() {
             </form>
           )}
           {!showPasswordForm && (
-            <div style={{ fontSize: 14, color: "#8899b0" }}>
+            <div style={{ fontSize: 14, color: "var(--text-secondary)" }}>
               Actualiza tu contraseña para mantener tu cuenta segura
             </div>
           )}

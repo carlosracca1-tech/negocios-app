@@ -91,7 +91,7 @@ export default function RegisterSaleModal({
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(6, 11, 20, 0.7)",
+        background: "rgba(0, 0, 0, 0.55)",
         backdropFilter: "blur(8px)",
         display: "flex",
         alignItems: "center",
@@ -103,7 +103,7 @@ export default function RegisterSaleModal({
     >
       <div
         style={{
-          background: "rgba(12, 21, 36, 0.95)",
+          background: "var(--surface-glass)",
           backdropFilter: "blur(20px)",
           borderRadius: 16,
           padding: 24,
@@ -112,11 +112,11 @@ export default function RegisterSaleModal({
           maxHeight: "90vh",
           overflowY: "auto",
           boxShadow: "0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(52, 211, 153, 0.1), 0 0 40px rgba(52, 211, 153, 0.05)",
-          border: "1px solid rgba(52, 211, 153, 0.15)",
+          border: "1px solid var(--success-border)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#e8edf5", marginBottom: 16 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>
           Registrar venta
         </h2>
 
@@ -128,7 +128,7 @@ export default function RegisterSaleModal({
                 display: "block",
                 fontSize: 10,
                 fontWeight: 600,
-                color: "#5a6b82",
+                color: "var(--text-tertiary)",
                 marginBottom: 6,
                 textTransform: "uppercase",
                 letterSpacing: 0.8,
@@ -148,21 +148,21 @@ export default function RegisterSaleModal({
                 width: "100%",
                 padding: "12px 14px",
                 borderRadius: 10,
-                border: "1px solid rgba(52, 211, 153, 0.15)",
-                backgroundColor: "rgba(6, 11, 20, 0.6)",
+                border: "1px solid var(--success-border)",
+                backgroundColor: "var(--surface-2)",
                 fontSize: 13,
                 outline: "none",
-                color: "#e8edf5",
+                color: "var(--text-primary)",
                 transition: "all 0.25s",
                 backdropFilter: "blur(8px)",
                 boxSizing: "border-box",
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#34d399";
+                e.currentTarget.style.borderColor = "var(--success)";
                 e.currentTarget.style.boxShadow = "0 0 0 3px rgba(52, 211, 153, 0.1), 0 0 15px rgba(52, 211, 153, 0.08)";
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = "rgba(52, 211, 153, 0.15)";
+                e.currentTarget.style.borderColor = "var(--success-border)";
                 e.currentTarget.style.boxShadow = "none";
               }}
             />
@@ -175,7 +175,7 @@ export default function RegisterSaleModal({
                 display: "block",
                 fontSize: 10,
                 fontWeight: 600,
-                color: "#5a6b82",
+                color: "var(--text-tertiary)",
                 marginBottom: 6,
                 textTransform: "uppercase",
                 letterSpacing: 0.8,
@@ -191,21 +191,21 @@ export default function RegisterSaleModal({
                 width: "100%",
                 padding: "12px 14px",
                 borderRadius: 10,
-                border: "1px solid rgba(52, 211, 153, 0.15)",
-                backgroundColor: "rgba(6, 11, 20, 0.6)",
+                border: "1px solid var(--success-border)",
+                backgroundColor: "var(--surface-2)",
                 fontSize: 13,
                 outline: "none",
-                color: "#e8edf5",
+                color: "var(--text-primary)",
                 transition: "all 0.25s",
                 backdropFilter: "blur(8px)",
                 boxSizing: "border-box",
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#34d399";
+                e.currentTarget.style.borderColor = "var(--success)";
                 e.currentTarget.style.boxShadow = "0 0 0 3px rgba(52, 211, 153, 0.1), 0 0 15px rgba(52, 211, 153, 0.08)";
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = "rgba(52, 211, 153, 0.15)";
+                e.currentTarget.style.borderColor = "var(--success-border)";
                 e.currentTarget.style.boxShadow = "none";
               }}
             />
@@ -218,7 +218,7 @@ export default function RegisterSaleModal({
                 display: "block",
                 fontSize: 10,
                 fontWeight: 600,
-                color: "#5a6b82",
+                color: "var(--text-tertiary)",
                 marginBottom: 6,
                 textTransform: "uppercase",
                 letterSpacing: 0.8,
@@ -235,21 +235,21 @@ export default function RegisterSaleModal({
                 width: "100%",
                 padding: "12px 14px",
                 borderRadius: 10,
-                border: "1px solid rgba(52, 211, 153, 0.15)",
-                backgroundColor: "rgba(6, 11, 20, 0.6)",
+                border: "1px solid var(--success-border)",
+                backgroundColor: "var(--surface-2)",
                 fontSize: 13,
                 outline: "none",
-                color: "#e8edf5",
+                color: "var(--text-primary)",
                 transition: "all 0.25s",
                 backdropFilter: "blur(8px)",
                 boxSizing: "border-box",
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#34d399";
+                e.currentTarget.style.borderColor = "var(--success)";
                 e.currentTarget.style.boxShadow = "0 0 0 3px rgba(52, 211, 153, 0.1), 0 0 15px rgba(52, 211, 153, 0.08)";
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = "rgba(52, 211, 153, 0.15)";
+                e.currentTarget.style.borderColor = "var(--success-border)";
                 e.currentTarget.style.boxShadow = "none";
               }}
             />
@@ -269,7 +269,7 @@ export default function RegisterSaleModal({
                 style={{
                   fontSize: 12,
                   fontWeight: 700,
-                  color: "#34d399",
+                  color: "var(--success)",
                   marginBottom: 12,
                   textTransform: "uppercase",
                   letterSpacing: 0.5,
@@ -284,24 +284,24 @@ export default function RegisterSaleModal({
                     style={{
                       marginBottom: 12,
                       paddingBottom: 12,
-                      borderBottom: "1px solid rgba(52, 211, 153, 0.15)",
+                      borderBottom: "1px solid var(--success-border)",
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, color: "#8899b0" }}>Precio de venta:</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "#e8edf5" }}>
+                      <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Precio de venta:</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>
                         ${parseFloat(salePrice).toLocaleString()}
                       </span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, color: "#8899b0" }}>Inversión total:</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "#e8edf5" }}>
+                      <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Inversión total:</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>
                         ${totalInvestment.toLocaleString()}
                       </span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "#34d399" }}>Resultado:</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#34d399" }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--success)" }}>Resultado:</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--success)" }}>
                         ${dividendPreview.result.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                       </span>
                     </div>
@@ -313,7 +313,7 @@ export default function RegisterSaleModal({
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
-                          color: "#5a6b82",
+                          color: "var(--text-tertiary)",
                           marginBottom: 8,
                           textTransform: "uppercase",
                           letterSpacing: 0.5,
@@ -333,11 +333,11 @@ export default function RegisterSaleModal({
                           }}
                         >
                           <div>
-                            <div style={{ fontSize: 12, color: "#e8edf5", fontWeight: 500 }}>{dist.name}</div>
+                            <div style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500 }}>{dist.name}</div>
                             <div
                               style={{
                                 fontSize: 11,
-                                color: "#5a6b82",
+                                color: "var(--text-tertiary)",
                               }}
                             >
                               {dist.percentage}%
@@ -347,7 +347,7 @@ export default function RegisterSaleModal({
                             style={{
                               fontSize: 12,
                               fontWeight: 600,
-                              color: "#34d399",
+                              color: "var(--success)",
                             }}
                           >
                             ${dist.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -356,7 +356,7 @@ export default function RegisterSaleModal({
                       ))}
                     </div>
                   ) : (
-                    <div style={{ fontSize: 12, color: "#8899b0" }}>No hay inversores registrados</div>
+                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>No hay inversores registrados</div>
                   )}
                 </>
               ) : (
@@ -364,7 +364,7 @@ export default function RegisterSaleModal({
                   <div
                     style={{
                       fontSize: 12,
-                      color: "#f87171",
+                      color: "var(--danger)",
                       marginBottom: 8,
                       fontWeight: 500,
                     }}
@@ -372,12 +372,12 @@ export default function RegisterSaleModal({
                     Sin ganancia para distribuir
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: 12, color: "#8899b0" }}>Pérdida:</span>
+                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Pérdida:</span>
                     <span
                       style={{
                         fontSize: 12,
                         fontWeight: 600,
-                        color: "#f87171",
+                        color: "var(--danger)",
                       }}
                     >
                       ${Math.abs(dividendPreview.result).toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -392,11 +392,11 @@ export default function RegisterSaleModal({
             <div
               style={{
                 fontSize: 12,
-                color: "#f87171",
-                background: "rgba(248, 113, 113, 0.08)",
+                color: "var(--danger)",
+                background: "var(--danger-soft)",
                 padding: "10px 12px",
                 borderRadius: 8,
-                border: "1px solid rgba(248, 113, 113, 0.15)",
+                border: "1px solid var(--danger-border)",
               }}
             >
               {error}
@@ -411,21 +411,21 @@ export default function RegisterSaleModal({
                 flex: 1,
                 padding: "10px 16px",
                 borderRadius: 10,
-                border: "1px solid rgba(56, 189, 248, 0.12)",
+                border: "1px solid var(--border-default)",
                 background: "transparent",
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#8899b0",
+                color: "var(--text-secondary)",
                 cursor: "pointer",
                 transition: "all 0.2s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(56, 189, 248, 0.06)";
-                e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.2)";
+                e.currentTarget.style.backgroundColor = "var(--surface-1)";
+                e.currentTarget.style.borderColor = "var(--border-strong)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.12)";
+                e.currentTarget.style.borderColor = "var(--border-default)";
               }}
             >
               Cancelar
@@ -438,10 +438,10 @@ export default function RegisterSaleModal({
                 padding: "10px 16px",
                 borderRadius: 10,
                 border: "none",
-                background: "linear-gradient(135deg, #34d399, #6ee7b7)",
+                background: "var(--success)",
                 fontSize: 13,
                 fontWeight: 600,
-                color: "#060b14",
+                color: "var(--accent-on)",
                 cursor: loading ? "not-allowed" : "pointer",
                 opacity: loading ? 0.6 : 1,
                 boxShadow: "0 2px 12px rgba(52, 211, 153, 0.2)",

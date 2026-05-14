@@ -85,19 +85,19 @@ export default function ProjectAlerts({
 
   const severityStyles = {
     danger: {
-      bg: "rgba(239, 68, 68, 0.05)",
-      border: "rgba(239, 68, 68, 0.12)",
-      dot: "#ef4444",
+      bg: "var(--danger-soft)",
+      border: "var(--danger-border)",
+      dot: "var(--danger)",
     },
     warning: {
-      bg: "rgba(245, 158, 11, 0.05)",
-      border: "rgba(245, 158, 11, 0.12)",
-      dot: "#f59e0b",
+      bg: "var(--warning-soft)",
+      border: "var(--warning-border)",
+      dot: "var(--warning)",
     },
     info: {
-      bg: "rgba(56, 189, 248, 0.05)",
-      border: "rgba(56, 189, 248, 0.12)",
-      dot: "#38bdf8",
+      bg: "var(--surface-2)",
+      border: "var(--border-default)",
+      dot: "var(--text-secondary)",
     },
   };
 
@@ -130,10 +130,10 @@ export default function ProjectAlerts({
               }}
             />
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, color: "#e8edf5", marginBottom: 1 }}>
+              <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 1 }}>
                 {alert.title}
               </div>
-              <div style={{ fontSize: 12, color: "#8899b0", lineHeight: 1.4 }}>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>
                 {alert.message}
               </div>
             </div>
@@ -142,15 +142,15 @@ export default function ProjectAlerts({
               style={{
                 background: "none",
                 border: "none",
-                color: "#3d4f63",
+                color: "var(--text-quaternary)",
                 cursor: "pointer",
                 padding: 2,
                 borderRadius: 4,
                 flexShrink: 0,
                 lineHeight: 1,
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#8899b0"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "#3d4f63"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-quaternary)"; }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18" />

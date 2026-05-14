@@ -140,7 +140,7 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
         {/* Search */}
         <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
           <svg
-            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5a6b82" strokeWidth="2"
+            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2"
             style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}
           >
             <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
@@ -153,16 +153,16 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
             style={{
               width: "100%",
               padding: "9px 12px 9px 34px",
-              background: "rgba(6, 11, 20, 0.6)",
-              border: "1px solid rgba(56, 189, 248, 0.08)",
+              background: "var(--surface-2)",
+              border: "1px solid var(--border-default)",
               borderRadius: 8,
-              color: "#e8edf5",
+              color: "var(--text-primary)",
               fontSize: 13,
               outline: "none",
               transition: "border-color 0.15s",
             }}
-            onFocus={(e) => (e.currentTarget.style.borderColor = "#38bdf8")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.08)")}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "var(--text-primary)")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "var(--surface-2)")}
           />
         </div>
 
@@ -172,10 +172,10 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
           onChange={(e) => setFilterCategory(e.target.value)}
           style={{
             padding: "9px 28px 9px 12px",
-            background: "rgba(6, 11, 20, 0.6)",
-            border: "1px solid rgba(56, 189, 248, 0.08)",
+            background: "var(--surface-2)",
+            border: "1px solid var(--border-default)",
             borderRadius: 8,
-            color: filterCategory ? "#e8edf5" : "#5a6b82",
+            color: filterCategory ? "var(--text-primary)" : "var(--text-tertiary)",
             fontSize: 13,
             outline: "none",
             cursor: "pointer",
@@ -197,10 +197,10 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
           onChange={(e) => setFilterType(e.target.value)}
           style={{
             padding: "9px 28px 9px 12px",
-            background: "rgba(6, 11, 20, 0.6)",
-            border: "1px solid rgba(56, 189, 248, 0.08)",
+            background: "var(--surface-2)",
+            border: "1px solid var(--border-default)",
             borderRadius: 8,
-            color: filterType ? "#e8edf5" : "#5a6b82",
+            color: filterType ? "var(--text-primary)" : "var(--text-tertiary)",
             fontSize: 13,
             outline: "none",
             cursor: "pointer",
@@ -221,13 +221,13 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
           <button
             onClick={onAddClick}
             style={{
-              background: "linear-gradient(135deg, #38bdf8, #7dd3fc)",
+              background: "var(--accent)",
               border: "none",
               borderRadius: 8,
               padding: "9px 16px",
               fontSize: 12,
               fontWeight: 600,
-              color: "#060b14",
+              color: "var(--accent-on)",
               cursor: "pointer",
               boxShadow: "0 2px 12px rgba(56, 189, 248, 0.2)",
               display: "flex",
@@ -249,14 +249,14 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
           {filterCategory && (
             <span style={{
               display: "inline-flex", alignItems: "center", gap: 4,
-              padding: "3px 10px", background: "rgba(56, 189, 248, 0.08)",
-              border: "1px solid rgba(56, 189, 248, 0.15)", borderRadius: 6,
-              fontSize: 11, color: "#7dd3fc",
+              padding: "3px 10px", background: "var(--surface-2)",
+              border: "1px solid var(--border-strong)", borderRadius: 6,
+              fontSize: 11, color: "var(--text-primary)",
             }}>
               {filterCategory}
               <button
                 onClick={() => setFilterCategory("")}
-                style={{ background: "none", border: "none", color: "#7dd3fc", cursor: "pointer", fontSize: 13, lineHeight: 1, padding: 0, marginLeft: 2 }}
+                style={{ background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer", fontSize: 13, lineHeight: 1, padding: 0, marginLeft: 2 }}
               >
                 ×
               </button>
@@ -265,14 +265,14 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
           {filterType && (
             <span style={{
               display: "inline-flex", alignItems: "center", gap: 4,
-              padding: "3px 10px", background: "rgba(56, 189, 248, 0.08)",
-              border: "1px solid rgba(56, 189, 248, 0.15)", borderRadius: 6,
-              fontSize: 11, color: "#7dd3fc",
+              padding: "3px 10px", background: "var(--surface-2)",
+              border: "1px solid var(--border-strong)", borderRadius: 6,
+              fontSize: 11, color: "var(--text-primary)",
             }}>
               {costTypeFullLabels[filterType] || filterType}
               <button
                 onClick={() => setFilterType("")}
-                style={{ background: "none", border: "none", color: "#7dd3fc", cursor: "pointer", fontSize: 13, lineHeight: 1, padding: 0, marginLeft: 2 }}
+                style={{ background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer", fontSize: 13, lineHeight: 1, padding: 0, marginLeft: 2 }}
               >
                 ×
               </button>
@@ -280,7 +280,7 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
           )}
           <button
             onClick={clearFilters}
-            style={{ background: "none", border: "none", color: "#5a6b82", fontSize: 11, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
+            style={{ background: "none", border: "none", color: "var(--text-tertiary)", fontSize: 11, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
           >
             Limpiar
           </button>
@@ -288,7 +288,7 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
       )}
 
       {/* Results info */}
-      <div style={{ fontSize: 12, color: "#5a6b82", marginBottom: 10 }}>
+      <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 10 }}>
         {hasActiveFilters
           ? `${filteredCosts.length} de ${costs.length} resultados`
           : `${costs.length} costos`}
@@ -298,24 +298,24 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
       <div className="responsive-table" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 700 }}>
           <thead>
-            <tr style={{ borderBottom: "1px solid rgba(56, 189, 248, 0.06)" }}>
+            <tr style={{ borderBottom: "1px solid var(--border-faint)" }}>
               <th
                 onClick={() => handleSort("date")}
-                style={{ textAlign: "left", padding: "10px 0", color: "#5a6b82", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, cursor: "pointer", userSelect: "none" }}
+                style={{ textAlign: "left", padding: "10px 0", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, cursor: "pointer", userSelect: "none" }}
               >
                 Fecha {sortField === "date" ? (sortDir === "desc" ? "↓" : "↑") : ""}
               </th>
-              <th style={{ textAlign: "left", padding: "10px 8px", color: "#5a6b82", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>Concepto</th>
-              <th style={{ textAlign: "center", padding: "10px 8px", color: "#5a6b82", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>Categoría</th>
-              <th style={{ textAlign: "center", padding: "10px 8px", color: "#5a6b82", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>Tipo</th>
+              <th style={{ textAlign: "left", padding: "10px 8px", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>Concepto</th>
+              <th style={{ textAlign: "center", padding: "10px 8px", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>Categoría</th>
+              <th style={{ textAlign: "center", padding: "10px 8px", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>Tipo</th>
               <th
                 onClick={() => handleSort("amount")}
-                style={{ textAlign: "right", padding: "10px 8px", color: "#5a6b82", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, cursor: "pointer", userSelect: "none" }}
+                style={{ textAlign: "right", padding: "10px 8px", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, cursor: "pointer", userSelect: "none" }}
               >
                 USD {sortField === "amount" ? (sortDir === "desc" ? "↓" : "↑") : ""}
               </th>
-              <th style={{ textAlign: "right", padding: "10px 8px", color: "#5a6b82", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>ARS</th>
-              <th style={{ textAlign: "right", padding: "10px 0", color: "#5a6b82", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>TC</th>
+              <th style={{ textAlign: "right", padding: "10px 8px", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>ARS</th>
+              <th style={{ textAlign: "right", padding: "10px 0", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>TC</th>
             </tr>
           </thead>
           <tbody>
@@ -326,15 +326,15 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(56, 189, 248, 0.03)")}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
               >
-                <td style={{ padding: "10px 0", color: "#8899b0", whiteSpace: "nowrap", fontSize: 12 }}>
+                <td style={{ padding: "10px 0", color: "var(--text-secondary)", whiteSpace: "nowrap", fontSize: 12 }}>
                   {new Date(cost.date).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
                 </td>
-                <td style={{ padding: "10px 8px", color: "#e8edf5", fontWeight: 500 }}>
+                <td style={{ padding: "10px 8px", color: "var(--text-primary)", fontWeight: 500 }}>
                   {cost.concept}
                 </td>
                 <td style={{ padding: "10px 8px", textAlign: "center" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "#8899b0" }}>
-                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: catColors[cost.category] || "#8899b0", flexShrink: 0 }} />
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-secondary)" }}>
+                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: catColors[cost.category] || "var(--text-secondary)", flexShrink: 0 }} />
                     {cost.category}
                   </span>
                 </td>
@@ -346,21 +346,21 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
                       fontSize: 11,
                       fontWeight: 500,
                       background: cost.costType === "material" || cost.costType === "repuesto"
-                        ? "rgba(56, 189, 248, 0.08)" : "rgba(52, 211, 153, 0.08)",
+                        ? "var(--surface-2)" : "var(--success-soft)",
                       color: cost.costType === "material" || cost.costType === "repuesto"
-                        ? "#7dd3fc" : "#6ee7b7",
+                        ? "var(--text-primary)" : "var(--success)",
                     }}
                   >
                     {costTypeLabels[cost.costType] || cost.costType}
                   </span>
                 </td>
-                <td style={{ padding: "10px 8px", textAlign: "right", color: "#e8edf5", fontWeight: 600, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                <td style={{ padding: "10px 8px", textAlign: "right", color: "var(--text-primary)", fontWeight: 600, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                   {fmtUsd(cost)}
                 </td>
-                <td style={{ padding: "10px 8px", textAlign: "right", color: "#5a6b82", fontSize: 12, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                <td style={{ padding: "10px 8px", textAlign: "right", color: "var(--text-tertiary)", fontSize: 12, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                   {fmtArs(cost)}
                 </td>
-                <td style={{ padding: "10px 0", textAlign: "right", color: "#3d4f63", fontSize: 12, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                <td style={{ padding: "10px 0", textAlign: "right", color: "var(--text-quaternary)", fontSize: 12, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                   {fmtTc(cost)}
                 </td>
               </tr>
@@ -377,57 +377,57 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
           alignItems: "center",
           padding: "14px 0",
           marginTop: 8,
-          borderTop: "2px solid rgba(56, 189, 248, 0.12)",
+          borderTop: "2px solid var(--border-default)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#8899b0" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>
               TOTAL{hasActiveFilters ? ` (${filteredCosts.length})` : ""}
             </span>
-            <div style={{ display: "flex", gap: 14, fontSize: 12, color: "#5a6b82" }}>
+            <div style={{ display: "flex", gap: 14, fontSize: 12, color: "var(--text-tertiary)" }}>
               {totalMaterials > 0 && (
                 <span>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#38bdf8", display: "inline-block", marginRight: 4, verticalAlign: "middle" }} />
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--text-primary)", display: "inline-block", marginRight: 4, verticalAlign: "middle" }} />
                   Mat {fmt(totalMaterials)}
                 </span>
               )}
               {totalLabor > 0 && (
                 <span>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#34d399", display: "inline-block", marginRight: 4, verticalAlign: "middle" }} />
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--success)", display: "inline-block", marginRight: 4, verticalAlign: "middle" }} />
                   MO {fmt(totalLabor)}
                 </span>
               )}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#e8edf5" }}>{fmt(totalFiltered)}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmt(totalFiltered)}</div>
           </div>
         </div>
       )}
 
       {costs.length === 0 && (
-        <div style={{ textAlign: "center", padding: "32px 16px", color: "#5a6b82" }}>
+        <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--text-tertiary)" }}>
           <div style={{ fontSize: 14, marginBottom: 12 }}>Sin costos registrados</div>
           {canEdit && (
             <button
               onClick={onAddClick}
               style={{
                 background: "transparent",
-                border: "1px solid rgba(56, 189, 248, 0.2)",
+                border: "1px solid var(--border-strong)",
                 borderRadius: 10,
                 padding: "8px 14px",
                 fontSize: 12,
                 fontWeight: 600,
-                color: "#7dd3fc",
+                color: "var(--text-primary)",
                 cursor: "pointer",
                 transition: "all 0.2s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(56, 189, 248, 0.08)";
+                e.currentTarget.style.backgroundColor = "var(--surface-2)";
                 e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.35)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.2)";
+                e.currentTarget.style.borderColor = "var(--border-strong)";
               }}
             >
               + Agregar primer costo

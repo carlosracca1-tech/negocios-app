@@ -80,24 +80,24 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
     return (
       <div style={{ textAlign: "center", padding: "60px 20px" }}>
         <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>📋</div>
-        <div style={{ fontSize: 16, fontWeight: 600, color: "#e8edf5", marginBottom: 8 }}>
+        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
           Sin gastos mensuales registrados
         </div>
-        <p style={{ fontSize: 13, color: "#5a6b82", marginBottom: 20, maxWidth: 400, margin: "0 auto 20px" }}>
+        <p style={{ fontSize: 13, color: "var(--text-tertiary)", marginBottom: 20, maxWidth: 400, margin: "0 auto 20px" }}>
           Agregá gastos recurrentes como expensas, seguro, patente, u otros gastos mensuales del proyecto.
         </p>
         {canEdit && (
           <button
             onClick={onAddClick}
             style={{
-              background: "linear-gradient(135deg, #38bdf8, #7dd3fc)",
+              background: "var(--accent)",
               border: "none",
               borderRadius: 10,
               padding: "10px 24px",
               cursor: "pointer",
               fontSize: 13,
               fontWeight: 600,
-              color: "#060b14",
+              color: "var(--accent-on)",
               boxShadow: "0 2px 12px rgba(56, 189, 248, 0.2)",
             }}
           >
@@ -115,13 +115,13 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
         {[
           { label: "Total USD", value: fmtUsd(stats.totalUsd), sub: `${stats.months} meses` },
           { label: "Promedio mensual", value: fmtUsd(stats.avgUsd), sub: "USD/mes" },
-          { label: "Mes más alto", value: stats.maxMonth ? fmtUsd(stats.maxMonth.totalUsd) : "—", sub: stats.maxMonth ? formatPeriod(stats.maxMonth.period + "-01") : "", color: "#f87171" },
-          { label: "Mes más bajo", value: stats.minMonth ? fmtUsd(stats.minMonth.totalUsd) : "—", sub: stats.minMonth ? formatPeriod(stats.minMonth.period + "-01") : "", color: "#34d399" },
+          { label: "Mes más alto", value: stats.maxMonth ? fmtUsd(stats.maxMonth.totalUsd) : "—", sub: stats.maxMonth ? formatPeriod(stats.maxMonth.period + "-01") : "", color: "var(--danger)" },
+          { label: "Mes más bajo", value: stats.minMonth ? fmtUsd(stats.minMonth.totalUsd) : "—", sub: stats.minMonth ? formatPeriod(stats.minMonth.period + "-01") : "", color: "var(--success)" },
         ].map((kpi, i) => (
-          <div key={i} className="kpi-card" style={{ background: "rgba(6, 11, 20, 0.6)", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(56, 189, 248, 0.08)" }}>
-            <div className="kpi-label" style={{ fontSize: 10, fontWeight: 600, color: "#5a6b82", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{kpi.label}</div>
-            <div className="kpi-value" style={{ fontSize: 18, fontWeight: 700, color: kpi.color || "#e8edf5" }}>{kpi.value}</div>
-            {kpi.sub && <div style={{ fontSize: 11, color: "#5a6b82", marginTop: 2 }}>{kpi.sub}</div>}
+          <div key={i} className="kpi-card" style={{ background: "var(--surface-2)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border-default)" }}>
+            <div className="kpi-label" style={{ fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{kpi.label}</div>
+            <div className="kpi-value" style={{ fontSize: 18, fontWeight: 700, color: kpi.color || "var(--text-primary)" }}>{kpi.value}</div>
+            {kpi.sub && <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{kpi.sub}</div>}
           </div>
         ))}
       </div>
@@ -130,8 +130,8 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
         {concepts.map((c, i) => (
           <span key={c} style={{
-            fontSize: 11, fontWeight: 500, color: "#8899b0",
-            background: "rgba(56, 189, 248, 0.06)", padding: "3px 10px", borderRadius: 6,
+            fontSize: 11, fontWeight: 500, color: "var(--text-secondary)",
+            background: "var(--surface-1)", padding: "3px 10px", borderRadius: 6,
             border: "1px solid rgba(56, 189, 248, 0.1)",
           }}>
             {c}
@@ -141,15 +141,15 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
 
       {/* View toggle */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ display: "flex", gap: 4, background: "rgba(6, 11, 20, 0.6)", borderRadius: 8, padding: 3, border: "1px solid rgba(56, 189, 248, 0.08)" }}>
+        <div style={{ display: "flex", gap: 4, background: "var(--surface-2)", borderRadius: 8, padding: 3, border: "1px solid var(--border-default)" }}>
           {(["monthly", "table"] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
               style={{
                 padding: "6px 14px", fontSize: 12, fontWeight: 500, border: "none", borderRadius: 6, cursor: "pointer",
-                background: viewMode === mode ? "rgba(56, 189, 248, 0.12)" : "transparent",
-                color: viewMode === mode ? "#7dd3fc" : "#5a6b82",
+                background: viewMode === mode ? "var(--surface-3)" : "transparent",
+                color: viewMode === mode ? "var(--text-primary)" : "var(--text-tertiary)",
                 transition: "all 0.2s",
               }}
             >
@@ -161,9 +161,9 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
           <button
             onClick={onAddClick}
             style={{
-              background: "linear-gradient(135deg, #38bdf8, #7dd3fc)",
+              background: "var(--accent)",
               border: "none", borderRadius: 8, padding: "7px 16px", cursor: "pointer",
-              fontSize: 12, fontWeight: 600, color: "#060b14",
+              fontSize: 12, fontWeight: 600, color: "var(--accent-on)",
               boxShadow: "0 2px 12px rgba(56, 189, 248, 0.2)",
             }}
           >
@@ -177,23 +177,23 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {monthlyData.map((month) => (
             <div key={month.period} style={{
-              background: "rgba(6, 11, 20, 0.4)", borderRadius: 10,
-              border: "1px solid rgba(56, 189, 248, 0.06)", overflow: "hidden",
+              background: "var(--surface-1)", borderRadius: 10,
+              border: "1px solid var(--border-faint)", overflow: "hidden",
             }}>
               {/* Month header */}
               <div className="month-header" style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "12px 16px", background: "rgba(56, 189, 248, 0.04)",
-                borderBottom: "1px solid rgba(56, 189, 248, 0.06)",
+                padding: "12px 16px", background: "var(--surface-1)",
+                borderBottom: "1px solid var(--border-faint)",
               }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#e8edf5" }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
                   {formatPeriod(month.period + "-01")}
                 </div>
                 <div className="month-totals" style={{ display: "flex", gap: 16, alignItems: "center" }}>
                   {month.totalArs > 0 && (
-                    <span style={{ fontSize: 12, color: "#8899b0" }}>{fmt(month.totalArs)}</span>
+                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{fmt(month.totalArs)}</span>
                   )}
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#7dd3fc" }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
                     {fmtUsd(month.totalUsd)}
                   </span>
                 </div>
@@ -202,27 +202,27 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
               {month.expenses.map((exp) => (
                 <div key={exp.id} className="expense-item" style={{
                   display: "flex", justifyContent: "space-between", alignItems: "center",
-                  padding: "10px 16px", borderBottom: "1px solid rgba(56, 189, 248, 0.03)",
+                  padding: "10px 16px", borderBottom: "1px solid var(--border-faint)",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: 99, background: "#38bdf8", flexShrink: 0 }} />
+                    <div style={{ width: 6, height: 6, borderRadius: 99, background: "var(--text-primary)", flexShrink: 0 }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: "#e8edf5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.concept}</div>
-                      {exp.notes && <div style={{ fontSize: 11, color: "#5a6b82", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.notes}</div>}
+                      <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.concept}</div>
+                      {exp.notes && <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.notes}</div>}
                     </div>
                   </div>
                   <div className="expense-item-amounts" style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
                     {exp.receiptUrl && (
-                      <span style={{ fontSize: 10, color: "#34d399", background: "rgba(52, 211, 153, 0.1)", padding: "2px 8px", borderRadius: 4 }}>
+                      <span style={{ fontSize: 10, color: "var(--success)", background: "var(--success-soft)", padding: "2px 8px", borderRadius: 4 }}>
                         Comprobante
                       </span>
                     )}
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#e8edf5", fontVariantNumeric: "tabular-nums" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
                         {exp.currency === "ARS" ? fmt(exp.amount) : fmtUsd(exp.amount)}
                       </div>
                       {exp.currency === "ARS" && exp.amountUsd && (
-                        <div style={{ fontSize: 10, color: "#5a6b82" }}>{fmtUsd(exp.amountUsd)}</div>
+                        <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{fmtUsd(exp.amountUsd)}</div>
                       )}
                     </div>
                   </div>
@@ -235,35 +235,35 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
 
       {/* Table view */}
       {viewMode === "table" && (
-        <div className="responsive-table" style={{ borderRadius: 10, border: "1px solid rgba(56, 189, 248, 0.06)", overflow: "hidden" }}>
+        <div className="responsive-table" style={{ borderRadius: 10, border: "1px solid var(--border-faint)", overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 500 }}>
             <thead>
-              <tr style={{ background: "rgba(56, 189, 248, 0.04)" }}>
-                <th style={{ textAlign: "left", padding: "10px 14px", fontWeight: 600, color: "#5a6b82", fontSize: 11, textTransform: "uppercase" }}>Período</th>
-                <th style={{ textAlign: "left", padding: "10px 14px", fontWeight: 600, color: "#5a6b82", fontSize: 11, textTransform: "uppercase" }}>Concepto</th>
-                <th style={{ textAlign: "right", padding: "10px 14px", fontWeight: 600, color: "#5a6b82", fontSize: 11, textTransform: "uppercase" }}>Monto</th>
-                <th style={{ textAlign: "right", padding: "10px 14px", fontWeight: 600, color: "#5a6b82", fontSize: 11, textTransform: "uppercase" }}>USD</th>
-                <th style={{ textAlign: "center", padding: "10px 14px", fontWeight: 600, color: "#5a6b82", fontSize: 11, textTransform: "uppercase" }}>Comp.</th>
+              <tr style={{ background: "var(--surface-1)" }}>
+                <th style={{ textAlign: "left", padding: "10px 14px", fontWeight: 600, color: "var(--text-tertiary)", fontSize: 11, textTransform: "uppercase" }}>Período</th>
+                <th style={{ textAlign: "left", padding: "10px 14px", fontWeight: 600, color: "var(--text-tertiary)", fontSize: 11, textTransform: "uppercase" }}>Concepto</th>
+                <th style={{ textAlign: "right", padding: "10px 14px", fontWeight: 600, color: "var(--text-tertiary)", fontSize: 11, textTransform: "uppercase" }}>Monto</th>
+                <th style={{ textAlign: "right", padding: "10px 14px", fontWeight: 600, color: "var(--text-tertiary)", fontSize: 11, textTransform: "uppercase" }}>USD</th>
+                <th style={{ textAlign: "center", padding: "10px 14px", fontWeight: 600, color: "var(--text-tertiary)", fontSize: 11, textTransform: "uppercase" }}>Comp.</th>
               </tr>
             </thead>
             <tbody>
               {expenses.map((exp) => (
-                <tr key={exp.id} style={{ borderTop: "1px solid rgba(56, 189, 248, 0.04)" }}>
-                  <td style={{ padding: "10px 14px", color: "#8899b0", whiteSpace: "nowrap" }}>
+                <tr key={exp.id} style={{ borderTop: "1px solid var(--border-faint)" }}>
+                  <td style={{ padding: "10px 14px", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
                     {formatShortPeriod(exp.period)}
                   </td>
-                  <td style={{ padding: "10px 14px", color: "#e8edf5", fontWeight: 500 }}>{exp.concept}</td>
-                  <td style={{ padding: "10px 14px", textAlign: "right", color: "#e8edf5", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                  <td style={{ padding: "10px 14px", color: "var(--text-primary)", fontWeight: 500 }}>{exp.concept}</td>
+                  <td style={{ padding: "10px 14px", textAlign: "right", color: "var(--text-primary)", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                     {exp.currency === "ARS" ? fmt(exp.amount) : fmtUsd(exp.amount)}
                   </td>
-                  <td style={{ padding: "10px 14px", textAlign: "right", color: "#7dd3fc", fontVariantNumeric: "tabular-nums" }}>
+                  <td style={{ padding: "10px 14px", textAlign: "right", color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
                     {exp.amountUsd ? fmtUsd(exp.amountUsd) : "—"}
                   </td>
                   <td style={{ padding: "10px 14px", textAlign: "center" }}>
                     {exp.receiptUrl ? (
-                      <span style={{ fontSize: 10, color: "#34d399", background: "rgba(52, 211, 153, 0.1)", padding: "2px 8px", borderRadius: 4 }}>✓</span>
+                      <span style={{ fontSize: 10, color: "var(--success)", background: "var(--success-soft)", padding: "2px 8px", borderRadius: 4 }}>✓</span>
                     ) : (
-                      <span style={{ fontSize: 10, color: "#5a6b82" }}>—</span>
+                      <span style={{ fontSize: 10, color: "var(--text-tertiary)" }}>—</span>
                     )}
                   </td>
                 </tr>
