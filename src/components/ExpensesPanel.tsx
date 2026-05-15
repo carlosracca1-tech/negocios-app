@@ -6,6 +6,8 @@ import { Expense } from "@/types";
 interface ExpensesPanelProps {
   expenses: Expense[];
   onAddClick: () => void;
+  onEditClick?: (expense: Expense) => void;
+  onDelete?: (expense: Expense) => void;
   canEdit?: boolean;
 }
 
@@ -46,7 +48,7 @@ function formatShortPeriod(period: Date | string): string {
   return `${monthNames[d.getUTCMonth()].substring(0, 3)} ${d.getUTCFullYear().toString().slice(-2)}`;
 }
 
-export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: ExpensesPanelProps) {
+export default function ExpensesPanel({ expenses, onAddClick, onEditClick, onDelete, canEdit = true }: ExpensesPanelProps) {
   const [viewMode, setViewMode] = useState<"table" | "monthly">("monthly");
 
   // Group by period (month)
@@ -237,6 +239,42 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
                         <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{fmtUsd(exp.amountUsd)}</div>
                       )}
                     </div>
+                    {canEdit && (onEditClick || onDelete) && (
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {onEditClick && (
+                          <button
+                            onClick={() => onEditClick(exp)}
+                            title="Editar"
+                            aria-label="Editar gasto"
+                            style={{
+                              background: "transparent", border: "1px solid var(--border-faint)",
+                              borderRadius: 6, padding: "4px 8px", cursor: "pointer",
+                              fontSize: 12, color: "var(--text-secondary)", lineHeight: 1,
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                          >
+                            ✎
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button
+                            onClick={() => onDelete(exp)}
+                            title="Eliminar"
+                            aria-label="Eliminar gasto"
+                            style={{
+                              background: "transparent", border: "1px solid var(--border-faint)",
+                              borderRadius: 6, padding: "4px 8px", cursor: "pointer",
+                              fontSize: 12, color: "var(--text-secondary)", lineHeight: 1,
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--danger-soft)"; e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.borderColor = "var(--danger-border)"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.borderColor = "var(--border-faint)"; }}
+                          >
+                            🗑
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -256,6 +294,9 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
                 <th style={{ textAlign: "right", padding: "10px 14px", fontWeight: 600, color: "var(--text-tertiary)", fontSize: 11, textTransform: "uppercase" }}>Monto</th>
                 <th style={{ textAlign: "right", padding: "10px 14px", fontWeight: 600, color: "var(--text-tertiary)", fontSize: 11, textTransform: "uppercase" }}>USD</th>
                 <th style={{ textAlign: "center", padding: "10px 14px", fontWeight: 600, color: "var(--text-tertiary)", fontSize: 11, textTransform: "uppercase" }}>Comp.</th>
+                {canEdit && (onEditClick || onDelete) && (
+                  <th style={{ textAlign: "center", padding: "10px 14px", fontWeight: 600, color: "var(--text-tertiary)", fontSize: 11, textTransform: "uppercase", width: 90 }}></th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -278,6 +319,18 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
                       <span style={{ fontSize: 10, color: "var(--text-tertiary)" }}>—</span>
                     )}
                   </td>
+                  {canEdit && (onEditClick || onDelete) && (
+                    <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                      <div style={{ display: "inline-flex", gap: 4 }}>
+                        {onEditClick && (
+                          <button onClick={() => onEditClick(exp)} title="Editar" aria-label="Editar gasto" style={{ background: "transparent", border: "1px solid var(--border-faint)", borderRadius: 6, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "var(--text-secondary)" }}>✎</button>
+                        )}
+                        {onDelete && (
+                          <button onClick={() => onDelete(exp)} title="Eliminar" aria-label="Eliminar gasto" style={{ background: "transparent", border: "1px solid var(--border-faint)", borderRadius: 6, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "var(--text-secondary)" }}>🗑</button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

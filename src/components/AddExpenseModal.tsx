@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useCreateExpense, useParseReceipt } from "@/hooks/useProjects";
+import { useCreateExpense, useParseReceipt, useUpdateExpense } from "@/hooks/useProjects";
 import { modalInputStyle as inputStyle, focusInput, blurInput } from "@/lib/constants";
+import { Expense } from "@/types";
 
 interface AddExpenseModalProps {
   projectId: string;
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  /** Si está presente, el modal entra en modo edición: prefilla campos y hace PATCH. */
+  expenseToEdit?: Expense | null;
 }
 
-export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess }: AddExpenseModalProps) {
+export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess, expenseToEdit }: AddExpenseModalProps) {
+  const isEditMode = Boolean(expenseToEdit);
   const [concept, setConcept] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<"ARS" | "USD">("ARS");
@@ -30,11 +34,13 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutate: createExpense, loading: creating, error: createError } = useCreateExpense();
+  const { mutate: updateExpense, loading: updating, error: updateError } = useUpdateExpense();
   const { mutate: parseReceipt, loading: parsing, error: parseError } = useParseReceipt();
 
-  // Auto-fetch dólar blue al abrir el modal (sólo si el campo está vacío y la moneda es ARS)
+  // Auto-fetch dólar blue al abrir el modal (sólo si el campo está vacío y estamos creando)
   useEffect(() => {
     if (!isOpen) return;
+    if (isEditMode) return; // en modo edición usamos el valor original
     if (exchangeRate) return; // no pisar lo que ya cargó el user
     let cancelled = false;
     setRateLoading(true);
@@ -54,6 +60,28 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  // Prefill cuando entramos en modo edición
+  useEffect(() => {
+    if (!isOpen || !expenseToEdit) return;
+    setConcept(expenseToEdit.concept || "");
+    setAmount(String(expenseToEdit.amount ?? ""));
+    setCurrency(expenseToEdit.currency);
+    setExchangeRate(expenseToEdit.exchangeRate != null ? String(expenseToEdit.exchangeRate) : "");
+    setRateAuto(false);
+    // El período está como Date/ISO en UTC; lo leemos como UTC para no perder el mes.
+    if (expenseToEdit.period) {
+      const d = new Date(expenseToEdit.period as unknown as string);
+      setPeriod(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
+    }
+    if (expenseToEdit.paidDate) {
+      const d = new Date(expenseToEdit.paidDate as unknown as string);
+      setPaidDate(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`);
+    } else {
+      setPaidDate("");
+    }
+    setNotes(expenseToEdit.notes || "");
+  }, [isOpen, expenseToEdit]);
 
   const resetForm = () => {
     setConcept("");
@@ -118,8 +146,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
     try {
       // Mediodía UTC para que ningún huso horario lo tire al mes anterior.
       const periodDate = new Date(`${period}-01T12:00:00.000Z`).toISOString();
-
-      await createExpense(projectId, {
+      const payload = {
         concept,
         amount: parseFloat(amount),
         currency,
@@ -127,9 +154,17 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
         period: periodDate,
         paidDate: paidDate ? new Date(paidDate).toISOString() : null,
         notes: notes || null,
-        receiptName: receiptFile?.name || null,
-        // receiptUrl would be set after file upload to storage — for now we store the name
-      });
+      };
+
+      if (isEditMode && expenseToEdit) {
+        await updateExpense(projectId, expenseToEdit.id, payload);
+      } else {
+        await createExpense(projectId, {
+          ...payload,
+          receiptName: receiptFile?.name || null,
+          // receiptUrl would be set after file upload to storage — for now we store the name
+        });
+      }
 
       resetForm();
       onSuccess?.();
@@ -170,13 +205,16 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
         onClick={(e) => e.stopPropagation()}
       >
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
-          Agregar gasto mensual
+          {isEditMode ? "Editar gasto mensual" : "Agregar gasto mensual"}
         </h2>
         <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 20 }}>
-          Subí un comprobante para completar automáticamente, o cargá los datos manualmente.
+          {isEditMode
+            ? "Modificá los campos y guardá los cambios."
+            : "Subí un comprobante para completar automáticamente, o cargá los datos manualmente."}
         </p>
 
-        {/* Upload area */}
+        {/* Upload area — sólo en modo creación (en edición no tiene sentido re-OCRear) */}
+        {!isEditMode && (<>
         <div
           onClick={() => fileInputRef.current?.click()}
           style={{
@@ -255,6 +293,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
             No se pudo leer el comprobante automáticamente. Completá los datos manualmente.
           </div>
         )}
+        </>)}
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
@@ -319,9 +358,9 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
             <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej: Incluye multa por velocidad" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
-          {createError && (
+          {(createError || updateError) && (
             <div style={{ fontSize: 12, color: "var(--danger)", background: "var(--danger-soft)", padding: "10px 12px", borderRadius: 8, border: "1px solid var(--danger-border)" }}>
-              {createError}
+              {createError || updateError}
             </div>
           )}
 
@@ -336,18 +375,18 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
             >
               Cancelar
             </button>
-            <button type="submit" disabled={creating || parsing} style={{
+            <button type="submit" disabled={creating || updating || parsing} style={{
               flex: 1, padding: "10px 16px", borderRadius: 10, border: "none",
               background: "var(--accent)",
               fontSize: 13, fontWeight: 600, color: "var(--accent-on)",
-              cursor: creating || parsing ? "not-allowed" : "pointer",
-              opacity: creating || parsing ? 0.6 : 1,
+              cursor: creating || updating || parsing ? "not-allowed" : "pointer",
+              opacity: creating || updating || parsing ? 0.6 : 1,
               boxShadow: "0 2px 12px rgba(56, 189, 248, 0.2)",
             }}
-              onMouseEnter={(e) => !(creating || parsing) && (e.currentTarget.style.boxShadow = "0 4px 20px rgba(56, 189, 248, 0.35)")}
+              onMouseEnter={(e) => !(creating || updating || parsing) && (e.currentTarget.style.boxShadow = "0 4px 20px rgba(56, 189, 248, 0.35)")}
               onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(56, 189, 248, 0.2)")}
             >
-              {creating ? "Guardando..." : "Agregar"}
+              {creating || updating ? "Guardando..." : isEditMode ? "Guardar cambios" : "Agregar"}
             </button>
           </div>
         </form>

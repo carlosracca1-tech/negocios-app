@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useProject } from "@/hooks/useProjects";
+import { useProject, useDeleteExpense } from "@/hooks/useProjects";
 import Header from "@/components/Header";
 import KPICard from "@/components/KPICard";
 import ProjectSummary from "@/components/ProjectSummary";
@@ -85,6 +85,8 @@ export default function ProjectPage({ params }: PageProps) {
   const [showAddCostModal, setShowAddCostModal] = useState(false);
   const [showRegisterSaleModal, setShowRegisterSaleModal] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<import("@/types").Expense | null>(null);
+  const { mutate: deleteExpense } = useDeleteExpense();
   const [showAddInvestorModal, setShowAddInvestorModal] = useState(false);
 
   const userRole = session?.user?.role;
@@ -722,7 +724,18 @@ export default function ProjectPage({ params }: PageProps) {
           {activeSection === "gastos" && (
             <ExpensesPanel
               expenses={expensesArray}
-              onAddClick={() => setShowAddExpenseModal(true)}
+              onAddClick={() => { setEditingExpense(null); setShowAddExpenseModal(true); }}
+              onEditClick={(exp) => { setEditingExpense(exp); setShowAddExpenseModal(true); }}
+              onDelete={async (exp) => {
+                const label = `${exp.concept} — ${new Date(exp.period).toLocaleDateString("es-AR", { month: "long", year: "numeric", timeZone: "UTC" })}`;
+                if (!window.confirm(`¿Eliminar el gasto "${label}"? Esta acción no se puede deshacer.`)) return;
+                try {
+                  await deleteExpense(params.id, exp.id);
+                  refetch();
+                } catch (err) {
+                  window.alert("No se pudo eliminar el gasto. " + (err instanceof Error ? err.message : ""));
+                }
+              }}
               canEdit={canEdit}
             />
           )}
@@ -770,8 +783,9 @@ export default function ProjectPage({ params }: PageProps) {
       <AddExpenseModal
         projectId={params.id}
         isOpen={showAddExpenseModal}
-        onClose={() => setShowAddExpenseModal(false)}
+        onClose={() => { setShowAddExpenseModal(false); setEditingExpense(null); }}
         onSuccess={() => refetch()}
+        expenseToEdit={editingExpense}
       />
 
       <RegisterSaleModal
