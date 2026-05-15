@@ -20,14 +20,30 @@ const monthNames = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
-function formatPeriod(period: Date | string): string {
+// Lee el período en UTC: la fecha está guardada como YYYY-MM-01T...Z y queremos
+// mostrar siempre el mes calendario sin que el huso horario del cliente lo corra.
+function periodKey(period: Date | string): string {
   const d = new Date(period);
-  return `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function formatPeriod(period: Date | string): string {
+  // Acepta tanto un ISO con hora como un "YYYY-MM" plano.
+  if (typeof period === "string" && /^\d{4}-\d{2}$/.test(period)) {
+    const [y, m] = period.split("-").map(Number);
+    return `${monthNames[m - 1]} ${y}`;
+  }
+  const d = new Date(period);
+  return `${monthNames[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 function formatShortPeriod(period: Date | string): string {
+  if (typeof period === "string" && /^\d{4}-\d{2}$/.test(period)) {
+    const [y, m] = period.split("-").map(Number);
+    return `${monthNames[m - 1].substring(0, 3)} ${String(y).slice(-2)}`;
+  }
   const d = new Date(period);
-  return `${monthNames[d.getMonth()].substring(0, 3)} ${d.getFullYear().toString().slice(-2)}`;
+  return `${monthNames[d.getUTCMonth()].substring(0, 3)} ${d.getUTCFullYear().toString().slice(-2)}`;
 }
 
 export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: ExpensesPanelProps) {
@@ -38,8 +54,7 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
     const grouped: Record<string, { period: string; expenses: Expense[]; totalArs: number; totalUsd: number }> = {};
 
     expenses.forEach((exp) => {
-      const d = new Date(exp.period);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const key = periodKey(exp.period);
       if (!grouped[key]) {
         grouped[key] = { period: key, expenses: [], totalArs: 0, totalUsd: 0 };
       }
@@ -55,10 +70,7 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
   const stats = useMemo(() => {
     const totalUsd = expenses.reduce((sum, e) => sum + (e.amountUsd ?? 0), 0);
     const totalArs = expenses.reduce((sum, e) => sum + (e.currency === "ARS" ? e.amount : 0), 0);
-    const months = new Set(expenses.map((e) => {
-      const d = new Date(e.period);
-      return `${d.getFullYear()}-${d.getMonth()}`;
-    })).size;
+    const months = new Set(expenses.map((e) => periodKey(e.period))).size;
     const avgUsd = months > 0 ? totalUsd / months : 0;
     const maxMonth = monthlyData.length > 0
       ? monthlyData.reduce((max, m) => m.totalUsd > max.totalUsd ? m : max)
@@ -115,8 +127,8 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
         {[
           { label: "Total USD", value: fmtUsd(stats.totalUsd), sub: `${stats.months} meses` },
           { label: "Promedio mensual", value: fmtUsd(stats.avgUsd), sub: "USD/mes" },
-          { label: "Mes más alto", value: stats.maxMonth ? fmtUsd(stats.maxMonth.totalUsd) : "—", sub: stats.maxMonth ? formatPeriod(stats.maxMonth.period + "-01") : "", color: "var(--danger)" },
-          { label: "Mes más bajo", value: stats.minMonth ? fmtUsd(stats.minMonth.totalUsd) : "—", sub: stats.minMonth ? formatPeriod(stats.minMonth.period + "-01") : "", color: "var(--success)" },
+          { label: "Mes más alto", value: stats.maxMonth ? fmtUsd(stats.maxMonth.totalUsd) : "—", sub: stats.maxMonth ? formatPeriod(stats.maxMonth.period) : "", color: "var(--danger)" },
+          { label: "Mes más bajo", value: stats.minMonth ? fmtUsd(stats.minMonth.totalUsd) : "—", sub: stats.minMonth ? formatPeriod(stats.minMonth.period) : "", color: "var(--success)" },
         ].map((kpi, i) => (
           <div key={i} className="kpi-card" style={{ background: "var(--surface-2)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border-default)" }}>
             <div className="kpi-label" style={{ fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{kpi.label}</div>
@@ -187,7 +199,7 @@ export default function ExpensesPanel({ expenses, onAddClick, canEdit = true }: 
                 borderBottom: "1px solid var(--border-faint)",
               }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
-                  {formatPeriod(month.period + "-01")}
+                  {formatPeriod(month.period)}
                 </div>
                 <div className="month-totals" style={{ display: "flex", gap: 16, alignItems: "center" }}>
                   {month.totalArs > 0 && (

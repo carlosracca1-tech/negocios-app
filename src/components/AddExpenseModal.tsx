@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCreateExpense, useParseReceipt } from "@/hooks/useProjects";
 import { modalInputStyle as inputStyle, focusInput, blurInput } from "@/lib/constants";
 
@@ -16,6 +16,8 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState<"ARS" | "USD">("ARS");
   const [exchangeRate, setExchangeRate] = useState("");
+  const [rateAuto, setRateAuto] = useState(false);
+  const [rateLoading, setRateLoading] = useState(false);
   const [period, setPeriod] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -30,11 +32,35 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
   const { mutate: createExpense, loading: creating, error: createError } = useCreateExpense();
   const { mutate: parseReceipt, loading: parsing, error: parseError } = useParseReceipt();
 
+  // Auto-fetch dólar blue al abrir el modal (sólo si el campo está vacío y la moneda es ARS)
+  useEffect(() => {
+    if (!isOpen) return;
+    if (exchangeRate) return; // no pisar lo que ya cargó el user
+    let cancelled = false;
+    setRateLoading(true);
+    fetch("/api/dolar-blue")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.promedio) return;
+        setExchangeRate(String(data.promedio));
+        setRateAuto(true);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setRateLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
   const resetForm = () => {
     setConcept("");
     setAmount("");
     setCurrency("ARS");
     setExchangeRate("");
+    setRateAuto(false);
     const now = new Date();
     setPeriod(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
     setPaidDate("");
@@ -67,8 +93,16 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
       if (parsed.amount) setAmount(String(parsed.amount));
       if (parsed.currency) setCurrency(parsed.currency);
       if (parsed.period) {
-        const d = new Date(parsed.period);
-        setPeriod(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+        // El parser devuelve "YYYY-MM-01" o un ISO. Tomamos UTC para no perder el mes
+        // por la zona horaria del cliente.
+        const raw = String(parsed.period);
+        const direct = raw.match(/^(\d{4})-(\d{2})/);
+        if (direct) {
+          setPeriod(`${direct[1]}-${direct[2]}`);
+        } else {
+          const d = new Date(raw);
+          setPeriod(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
+        }
       }
       if (parsed.paidDate) setPaidDate(parsed.paidDate);
       if (parsed.notes) setNotes(parsed.notes);
@@ -82,7 +116,8 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const periodDate = new Date(`${period}-01T00:00:00.000Z`).toISOString();
+      // Mediodía UTC para que ningún huso horario lo tire al mes anterior.
+      const periodDate = new Date(`${period}-01T12:00:00.000Z`).toISOString();
 
       await createExpense(projectId, {
         concept,
@@ -245,9 +280,21 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess 
             <div>
               <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>
                 Tipo de cambio (Dólar Blue)
-                <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}> — opcional, para calcular USD</span>
+                <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+                  {rateLoading ? " — cargando cotización..." : rateAuto ? " — auto (dolarapi.com)" : " — opcional, para calcular USD"}
+                </span>
               </label>
-              <input type="number" value={exchangeRate} onChange={(e) => setExchangeRate(e.target.value)} placeholder="Ej: 1200" step="0.01" min="0" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+              <input
+                type="number"
+                value={exchangeRate}
+                onChange={(e) => { setExchangeRate(e.target.value); setRateAuto(false); }}
+                placeholder={rateLoading ? "Cargando..." : "Ej: 1200"}
+                step="0.01"
+                min="0"
+                style={inputStyle}
+                onFocus={focusInput}
+                onBlur={blurInput}
+              />
               {exchangeRate && amount && (
                 <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4 }}>
                   ≈ U$D {(parseFloat(amount) / parseFloat(exchangeRate)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
