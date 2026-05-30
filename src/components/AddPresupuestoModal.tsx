@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { ParsedBudget, Partida, ScopeItem } from "@/types";
 import { budgetApi, partidasApi, cotizacionesApi } from "@/lib/api-client";
 import { categoriesByProjectType } from "@/lib/constants";
@@ -42,8 +42,42 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
   const [currency, setCurrency] = useState<"USD" | "ARS">("USD");
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
 
+  // Dólar blue automático (promedio compra/venta) — mismo patrón que AddCostModal
+  const [blueRate, setBlueRate] = useState<{ compra: number; venta: number; promedio: number } | null>(null);
+  const [blueLoading, setBlueLoading] = useState(false);
+  const [blueError, setBlueError] = useState("");
+
   const fileRef = useRef<HTMLInputElement>(null);
   const categories = categoriesByProjectType[projectType] || categoriesByProjectType.Casa;
+
+  const fetchBlueRate = useCallback(async () => {
+    setBlueLoading(true);
+    setBlueError("");
+    try {
+      const res = await fetch("/api/dolar-blue");
+      if (!res.ok) throw new Error("fetch failed");
+      const data = await res.json();
+      setBlueRate({ compra: data.compra, venta: data.venta, promedio: data.promedio });
+    } catch {
+      setBlueError("No se pudo obtener el dólar blue. Reintentá.");
+    } finally {
+      setBlueLoading(false);
+    }
+  }, []);
+
+  // Traer el blue al abrir el modal (lo necesitamos si la cotización es en ARS)
+  useEffect(() => {
+    if (isOpen && !blueRate && !blueLoading) {
+      fetchBlueRate();
+    }
+  }, [isOpen, blueRate, blueLoading, fetchBlueRate]);
+
+  // Mantener el tipo de cambio sincronizado con el promedio del blue cuando es ARS
+  useEffect(() => {
+    if (currency === "ARS" && blueRate) {
+      setExchangeRate(blueRate.promedio);
+    }
+  }, [currency, blueRate]);
 
   const reset = useCallback(() => {
     setFile(null);
@@ -178,14 +212,14 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
         style={{
           background: "var(--surface-solid)", border: "1px solid var(--border-default)",
           borderRadius: 16, width: "100%", maxWidth: 560, maxHeight: "92vh",
-          overflowY: "auto", boxShadow: "var(--shadow-elevated)",
+          display: "flex", flexDirection: "column", boxShadow: "var(--shadow-elevated)",
         }}
       >
         {/* Header */}
         <div style={{
           padding: "17px 20px", borderBottom: "1px solid var(--border-default)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          position: "sticky", top: 0, background: "var(--surface-solid)", zIndex: 1,
+          flexShrink: 0, background: "var(--surface-solid)",
         }}>
           <h3 style={{ fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", gap: 9, color: "var(--text-primary)" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -203,7 +237,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
         </div>
 
         {/* Body */}
-        <div style={{ padding: 20 }}>
+        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
           {/* File chip / drop zone */}
           {!file ? (
             <div
@@ -402,16 +436,37 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
                 </div>
                 {currency === "ARS" && (
                   <div>
-                    <label style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.6, color: "var(--text-tertiary)", marginBottom: 5, display: "block" }}>Tipo cambio</label>
-                    <input
-                      type="number"
-                      placeholder="Dolar blue"
-                      value={exchangeRate || ""}
-                      onChange={(e) => setExchangeRate(Number(e.target.value) || null)}
-                      style={modalInputStyle}
-                      onFocus={focusInput}
-                      onBlur={blurInput}
-                    />
+                    <label style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.6, color: "var(--text-tertiary)", marginBottom: 5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span>Tipo cambio · dólar blue</span>
+                      <button
+                        type="button"
+                        onClick={fetchBlueRate}
+                        disabled={blueLoading}
+                        style={{ background: "none", border: "none", color: "var(--text-tertiary)", cursor: blueLoading ? "wait" : "pointer", fontSize: 12, padding: 0, lineHeight: 1 }}
+                        title="Actualizar cotización"
+                      >
+                        {blueLoading ? "…" : "↻"}
+                      </button>
+                    </label>
+                    <div style={{ ...modalInputStyle, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, cursor: "default" }}>
+                      {blueLoading && !blueRate ? (
+                        <span style={{ color: "var(--text-tertiary)" }}>Cargando…</span>
+                      ) : blueRate ? (
+                        <>
+                          <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>${blueRate.promedio.toLocaleString("es-AR")}</span>
+                          <span style={{ fontSize: 10.5, color: "var(--text-tertiary)" }}>
+                            Compra ${blueRate.compra} · Venta ${blueRate.venta}
+                          </span>
+                        </>
+                      ) : (
+                        <span style={{ color: "var(--danger)", fontSize: 11 }}>{blueError || "Sin cotización"}</span>
+                      )}
+                    </div>
+                    {blueRate && amount > 0 && (
+                      <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", marginTop: 4 }}>
+                        ≈ USD {(amount / blueRate.promedio).toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                      </div>
+                    )}
                   </div>
                 )}
                 {currency === "USD" && parsed.leadTimeText && (
@@ -472,7 +527,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
         <div style={{
           padding: "15px 20px", borderTop: "1px solid var(--border-default)",
           display: "flex", justifyContent: "space-between", alignItems: "center",
-          gap: 10, flexWrap: "wrap", position: "sticky", bottom: 0,
+          gap: 10, flexWrap: "wrap", flexShrink: 0,
           background: "var(--surface-solid)",
         }}>
           <span style={{ fontSize: 11.5, color: "var(--text-tertiary)", flex: 1, minWidth: 140 }}>
