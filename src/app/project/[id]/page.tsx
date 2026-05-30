@@ -18,6 +18,7 @@ import ExpensesPanel from "@/components/ExpensesPanel";
 import RegisterSaleModal from "@/components/RegisterSaleModal";
 import AddInvestorModal from "@/components/AddInvestorModal";
 import ProjectAlerts from "@/components/ProjectAlerts";
+import PresupuestosPanel from "@/components/PresupuestosPanel";
 import { fmt, fmtSign, fmtPct, daysAgo, safeNum } from "@/lib/format";
 import { statusConfig } from "@/lib/constants";
 
@@ -410,6 +411,7 @@ export default function ProjectPage({ params }: PageProps) {
             { key: "resumen", label: "Resumen" },
             { key: "costos", label: `Costos (${costsArray.length})` },
             { key: "gastos", label: `Gastos (${expensesArray.length})` },
+            { key: "presupuestos", label: "Presupuestos" },
             { key: "timeline", label: "Timeline" },
             ...(isAdmin ? [{ key: "acceso", label: `Acceso (${(p.access || []).length || 0})` }] : []),
             ...((isAdmin || isInvestor) ? [{ key: "capital", label: "Capital" }] : []),
@@ -736,6 +738,16 @@ export default function ProjectPage({ params }: PageProps) {
                   window.alert("No se pudo eliminar el gasto. " + (err instanceof Error ? err.message : ""));
                 }
               }}
+              canEdit={canEdit}
+            />
+          )}
+
+          {activeSection === "presupuestos" && (
+            <PresupuestosPanel
+              projectId={params.id}
+              projectType={p?.type || "Casa"}
+              buyPrice={buyPrice}
+              totalExpenses={totalExpensesUsd}
               canEdit={canEdit}
             />
           )}
