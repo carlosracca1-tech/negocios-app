@@ -70,6 +70,7 @@ model Project {
   investors     Investor[]
   access        ProjectAccess[]
   timeline      TimelineEvent[]
+  partidas      Partida[]
 }
 
 model Cost {
@@ -84,8 +85,10 @@ model Cost {
   costType     String
   date         DateTime
   createdAt    DateTime @default(now())
+  partidaId    String?
 
   project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  partida      Partida? @relation(fields: [partidaId], references: [id], onDelete: SetNull)
 }
 
 model Investor {
@@ -155,4 +158,46 @@ model Notification {
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Partida {
+  id              String   @id @default(cuid())
+  projectId       String
+  name            String
+  category        String
+  description     String?
+  estimatedAmount Float?
+  status          String   @default("pendiente")
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cotizaciones Cotizacion[]
+  costs        Cost[]
+}
+
+model Cotizacion {
+  id            String   @id @default(cuid())
+  partidaId     String
+  provider      String
+  amount        Float
+  currency      String   @default("USD")
+  exchangeRate  Float?
+  amountUsd     Float?
+  scopeItems    Json?
+  leadTimeDays  Int?
+  leadTimeText  String?
+  paymentTerms  String?
+  warranty      String?
+  validityDays  Int?
+  notes         String?
+  fileUrl       String?
+  fileName      String?
+  isChosen      Boolean  @default(false)
+  aiRecommended Boolean  @default(false)
+  aiReasoning   String?
+  createdAt     DateTime @default(now())
+
+  partida      Partida  @relation(fields: [partidaId], references: [id], onDelete: Cascade)
 }

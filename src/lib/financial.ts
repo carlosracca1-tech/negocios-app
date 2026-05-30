@@ -61,3 +61,92 @@ export function computeProjectFinancials(
 
   return { totalCosts, totalExpenses, investment, result, margin, estimatedMargin };
 }
+
+// ============================================================================
+// BUDGET / PRESUPUESTOS
+// ============================================================================
+
+interface CotizacionLike {
+  amount: number;
+  currency?: string | null;
+  amountUsd?: number | null;
+  isChosen?: boolean;
+}
+
+/** Normalize a cotizacion amount to USD */
+export function cotizacionUsd(cot: CotizacionLike): number {
+  if (cot.currency === "ARS" && cot.amountUsd != null) {
+    return safe(cot.amountUsd);
+  }
+  return safe(cot.amount);
+}
+
+interface PartidaLike {
+  id: string;
+  name: string;
+  category: string;
+  estimatedAmount?: number | null;
+  cotizaciones?: CotizacionLike[];
+}
+
+/** Projected USD for a partida: chosen > min cotizacion > estimatedAmount > 0 */
+export function partidaProjectedUsd(partida: PartidaLike): number {
+  const cots = partida.cotizaciones || [];
+  const chosen = cots.find((c) => c.isChosen);
+  if (chosen) return cotizacionUsd(chosen);
+  if (cots.length > 0) {
+    return Math.min(...cots.map(cotizacionUsd));
+  }
+  return safe(partida.estimatedAmount);
+}
+
+interface CostLike {
+  amount: number;
+  currency?: string | null;
+  amountUsd?: number | null;
+  partidaId?: string | null;
+}
+
+export interface BudgetRubroResult {
+  partidaId: string;
+  name: string;
+  category: string;
+  projected: number;
+  executed: number;
+  deviation: number;
+  pct: number;
+}
+
+export interface BudgetProjectionResult {
+  totalProjected: number;
+  totalExecuted: number;
+  deviation: number;
+  byRubro: BudgetRubroResult[];
+}
+
+/** Compute budget projection across all partidas vs executed costs */
+export function computeBudgetProjection(
+  partidas: PartidaLike[],
+  costs: CostLike[]
+): BudgetProjectionResult {
+  const byRubro: BudgetRubroResult[] = partidas.map((p) => {
+    const projected = partidaProjectedUsd(p);
+    const executed = costs
+      .filter((c) => c.partidaId === p.id)
+      .reduce((sum, c) => {
+        if (c.currency === "ARS" && c.amountUsd != null) {
+          return sum + safe(c.amountUsd);
+        }
+        return sum + safe(c.amount);
+      }, 0);
+    const deviation = projected - executed;
+    const pct = projected > 0 ? (executed / projected) * 100 : 0;
+    return { partidaId: p.id, name: p.name, category: p.category, projected, executed, deviation, pct };
+  });
+
+  const totalProjected = byRubro.reduce((s, r) => s + r.projected, 0);
+  const totalExecuted = byRubro.reduce((s, r) => s + r.executed, 0);
+  const deviation = totalProjected - totalExecuted;
+
+  return { totalProjected, totalExecuted, deviation, byRubro };
+}
