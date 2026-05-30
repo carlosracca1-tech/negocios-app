@@ -203,16 +203,15 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
       style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
-        backdropFilter: "blur(5px)", display: "flex", alignItems: "center",
-        justifyContent: "center", zIndex: 50, padding: 16,
+        backdropFilter: "blur(5px)", display: "flex", alignItems: "flex-start",
+        justifyContent: "center", zIndex: 50, padding: "24px 16px", overflowY: "auto",
       }}
     >
       <div
-        className="modal-content"
         style={{
           background: "var(--surface-solid)", border: "1px solid var(--border-default)",
-          borderRadius: 16, width: "100%", maxWidth: 560, maxHeight: "92vh",
-          display: "flex", flexDirection: "column", boxShadow: "var(--shadow-elevated)",
+          borderRadius: 16, width: "100%", maxWidth: 560, maxHeight: "calc(100vh - 48px)",
+          margin: "auto", display: "flex", flexDirection: "column", boxShadow: "var(--shadow-elevated)",
         }}
       >
         {/* Header */}
