@@ -237,7 +237,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
         </div>
 
         {/* Body */}
-        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+        <div style={{ padding: 20, overflowY: "auto", flex: 1, minHeight: 0 }}>
           {/* File chip / drop zone */}
           {!file ? (
             <div
