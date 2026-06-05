@@ -1,4 +1,4 @@
-import { Project, Cost, Investor, ProjectAccess, TimelineEvent, User, Expense, ParsedReceipt } from "@/types";
+import { Project, Cost, Investor, ProjectAccess, TimelineEvent, User, Expense, ParsedReceipt, Partida, Cotizacion, ParsedBudget, AiRecommendation, BudgetProjection } from "@/types";
 
 // ============================================================================
 // BASE API HELPERS
@@ -315,6 +315,142 @@ export interface Alert {
 export const alertsApi = {
   async list(): Promise<Alert[]> {
     return apiGet("/api/alerts");
+  },
+};
+
+// ============================================================================
+// USERS API
+// ============================================================================
+
+// ============================================================================
+// PARTIDAS API (Presupuestos)
+// ============================================================================
+
+export const partidasApi = {
+  async list(projectId: string): Promise<Partida[]> {
+    return apiGet(`/api/projects/${projectId}/partidas`);
+  },
+
+  async create(
+    projectId: string,
+    data: {
+      name: string;
+      category: string;
+      description?: string | null;
+      estimatedAmount?: number | null;
+      order?: number;
+    }
+  ): Promise<Partida> {
+    return apiPost(`/api/projects/${projectId}/partidas`, data);
+  },
+
+  async update(
+    projectId: string,
+    partidaId: string,
+    data: Partial<{
+      name: string;
+      category: string;
+      description: string | null;
+      estimatedAmount: number | null;
+      status: string;
+      order: number;
+    }>
+  ): Promise<Partida> {
+    return apiPatch(`/api/projects/${projectId}/partidas/${partidaId}`, data);
+  },
+
+  async delete(projectId: string, partidaId: string): Promise<void> {
+    return apiDelete(`/api/projects/${projectId}/partidas/${partidaId}`);
+  },
+};
+
+// ============================================================================
+// COTIZACIONES API
+// ============================================================================
+
+export const cotizacionesApi = {
+  async list(projectId: string, partidaId: string): Promise<Cotizacion[]> {
+    return apiGet(`/api/projects/${projectId}/partidas/${partidaId}/cotizaciones`);
+  },
+
+  async create(
+    projectId: string,
+    partidaId: string,
+    data: {
+      provider: string;
+      amount: number;
+      currency?: "ARS" | "USD";
+      exchangeRate?: number | null;
+      scopeItems?: { label: string; included: boolean }[] | null;
+      leadTimeDays?: number | null;
+      leadTimeText?: string | null;
+      paymentTerms?: string | null;
+      warranty?: string | null;
+      validityDays?: number | null;
+      notes?: string | null;
+      fileUrl?: string | null;
+      fileName?: string | null;
+    }
+  ): Promise<Cotizacion> {
+    return apiPost(`/api/projects/${projectId}/partidas/${partidaId}/cotizaciones`, data);
+  },
+
+  async update(
+    projectId: string,
+    partidaId: string,
+    cotId: string,
+    data: Partial<{
+      provider: string;
+      amount: number;
+      currency: "ARS" | "USD";
+      exchangeRate: number | null;
+      scopeItems: { label: string; included: boolean }[] | null;
+      leadTimeDays: number | null;
+      leadTimeText: string | null;
+      paymentTerms: string | null;
+      warranty: string | null;
+      validityDays: number | null;
+      notes: string | null;
+    }>
+  ): Promise<Cotizacion> {
+    return apiPatch(`/api/projects/${projectId}/partidas/${partidaId}/cotizaciones/${cotId}`, data);
+  },
+
+  async delete(projectId: string, partidaId: string, cotId: string): Promise<void> {
+    return apiDelete(`/api/projects/${projectId}/partidas/${partidaId}/cotizaciones/${cotId}`);
+  },
+
+  async elegir(projectId: string, partidaId: string, cotId: string): Promise<Cotizacion> {
+    return apiPost(`/api/projects/${projectId}/partidas/${partidaId}/cotizaciones/${cotId}/elegir`, {});
+  },
+};
+
+// ============================================================================
+// BUDGET API (Presupuestos IA + Projection)
+// ============================================================================
+
+export const budgetApi = {
+  async analyze(projectId: string, file: File): Promise<ParsedBudget> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`/api/projects/${projectId}/budget/analyze`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.error || `API error: ${res.status}`);
+    }
+    const json = await res.json();
+    return json.data;
+  },
+
+  async recomendar(projectId: string, partidaId: string): Promise<AiRecommendation> {
+    return apiPost(`/api/projects/${projectId}/partidas/${partidaId}/recomendar`, {});
+  },
+
+  async getProjection(projectId: string): Promise<BudgetProjection> {
+    return apiGet(`/api/projects/${projectId}/budget`);
   },
 };
 

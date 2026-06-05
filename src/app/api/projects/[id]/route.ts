@@ -71,6 +71,15 @@ export async function GET(
             date: "desc",
           },
         },
+        partidas: {
+          include: {
+            cotizaciones: {
+              orderBy: { createdAt: "desc" },
+            },
+            costs: true,
+          },
+          orderBy: { order: "asc" },
+        },
       },
     });
 

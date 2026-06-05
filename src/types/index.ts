@@ -116,3 +116,84 @@ export interface ParsedReceipt {
   paidDate: string | null;
   notes: string | null;
 }
+
+export interface ScopeItem {
+  label: string;
+  included: boolean;
+}
+
+export interface Cotizacion {
+  id: string;
+  partidaId: string;
+  provider: string;
+  amount: number;
+  currency: "ARS" | "USD";
+  exchangeRate: number | null;
+  amountUsd: number | null;
+  scopeItems: ScopeItem[] | null;
+  leadTimeDays: number | null;
+  leadTimeText: string | null;
+  paymentTerms: string | null;
+  warranty: string | null;
+  validityDays: number | null;
+  notes: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  isChosen: boolean;
+  aiRecommended: boolean;
+  aiReasoning: string | null;
+  createdAt: Date;
+}
+
+export interface Partida {
+  id: string;
+  projectId: string;
+  name: string;
+  category: string;
+  description: string | null;
+  estimatedAmount: number | null;
+  status: string;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+  cotizaciones?: Cotizacion[];
+  costs?: Cost[];
+}
+
+export interface ParsedBudget {
+  provider: string;
+  category: string;
+  suggestedPartidaName: string;
+  amount: number;
+  currency: "ARS" | "USD";
+  scopeItems: ScopeItem[];
+  leadTimeDays: number | null;
+  leadTimeText: string | null;
+  paymentTerms: string | null;
+  warranty: string | null;
+  validityDays: number | null;
+  notes: string | null;
+}
+
+export interface AiRecommendation {
+  recommendedCotizacionId: string;
+  reasoning: string;
+  savingsNote: string;
+}
+
+export interface BudgetRubro {
+  partidaId: string;
+  name: string;
+  category: string;
+  projected: number;
+  executed: number;
+  deviation: number;
+  pct: number;
+}
+
+export interface BudgetProjection {
+  totalProjected: number;
+  totalExecuted: number;
+  deviation: number;
+  byRubro: BudgetRubro[];
+}

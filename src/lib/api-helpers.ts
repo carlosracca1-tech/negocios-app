@@ -179,3 +179,63 @@ export const createUserSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["admin", "colaborador", "vista"]).optional().default("vista"),
 });
+
+// ============================================================================
+// PRESUPUESTOS SCHEMAS
+// ============================================================================
+
+export const createPartidaSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  category: z.enum(allCategories, {
+    errorMap: () => ({ message: "Invalid category" }),
+  }),
+  description: z.string().optional().nullable(),
+  estimatedAmount: z.number().positive().optional().nullable(),
+  order: z.number().int().min(0).optional().default(0),
+});
+
+export const updatePartidaSchema = z.object({
+  name: z.string().min(1).optional(),
+  category: z.enum(allCategories).optional(),
+  description: z.string().optional().nullable(),
+  estimatedAmount: z.number().positive().optional().nullable(),
+  status: z.enum(["pendiente", "elegida", "ejecutada"]).optional(),
+  order: z.number().int().min(0).optional(),
+});
+
+const scopeItemSchema = z.object({
+  label: z.string(),
+  included: z.boolean(),
+});
+
+export const createCotizacionSchema = z.object({
+  provider: z.string().min(1, "Provider is required"),
+  amount: z.number().positive("Amount must be positive"),
+  currency: z.enum(["ARS", "USD"]).optional().default("USD"),
+  exchangeRate: z.number().positive().optional().nullable(),
+  scopeItems: z.array(scopeItemSchema).optional().nullable(),
+  leadTimeDays: z.number().int().positive().optional().nullable(),
+  leadTimeText: z.string().optional().nullable(),
+  paymentTerms: z.string().optional().nullable(),
+  warranty: z.string().optional().nullable(),
+  validityDays: z.number().int().positive().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  fileUrl: z.string().optional().nullable(),
+  fileName: z.string().optional().nullable(),
+});
+
+export const updateCotizacionSchema = z.object({
+  provider: z.string().min(1).optional(),
+  amount: z.number().positive().optional(),
+  currency: z.enum(["ARS", "USD"]).optional(),
+  exchangeRate: z.number().positive().optional().nullable(),
+  scopeItems: z.array(scopeItemSchema).optional().nullable(),
+  leadTimeDays: z.number().int().positive().optional().nullable(),
+  leadTimeText: z.string().optional().nullable(),
+  paymentTerms: z.string().optional().nullable(),
+  warranty: z.string().optional().nullable(),
+  validityDays: z.number().int().positive().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  fileUrl: z.string().optional().nullable(),
+  fileName: z.string().optional().nullable(),
+});

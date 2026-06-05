@@ -399,6 +399,32 @@ input:focus, select:focus, textarea:focus {
   .insight-grid { grid-template-columns: 1fr !important; }
 }
 
+/* ---- Presupuestado vs Real responsive (max-width: 760px) ---- */
+@media (max-width: 760px) {
+  .pvr-head-row { display: none !important; }
+  .pvr-data-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 7px 14px !important;
+    padding: 14px 15px !important;
+    grid-template-columns: none !important;
+  }
+  .pvr-data-row > div:first-child { flex-basis: 100%; font-size: 13.5px; }
+  .pvr-data-row .bar-wrap { flex-basis: 100%; order: 2; height: 7px; }
+  .pvr-data-row .tabular[data-label] { order: 3; text-align: left !important; font-size: 12.5px; }
+  .pvr-data-row .tabular[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    margin-bottom: 1px;
+  }
+}
+
 /* ---- Mobile (max-width: 480px) ---- */
 @media (max-width: 480px) {
   .page-container { padding: 10px !important; }
