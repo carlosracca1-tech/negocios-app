@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useProject, useDeleteExpense } from "@/hooks/useProjects";
+import { useProject, useDeleteExpense, useDeleteCost } from "@/hooks/useProjects";
 import Header from "@/components/Header";
 import KPICard from "@/components/KPICard";
 import ProjectSummary from "@/components/ProjectSummary";
@@ -87,7 +87,9 @@ export default function ProjectPage({ params }: PageProps) {
   const [showRegisterSaleModal, setShowRegisterSaleModal] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<import("@/types").Expense | null>(null);
+  const [editingCost, setEditingCost] = useState<import("@/types").Cost | null>(null);
   const { mutate: deleteExpense } = useDeleteExpense();
+  const { mutate: deleteCost } = useDeleteCost();
   const [showAddInvestorModal, setShowAddInvestorModal] = useState(false);
 
   const userRole = session?.user?.role;
@@ -258,7 +260,7 @@ export default function ProjectPage({ params }: PageProps) {
             )}
             {/* + Costo — primary action */}
             {canEdit && (
-              <button onClick={() => setShowAddCostModal(true)} style={primaryBtn}>
+              <button onClick={() => { setEditingCost(null); setShowAddCostModal(true); }} style={primaryBtn}>
                 + Costo
               </button>
             )}
@@ -718,7 +720,17 @@ export default function ProjectPage({ params }: PageProps) {
           {activeSection === "costos" && (
             <CostsTable
               costs={costsArray}
-              onAddClick={() => setShowAddCostModal(true)}
+              onAddClick={() => { setEditingCost(null); setShowAddCostModal(true); }}
+              onEditClick={(cost) => { setEditingCost(cost); setShowAddCostModal(true); }}
+              onDelete={async (cost) => {
+                if (!window.confirm(`¿Eliminar el costo "${cost.concept}"? Esta acción no se puede deshacer.`)) return;
+                try {
+                  await deleteCost(params.id, cost.id);
+                  refetch();
+                } catch (err) {
+                  window.alert("No se pudo eliminar el costo. " + (err instanceof Error ? err.message : ""));
+                }
+              }}
               canEdit={canEdit}
             />
           )}
@@ -788,8 +800,9 @@ export default function ProjectPage({ params }: PageProps) {
         projectId={params.id}
         projectType={p?.type}
         isOpen={showAddCostModal}
-        onClose={() => setShowAddCostModal(false)}
+        onClose={() => { setShowAddCostModal(false); setEditingCost(null); }}
         onSuccess={() => refetch()}
+        costToEdit={editingCost}
       />
 
       <AddExpenseModal
