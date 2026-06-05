@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useCreateCost } from "@/hooks/useProjects";
+import { useCreateCost, useUpdateCost } from "@/hooks/useProjects";
+import { Cost } from "@/types";
 import {
   modalInputStyle as inputStyle,
   focusInput,
@@ -11,12 +12,31 @@ import {
   allowedCostTypesByCategory,
 } from "@/lib/constants";
 
+// Convierte el texto del input a número aceptando coma o punto como separador
+// decimal (formato es-AR), y puntos como separador de miles.
+function parseAmountInput(raw: string): number {
+  if (!raw) return 0;
+  let s = raw.trim();
+  const hasComma = s.includes(",");
+  const hasDot = s.includes(".");
+  if (hasComma && hasDot) {
+    // "1.234,56" → punto = miles, coma = decimal
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else if (hasComma) {
+    s = s.replace(",", ".");
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
 interface AddCostModalProps {
   projectId: string;
   projectType?: string;
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  /** Si está presente, el modal entra en modo edición: prefilla campos y hace PATCH. */
+  costToEdit?: Cost | null;
 }
 
 export default function AddCostModal({
@@ -25,7 +45,9 @@ export default function AddCostModal({
   isOpen,
   onClose,
   onSuccess,
+  costToEdit,
 }: AddCostModalProps) {
+  const isEditMode = Boolean(costToEdit);
   const categories = useMemo(
     () => categoriesByProjectType[projectType] || categoriesByProjectType.Casa,
     [projectType]
@@ -40,7 +62,12 @@ export default function AddCostModal({
   const [currency, setCurrency] = useState<"ARS" | "USD">("USD");
   const [category, setCategory] = useState(categories[0]?.value || "Obra");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const { mutate, loading, error } = useCreateCost();
+  // Tipo de cambio original guardado (sólo se usa en modo edición de un costo en ARS)
+  const [editRate, setEditRate] = useState("");
+  const { mutate: createCost, loading: creating, error: createError } = useCreateCost();
+  const { mutate: updateCost, loading: updating, error: updateError } = useUpdateCost();
+  const loading = creating || updating;
+  const error = createError || updateError;
 
   // === Cotización del dólar blue (BNA / dolarapi) — bloqueada ===
   const [blueRate, setBlueRate] = useState<{ compra: number; venta: number; promedio: number; source?: string } | null>(null);
@@ -78,12 +105,36 @@ export default function AddCostModal({
     }
   }, []);
 
-  // Fetch dólar blue al abrir el modal (lo necesitamos siempre, por si el usuario cambia a ARS)
+  // Fetch dólar blue al abrir el modal (sólo al crear; al editar usamos el TC original)
   useEffect(() => {
-    if (isOpen && !blueRate && !blueLoading) {
+    if (isOpen && !isEditMode && !blueRate && !blueLoading) {
       fetchBlueRate();
     }
-  }, [isOpen, blueRate, blueLoading, fetchBlueRate]);
+  }, [isOpen, isEditMode, blueRate, blueLoading, fetchBlueRate]);
+
+  // Al abrir en modo creación, limpiar cualquier valor que haya quedado de una edición previa
+  useEffect(() => {
+    if (isOpen && !costToEdit) {
+      setConcept("");
+      setAmount("");
+      setCurrency("USD");
+      setEditRate("");
+      setDate(new Date().toISOString().split("T")[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, costToEdit]);
+
+  // Prefill cuando entramos en modo edición
+  useEffect(() => {
+    if (!isOpen || !costToEdit) return;
+    setConcept(costToEdit.concept || "");
+    setAmount(costToEdit.amount != null ? String(costToEdit.amount) : "");
+    setCurrency(costToEdit.currency || "USD");
+    setCategory(costToEdit.category);
+    setCostType(costToEdit.costType);
+    setDate(new Date(costToEdit.date).toISOString().split("T")[0]);
+    setEditRate(costToEdit.exchangeRate != null ? String(costToEdit.exchangeRate) : "");
+  }, [isOpen, costToEdit]);
 
   const resetForm = () => {
     setConcept("");
@@ -92,35 +143,49 @@ export default function AddCostModal({
     setCategory(categories[0]?.value || "Obra");
     setCostType(filteredCostTypes[0]?.value || "material");
     setDate(new Date().toISOString().split("T")[0]);
+    setEditRate("");
   };
 
-  // Conversión a USD para guardar
-  const amountNum = parseFloat(amount) || 0;
+  // Tipo de cambio efectivo: al editar usamos el TC guardado; al crear, el blue del día
+  const currentRate =
+    currency === "ARS"
+      ? isEditMode
+        ? parseFloat(editRate) || 0
+        : blueRate?.promedio || 0
+      : 0;
+
+  // Conversión a USD para guardar (acepta coma o punto como decimal)
+  const amountNum = parseAmountInput(amount);
   const usdAmount =
     currency === "USD"
       ? amountNum
-      : blueRate && blueRate.promedio > 0
-        ? amountNum / blueRate.promedio
+      : currentRate > 0
+        ? amountNum / currentRate
         : 0;
 
   const canSubmit =
     concept.trim().length > 0 &&
     amountNum > 0 &&
-    (currency === "USD" || (blueRate && blueRate.promedio > 0));
+    (currency === "USD" || currentRate > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
     try {
-      await mutate(projectId, {
+      const payload = {
         concept,
         amount: amountNum,
         category,
         costType,
         date: new Date(date).toISOString(),
         currency,
-        exchangeRate: currency === "ARS" && blueRate ? blueRate.promedio : null,
-      });
+        exchangeRate: currency === "ARS" ? currentRate : null,
+      };
+      if (isEditMode && costToEdit) {
+        await updateCost(projectId, costToEdit.id, payload);
+      } else {
+        await createCost(projectId, payload);
+      }
       resetForm();
       onSuccess?.();
       onClose();
@@ -153,7 +218,7 @@ export default function AddCostModal({
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Agregar costo</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{isEditMode ? "Editar costo" : "Agregar costo"}</h2>
             <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: "4px 0 0" }}>
               Proyecto tipo <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{projectType}</span>
             </p>
@@ -223,17 +288,48 @@ export default function AddCostModal({
               Monto en {currency === "USD" ? "dólares (U$D)" : "pesos (AR$)"}
             </label>
             <input
-              type="number" value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder={currency === "USD" ? "0.00" : "0"}
-              step={currency === "USD" ? "0.01" : "1"}
-              min="0"
+              type="text"
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+              placeholder={currency === "USD" ? "0,00" : "0,00"}
               required style={inputStyle} onFocus={focusInput} onBlur={blurInput}
             />
           </div>
 
+          {/* === Bloque edición: TC original guardado === */}
+          {currency === "ARS" && isEditMode && (
+            <div style={{
+              padding: "12px 14px",
+              background: "var(--surface-2)",
+              border: "1px solid var(--border-default)",
+              borderRadius: 12,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 }}>
+                Tipo de cambio guardado
+              </div>
+              {currentRate > 0 ? (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                    AR$ {amountNum.toLocaleString("es-AR")} ÷ {currentRate}
+                  </span>
+                  <span className="tabular" style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>
+                    ≈ U$D {usdAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: "var(--warning)" }}>
+                  ⚠ Este costo no tiene tipo de cambio guardado.
+                </div>
+              )}
+              <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 8, lineHeight: 1.4 }}>
+                Se conserva el tipo de cambio con el que se cargó el costo originalmente.
+              </div>
+            </div>
+          )}
+
           {/* === Bloque conversión ARS → USD === */}
-          {currency === "ARS" && (
+          {currency === "ARS" && !isEditMode && (
             <div style={{
               padding: "12px 14px",
               background: "var(--surface-2)",
@@ -442,7 +538,11 @@ export default function AddCostModal({
               onMouseEnter={(e) => !loading && canSubmit && (e.currentTarget.style.filter = "brightness(0.92)")}
               onMouseLeave={(e) => (e.currentTarget.style.filter = "none")}
             >
-              {loading ? "Agregando…" : currency === "ARS" && usdAmount > 0 ? `Agregar (U$D ${usdAmount.toFixed(2)})` : "Agregar"}
+              {loading
+                ? (isEditMode ? "Guardando…" : "Agregando…")
+                : currency === "ARS" && usdAmount > 0
+                  ? `${isEditMode ? "Guardar" : "Agregar"} (U$D ${usdAmount.toFixed(2)})`
+                  : (isEditMode ? "Guardar cambios" : "Agregar")}
             </button>
           </div>
         </form>

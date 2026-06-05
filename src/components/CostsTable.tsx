@@ -24,10 +24,13 @@ const costTypeFullLabels: Record<string, string> = {
 interface CostsTableProps {
   costs: Cost[];
   onAddClick: () => void;
+  onEditClick?: (cost: Cost) => void;
+  onDelete?: (cost: Cost) => void;
   canEdit?: boolean;
 }
 
-export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsTableProps) {
+export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, canEdit = true }: CostsTableProps) {
+  const showActions = canEdit && Boolean(onEditClick || onDelete);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterType, setFilterType] = useState("");
@@ -316,6 +319,9 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
               </th>
               <th style={{ textAlign: "right", padding: "10px 8px", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>ARS</th>
               <th style={{ textAlign: "right", padding: "10px 0", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8 }}>TC</th>
+              {showActions && (
+                <th style={{ textAlign: "center", padding: "10px 0 10px 8px", color: "var(--text-tertiary)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.8, width: 80 }}></th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -363,6 +369,34 @@ export default function CostsTable({ costs, onAddClick, canEdit = true }: CostsT
                 <td style={{ padding: "10px 0", textAlign: "right", color: "var(--text-quaternary)", fontSize: 12, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
                   {fmtTc(cost)}
                 </td>
+                {showActions && (
+                  <td style={{ padding: "10px 0 10px 8px", textAlign: "center", whiteSpace: "nowrap" }}>
+                    <div style={{ display: "inline-flex", gap: 4 }}>
+                      {onEditClick && (
+                        <button
+                          onClick={() => onEditClick(cost)}
+                          title="Editar" aria-label="Editar costo"
+                          style={{ background: "transparent", border: "1px solid var(--border-faint)", borderRadius: 6, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1 }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-2)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                        >
+                          ✎
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(cost)}
+                          title="Eliminar" aria-label="Eliminar costo"
+                          style={{ background: "transparent", border: "1px solid var(--border-faint)", borderRadius: 6, padding: "3px 7px", cursor: "pointer", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1 }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--danger-soft)"; e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.borderColor = "var(--danger-border)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.borderColor = "var(--border-faint)"; }}
+                        >
+                          🗑
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
