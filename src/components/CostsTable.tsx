@@ -48,6 +48,15 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
     return Array.from(types).sort();
   }, [costs]);
 
+  // USD-normalized value of a cost (matches the USD column logic)
+  const usdValue = (cost: Cost) => {
+    if (cost.amountUsd != null) return cost.amountUsd;
+    if (cost.currency === "ARS" && cost.exchangeRate && cost.exchangeRate > 0) {
+      return cost.amount / cost.exchangeRate;
+    }
+    return cost.amount;
+  };
+
   // Filter + search
   const filteredCosts = useMemo(() => {
     let result = [...costs];
@@ -76,7 +85,7 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
       if (sortField === "date") {
         cmp = new Date(a.date).getTime() - new Date(b.date).getTime();
       } else {
-        cmp = a.amount - b.amount;
+        cmp = usdValue(a) - usdValue(b);
       }
       return sortDir === "desc" ? -cmp : cmp;
     });
@@ -84,10 +93,10 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
     return result;
   }, [costs, search, filterCategory, filterType, sortField, sortDir]);
 
-  // Totals for filtered results
-  const totalFiltered = useMemo(() => filteredCosts.reduce((s, c) => s + c.amount, 0), [filteredCosts]);
-  const totalMaterials = useMemo(() => filteredCosts.reduce((s, c) => s + (c.costType === "material" || c.costType === "repuesto" ? c.amount : 0), 0), [filteredCosts]);
-  const totalLabor = useMemo(() => filteredCosts.reduce((s, c) => s + (c.costType === "mano_de_obra" ? c.amount : 0), 0), [filteredCosts]);
+  // Totals for filtered results (always in USD)
+  const totalFiltered = useMemo(() => filteredCosts.reduce((s, c) => s + usdValue(c), 0), [filteredCosts]);
+  const totalMaterials = useMemo(() => filteredCosts.reduce((s, c) => s + (c.costType === "material" || c.costType === "repuesto" ? usdValue(c) : 0), 0), [filteredCosts]);
+  const totalLabor = useMemo(() => filteredCosts.reduce((s, c) => s + (c.costType === "mano_de_obra" ? usdValue(c) : 0), 0), [filteredCosts]);
 
   const hasActiveFilters = search || filterCategory || filterType;
 
@@ -126,15 +135,7 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
     return "—";
   };
 
-  const fmtUsd = (cost: Cost) => {
-    if (cost.currency === "USD") {
-      return fmt(cost.amount);
-    }
-    if (cost.currency === "ARS" && cost.exchangeRate && cost.exchangeRate > 0) {
-      return fmt(cost.amount / cost.exchangeRate);
-    }
-    return fmt(cost.amount);
-  };
+  const fmtUsd = (cost: Cost) => fmt(usdValue(cost));
 
   return (
     <div>
