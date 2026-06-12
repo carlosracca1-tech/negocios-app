@@ -342,10 +342,10 @@ export default function ProjectPage({ params }: PageProps) {
 
         {/* KPIs */}
         <div
-          className="kpi-grid-6"
+          className="kpi-grid-7"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(6, 1fr)",
+            gridTemplateColumns: "repeat(7, 1fr)",
             gap: 12,
             marginBottom: 16,
           }}
@@ -358,6 +358,11 @@ export default function ProjectPage({ params }: PageProps) {
                 value: fmt(totalCosts),
                 sub: costRatio > 40 ? `${costRatio.toFixed(0)}% de compra` : undefined,
                 subColor: costRatio > 40 ? "var(--warning)" : undefined,
+              },
+              {
+                label: "Gastos",
+                value: fmt(totalExpensesUsd),
+                sub: avgMonthlyExpense > 0 ? `${fmt(avgMonthlyExpense)}/mes` : undefined,
               },
               { label: "Inversión Total", value: fmt(inv), bold: true },
               p.salePrice
