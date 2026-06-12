@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, checkProjectAccess } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
+import { computeProjectFinancials } from "@/lib/financial";
 
 export const dynamic = "force-dynamic";
 
@@ -36,15 +37,17 @@ export async function GET(
       );
     }
 
-    const totalCosts = project.costs.reduce((sum, c) => sum + c.amount, 0);
-    const totalExpensesUsd = project.expenses.reduce(
-      (sum, e) => sum + (e.amountUsd ?? 0),
-      0
+    // Single source of truth: normaliza ARS->USD via amountUsd (igual que el dashboard)
+    const fin = computeProjectFinancials(
+      project,
+      project.costs,
+      project.expenses
     );
-    const investment = project.buyPrice + totalCosts;
-    const result = project.salePrice ? project.salePrice - investment : null;
-    const margin =
-      result !== null && investment > 0 ? (result / investment) * 100 : null;
+    const totalCosts = fin.totalCosts;
+    const totalExpensesUsd = fin.totalExpenses;
+    const investment = fin.investment;
+    const result = project.salePrice ? fin.result : null;
+    const margin = project.salePrice ? fin.margin : null;
 
     const report = {
       generatedAt: new Date().toISOString(),
@@ -70,6 +73,9 @@ export async function GET(
       costs: project.costs.map((c) => ({
         concept: c.concept,
         amount: c.amount,
+        currency: c.currency,
+        exchangeRate: c.exchangeRate,
+        amountUsd: c.amountUsd,
         category: c.category,
         costType: c.costType,
         date: c.date,
