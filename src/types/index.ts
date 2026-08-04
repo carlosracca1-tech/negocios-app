@@ -26,6 +26,8 @@ export interface Project {
   /** Venta objetivo: precio al que apuntamos vender (etiqueta UI: "venta objetivo") */
   listingPrice: number | null;
   etapas?: EtapasAvance | null;
+  /** Estimación manual de lo que falta pagar para terminar la obra (USD) */
+  costToFinish?: number | null;
   address: string | null;
   buyDate: Date;
   saleDate?: Date | null;

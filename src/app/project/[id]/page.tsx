@@ -481,6 +481,7 @@ export default function ProjectPage({ params }: PageProps) {
                 totalExpenses={totalExpensesUsd}
                 listingPrice={p.listingPrice}
                 salePrice={p.salePrice}
+                costToFinish={p.costToFinish}
                 etapas={p.etapas}
                 costs={costsArray}
                 expenses={expensesArray}

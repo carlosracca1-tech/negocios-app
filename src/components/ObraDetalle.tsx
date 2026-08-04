@@ -18,7 +18,7 @@ import { useMemo, useState } from "react";
 import { Cost, Expense, Partida, EtapasAvance } from "@/types";
 import {
   computeObraProyeccion,
-  computeGastoVsAvance,
+  computeRitmoObra,
   semaforoMargen,
   ETAPAS_PESOS,
   ETAPAS_LABELS,
@@ -36,6 +36,7 @@ interface ObraDetalleProps {
   totalExpenses: number;
   listingPrice: number | null; // venta objetivo
   salePrice: number | null;
+  costToFinish: number | null | undefined; // estimado para terminar la obra
   etapas: EtapasAvance | null | undefined;
   costs: Cost[];
   expenses: Expense[];
@@ -57,7 +58,7 @@ const ETAPA_KEYS = Object.keys(ETAPAS_PESOS) as EtapaKey[];
 export default function ObraDetalle(props: ObraDetalleProps) {
   const {
     projectId, status, buyPrice, totalCosts, totalExpenses,
-    listingPrice, salePrice, etapas, costs, expenses, partidas,
+    listingPrice, salePrice, costToFinish, etapas, costs, expenses, partidas,
     canEdit, onRefetch, onVerCostos, onVerPresupuestos,
   } = props;
 
@@ -72,6 +73,11 @@ export default function ObraDetalle(props: ObraDetalleProps) {
   const [ventaDraft, setVentaDraft] = useState("");
   const [guardandoVenta, setGuardandoVenta] = useState(false);
 
+  // ── Editor de "falta para terminar" ──
+  const [editandoFalta, setEditandoFalta] = useState(false);
+  const [faltaDraft, setFaltaDraft] = useState("");
+  const [guardandoFalta, setGuardandoFalta] = useState(false);
+
   // ── Editor de etapas ──
   const [editandoEtapas, setEditandoEtapas] = useState(false);
   const [etapasDraft, setEtapasDraft] = useState<Record<EtapaKey, string>>(
@@ -85,21 +91,24 @@ export default function ObraDetalle(props: ObraDetalleProps) {
   const proy = useMemo(
     () => computeObraProyeccion({
       buyPrice, totalCosts, totalExpenses, ventaReferencia,
+      faltaParaTerminar: costToFinish,
       partidas: partidas || [], costs: costs || [],
     }),
-    [buyPrice, totalCosts, totalExpenses, ventaReferencia, partidas, costs]
+    [buyPrice, totalCosts, totalExpenses, ventaReferencia, costToFinish, partidas, costs]
   );
 
-  const gva = useMemo(
-    () => computeGastoVsAvance({
-      costosObra: totalCosts,
-      presupuestoTotal: proy.presupuestoTotal,
-      etapas,
+  // Ritmo de obra: solo costos + avance, sin mirar el presupuesto por rubro.
+  const ritmo = useMemo(
+    () => computeRitmoObra({
+      costosObra: totalCosts, buyPrice, totalExpenses, ventaReferencia, etapas,
     }),
-    [totalCosts, proy.presupuestoTotal, etapas]
+    [totalCosts, buyPrice, totalExpenses, ventaReferencia, etapas]
   );
 
   const tienePresupuesto = (partidas || []).length > 0 && proy.presupuestoTotal > 0;
+  // El presupuesto por rubro solo sirve si cubre al menos la mitad de lo gastado.
+  const presupuestoConfiable = tienePresupuesto && proy.presupuestoTotal >= totalCosts * 0.5;
+  const tieneFalta = proy.faltaEsManual;
   const tieneEtapas = ETAPA_KEYS.some((k) => safeNum(etapas?.[k]) > 0);
   const tieneVenta = ventaReferencia > 0;
   const margenColor = tieneVenta ? SEMAFORO_VAR[proy.semaforo] : "var(--text-tertiary)";
@@ -117,6 +126,22 @@ export default function ObraDetalle(props: ObraDetalleProps) {
       window.alert("No se pudo guardar la venta objetivo. " + (err instanceof Error ? err.message : ""));
     } finally {
       setGuardandoVenta(false);
+    }
+  };
+
+  // ── Guardar "falta para terminar" ──
+  const guardarFalta = async () => {
+    const v = Number(faltaDraft.replace(/\./g, "").replace(",", "."));
+    if (!isFinite(v) || v < 0) return;
+    try {
+      setGuardandoFalta(true);
+      await projectsApi.update(projectId, { costToFinish: v });
+      setEditandoFalta(false);
+      onRefetch();
+    } catch (err) {
+      window.alert("No se pudo guardar el estimado. " + (err instanceof Error ? err.message : ""));
+    } finally {
+      setGuardandoFalta(false);
     }
   };
 
@@ -159,7 +184,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
     const out: { titulo: string; texto: string; tono: "ok" | "warn" | "info" }[] = [];
 
     // 1. Rubro más desviado
-    if (tienePresupuesto) {
+    if (presupuestoConfiable) {
       const rubros = (partidas || []).map((p) => {
         const projected = safeNum(p.estimatedAmount) || 0;
         const cots = p.cotizaciones || [];
@@ -188,33 +213,33 @@ export default function ObraDetalle(props: ObraDetalleProps) {
           tono: "ok",
         });
       }
-    } else {
+    } else if (!tieneFalta) {
       out.push({
-        titulo: "Falta el presupuesto por rubro",
-        texto: "Sin presupuesto por rubro no hay cierre estimado ni alertas: el margen se calcula solo con lo ya gastado. Cargalo una vez en la pestaña Presupuestos.",
+        titulo: "Falta estimar cuánto queda",
+        texto: "Sin el estimado de lo que falta pagar no hay cierre ni margen confiable: el número se calcularía solo con lo ya gastado. Escribilo arriba, en “Falta para terminar”.",
         tono: "warn",
       });
     }
 
-    // 2. Gasto vs avance
-    if (tienePresupuesto && tieneEtapas) {
-      if (gva.alerta) {
+    // 2. Ritmo de obra (solo costos y avance)
+    if (ritmo.hayDatos) {
+      if (ritmo.alerta) {
         out.push({
-          titulo: "La plata corre más que la obra",
-          texto: `Gastaste el ${fmtPctAr(gva.usadoPct, 0)} del presupuesto con la obra al ${fmtPctAr(gva.avancePct, 0)}: ${fmtPctAr(gva.deltaPp, 0).replace("%", "pp")} de diferencia. Al ritmo actual la obra cierra en ${fmtUsd(gva.proyeccionAlRitmo)}.`,
+          titulo: "El ritmo de gasto se come el margen",
+          texto: `Llevás ${fmtUsd(ritmo.costosObra)} con la obra al ${fmtPctAr(ritmo.avancePct, 0)}. Si sigue a este ritmo, la obra completa cuesta ${fmtUsd(ritmo.obraAlRitmo)} y el margen cae a ${fmtPctAr(ritmo.margenAlRitmo)}.`,
           tono: "warn",
         });
       } else {
         out.push({
-          titulo: "Gasto acompaña al avance",
-          texto: `${fmtPctAr(gva.usadoPct, 0)} del presupuesto gastado con la obra al ${fmtPctAr(gva.avancePct, 0)}. La diferencia está dentro de los 15pp de tolerancia.`,
+          titulo: "El ritmo de gasto cierra bien",
+          texto: `Con la obra al ${fmtPctAr(ritmo.avancePct, 0)} y ${fmtUsd(ritmo.costosObra)} gastados, seguir a este ritmo deja la obra en ${fmtUsd(ritmo.obraAlRitmo)}${ritmo.margenAlRitmo != null ? ` y el margen en ${fmtPctAr(ritmo.margenAlRitmo)}` : ""}.`,
           tono: "ok",
         });
       }
     } else {
       out.push({
         titulo: "Cargá el avance mensual",
-        texto: "Actualizar las 5 etapas una vez por mes habilita la comparación gasto vs. avance: la alerta más útil del panel.",
+        texto: "Actualizar las 5 etapas una vez por mes permite proyectar el costo total de la obra desde el ritmo real de gasto, sin depender del presupuesto.",
         tono: "info",
       });
     }
@@ -245,7 +270,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
     });
 
     return out.slice(0, 4);
-  }, [tienePresupuesto, tieneEtapas, partidas, costs, expenses, totalExpenses, gva]);
+  }, [presupuestoConfiable, tieneFalta, partidas, costs, expenses, totalExpenses, ritmo]);
 
   // ── Cascada de margen: 7 columnas flotantes ──
   const cascada = useMemo(() => {
@@ -286,7 +311,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
     [costs]
   );
 
-  const avancePonderado = gva.avancePct;
+  const avancePonderado = ritmo.avancePct;
 
   // ══════════════════════════════════════════════════════════════════════════
 
@@ -306,9 +331,11 @@ export default function ObraDetalle(props: ObraDetalleProps) {
         ) : (
           <>
             Pusimos <b className="mono">{fmtUsd(proy.inversionActual)}</b> entre compra, obra y gastos.
-            {tienePresupuesto && (
-              <> Falta ejecutar <b className="mono">{fmtUsd(proy.presupuestoRestante)}</b> de presupuesto:
+            {tieneFalta ? (
+              <> Calculás <b className="mono">{fmtUsd(proy.presupuestoRestante)}</b> más para terminarla:
               la obra cerraría en <b className="mono">{fmtUsd(proy.cierreEstimado)}</b>.</>
+            ) : (
+              <> Falta definir cuánto más hace falta para terminarla.</>
             )}
             {tieneVenta ? (
               <> Si la vendemos en <b className="mono">{fmtUsd(ventaReferencia)}</b>, quedan{" "}
@@ -342,10 +369,44 @@ export default function ObraDetalle(props: ObraDetalleProps) {
               </div>
             </div>
 
-            {/* Venta objetivo — editable (Tweak) */}
+            {/* Venta objetivo + falta para terminar — editables (Tweaks) */}
             {!vendida && (
               <div className="obra2a-ventaBox">
-                <div className="obra2a-kicker" style={{ marginBottom: 4 }}>VENTA OBJETIVO</div>
+                <div className="obra2a-kicker" style={{ marginBottom: 4 }}>FALTA PARA TERMINAR</div>
+                {editandoFalta ? (
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
+                    <span className="mono" style={{ fontSize: 12, color: "var(--text-tertiary)" }}>USD</span>
+                    <input
+                      className="obra2a-ventaInput mono"
+                      inputMode="numeric"
+                      autoFocus
+                      value={faltaDraft}
+                      onChange={(e) => setFaltaDraft(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") guardarFalta(); if (e.key === "Escape") setEditandoFalta(false); }}
+                      placeholder={ritmo.faltaSegunRitmo != null ? fmtNum(ritmo.faltaSegunRitmo) : "20.000"}
+                    />
+                    <button className="obra2a-btnGuardar" onClick={guardarFalta} disabled={guardandoFalta}>
+                      {guardandoFalta ? "…" : "Guardar"}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="obra2a-ventaValor mono"
+                    disabled={!canEdit}
+                    onClick={() => { setFaltaDraft(tieneFalta ? String(Math.round(proy.presupuestoRestante)) : ""); setEditandoFalta(true); }}
+                    title={canEdit ? "Cuánto calculás que falta pagar para terminar la obra" : undefined}
+                  >
+                    {tieneFalta ? fmtUsd(proy.presupuestoRestante) : "+ Estimar"}
+                    {canEdit && <span className="obra2a-lapiz">✎</span>}
+                  </button>
+                )}
+                {!editandoFalta && ritmo.hayDatos && ritmo.faltaSegunRitmo != null && (
+                  <div className="obra2a-ventaHint mono">
+                    al ritmo actual: {fmtUsd(ritmo.faltaSegunRitmo)}
+                  </div>
+                )}
+
+                <div className="obra2a-kicker" style={{ marginBottom: 4, marginTop: 14 }}>VENTA OBJETIVO</div>
                 {editandoVenta ? (
                   <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                     <span className="mono" style={{ fontSize: 12, color: "var(--text-tertiary)" }}>USD</span>
@@ -457,25 +518,28 @@ export default function ObraDetalle(props: ObraDetalleProps) {
             })}
           </div>
 
-          {/* Alerta gasto vs avance */}
-          {tienePresupuesto && tieneEtapas ? (
-            <div className={`obra2a-estado ${gva.alerta ? "warn" : "ok"}`}>
-              {gva.alerta ? (
-                <>Gastaste el <b className="mono">{fmtPctAr(gva.usadoPct, 0)}</b> del presupuesto con la obra
-                al <b className="mono">{fmtPctAr(gva.avancePct, 0)}</b>: van{" "}
-                <b className="mono">{fmtPctAr(gva.deltaPp, 0).replace("%", "")}pp</b> de diferencia.
-                Al ritmo actual la obra cierra en <b className="mono">{fmtUsd(gva.proyeccionAlRitmo)}</b>.</>
-              ) : (
-                <>El gasto acompaña al avance: <b className="mono">{fmtPctAr(gva.usadoPct, 0)}</b> del
-                presupuesto usado con la obra al <b className="mono">{fmtPctAr(gva.avancePct, 0)}</b>.</>
+          {/* Ritmo de obra: solo costos y avance, nada de presupuesto */}
+          {ritmo.hayDatos ? (
+            <div className={`obra2a-estado ${ritmo.alerta ? "warn" : ritmo.margenAlRitmo != null ? "ok" : "info"}`}>
+              Llevás <b className="mono">{fmtUsd(ritmo.costosObra)}</b> en obra con el avance
+              al <b className="mono">{fmtPctAr(ritmo.avancePct, 0)}</b>. A este ritmo la obra completa
+              costaría <b className="mono">{fmtUsd(ritmo.obraAlRitmo)}</b> —{" "}
+              <b className="mono">{fmtUsd(ritmo.faltaSegunRitmo)}</b> más que lo ya pagado
+              {ritmo.margenAlRitmo != null && (
+                <> — y el margen quedaría en{" "}
+                <b className="mono" style={{ color: SEMAFORO_VAR[ritmo.semaforo || "rojo"] }}>
+                  {fmtPctAr(ritmo.margenAlRitmo)}
+                </b></>
+              )}.
+              {tieneFalta && ritmo.faltaSegunRitmo != null && ritmo.faltaSegunRitmo > proy.presupuestoRestante * 1.2 && (
+                <> Tu estimado de <b className="mono">{fmtUsd(proy.presupuestoRestante)}</b> puede quedar corto.</>
               )}
             </div>
           ) : (
             <div className="obra2a-estado info">
-              {!tienePresupuesto
-                ? <>Cargá el presupuesto por rubro para comparar gasto contra avance.{" "}
-                    <button className="obra2a-link" onClick={onVerPresupuestos}>Ir a Presupuestos →</button></>
-                : <>Actualizá el avance de las 5 etapas (una vez por mes alcanza) para activar la alerta gasto vs. avance.</>}
+              {!tieneEtapas
+                ? <>Actualizá el avance de las 5 etapas (una vez por mes alcanza) para ver cuánto costaría la obra completa a este ritmo.</>
+                : <>Cargá costos de obra para proyectar el cierre a partir del ritmo real de gasto.</>}
             </div>
           )}
         </div>
@@ -541,13 +605,21 @@ export default function ObraDetalle(props: ObraDetalleProps) {
         </div>
       ) : (
         <div>
-          {/* Presupuesto vs real por rubro */}
+          {/* Presupuesto vs real por rubro — solo si el presupuesto cubre la obra */}
           <div className="obra2a-card" style={{ marginTop: 14 }}>
             <div className="obra2a-kicker">PRESUPUESTO VS. REAL POR RUBRO</div>
-            {rubros.length === 0 ? (
+            {!presupuestoConfiable ? (
               <div className="obra2a-vacio">
-                Sin presupuesto por rubro todavía.{" "}
-                <button className="obra2a-link" onClick={onVerPresupuestos}>Cargarlo en Presupuestos →</button>
+                {rubros.length === 0 ? (
+                  <>Sin presupuesto por rubro todavía. </>
+                ) : (
+                  <>El presupuesto cargado ({fmtUsd(proy.presupuestoTotal)}) cubre solo una parte
+                  de los {fmtUsd(totalCosts)} ya gastados, así que compararlo daría porcentajes
+                  engañosos. Se muestra cuando esté completo. </>
+                )}
+                <button className="obra2a-link" onClick={onVerPresupuestos}>
+                  {rubros.length === 0 ? "Cargarlo en Presupuestos →" : "Completarlo en Presupuestos →"}
+                </button>
               </div>
             ) : (
               <div style={{ marginTop: 10 }}>
@@ -582,29 +654,36 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                 })}
                 <div className="obra2a-rubroTotales mono">
                   Ejecutado {fmtUsd(proy.ejecutadoEnPresupuesto)} de {fmtUsd(proy.presupuestoTotal)} presupuestados
-                  · restante {fmtUsd(proy.presupuestoRestante)}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Ritmo de gasto */}
-          {tienePresupuesto && tieneEtapas && gva.proyeccionAlRitmo != null && (
+          {/* Ritmo de gasto — costos vs. estimación, sin presupuesto por rubro */}
+          {ritmo.hayDatos && (
             <div className="obra2a-card" style={{ marginTop: 14 }}>
               <div className="obra2a-kicker">RITMO DE GASTO</div>
               <div className="obra2a-ritmo">
                 <div>
-                  <div className="obra2a-ritmoLabel">Presupuesto de obra</div>
-                  <div className="obra2a-ritmoVal mono">{fmtUsd(proy.presupuestoTotal)}</div>
+                  <div className="obra2a-ritmoLabel">Gastado en obra ({fmtPctAr(ritmo.avancePct, 0)} construido)</div>
+                  <div className="obra2a-ritmoVal mono">{fmtUsd(ritmo.costosObra)}</div>
                 </div>
                 <div>
-                  <div className="obra2a-ritmoLabel">Gastado ({fmtPctAr(gva.usadoPct, 0)})</div>
-                  <div className="obra2a-ritmoVal mono">{fmtUsd(totalCosts)}</div>
+                  <div className="obra2a-ritmoLabel">Falta, según tu estimado</div>
+                  <div className="obra2a-ritmoVal mono">
+                    {tieneFalta ? fmtUsd(proy.presupuestoRestante) : "—"}
+                  </div>
                 </div>
                 <div>
-                  <div className="obra2a-ritmoLabel">Proyección al ritmo actual</div>
-                  <div className="obra2a-ritmoVal mono" style={{ color: gva.proyeccionAlRitmo > proy.presupuestoTotal ? "var(--warning)" : "var(--success)" }}>
-                    {fmtUsd(gva.proyeccionAlRitmo)}
+                  <div className="obra2a-ritmoLabel">Falta, al ritmo actual</div>
+                  <div
+                    className="obra2a-ritmoVal mono"
+                    style={{
+                      color: tieneFalta && ritmo.faltaSegunRitmo != null && ritmo.faltaSegunRitmo > proy.presupuestoRestante * 1.2
+                        ? "var(--warning)" : "var(--text-primary)",
+                    }}
+                  >
+                    {fmtUsd(ritmo.faltaSegunRitmo)}
                   </div>
                 </div>
               </div>

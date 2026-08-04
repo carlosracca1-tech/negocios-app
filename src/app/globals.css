@@ -808,3 +808,11 @@ input:focus, select:focus, textarea:focus {
   .obra2a-tdCat { display: none; }
   .obra2a-switch { min-width: 44px; min-height: 24px; }
 }
+
+/* Nota bajo un campo editable del héroe (ej: "al ritmo actual: USD 55.000") */
+.obra2a-ventaHint {
+  font-size: 10px;
+  color: var(--text-quaternary);
+  margin-top: 4px;
+  text-align: right;
+}

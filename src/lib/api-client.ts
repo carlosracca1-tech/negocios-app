@@ -105,6 +105,7 @@ export const projectsApi = {
       listingPrice: number;
       address: string;
       etapas: EtapasAvance;
+      costToFinish: number | null;
     }>
   ): Promise<Project> {
     return apiPatch(`/api/projects/${id}`, data);

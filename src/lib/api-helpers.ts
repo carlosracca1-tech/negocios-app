@@ -125,6 +125,8 @@ export const updateProjectSchema = z.object({
   saleDate: z.string().datetime().optional().nullable(),
   buyerName: z.string().optional().nullable(),
   etapas: etapasSchema.optional(),
+  /** Estimación de lo que falta pagar para terminar la obra — pantalla 2a */
+  costToFinish: z.number().min(0).optional().nullable(),
 });
 
 const allCategories = [

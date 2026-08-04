@@ -187,6 +187,18 @@ export async function PATCH(
       });
     }
 
+    // Check for "falta para terminar" change — pantalla 2a
+    if (
+      data.costToFinish != null &&
+      data.costToFinish !== currentProject.costToFinish
+    ) {
+      timelineEvents.push({
+        projectId,
+        action: "Falta para terminar actualizado",
+        detail: `Estimado para terminar la obra: $${data.costToFinish.toLocaleString("de-DE")}`,
+      });
+    }
+
     // Check for venta objetivo change — pantalla 2a
     if (
       data.listingPrice != null &&

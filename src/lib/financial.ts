@@ -199,8 +199,11 @@ export function semaforoMargen(margenPct: number): SemaforoMargen {
 export interface ObraProyeccion {
   /** compra + costos de obra + gastos mensuales */
   inversionActual: number;
-  /** Σ max(0, presupuesto_rubro − ejecutado_rubro): lo que falta ejecutar sin contar excesos */
+  /** Lo que falta pagar para terminar la obra. Estimación manual del dueño si
+   *  está cargada; si no, Σ max(0, presupuesto_rubro − ejecutado_rubro). */
   presupuestoRestante: number;
+  /** true cuando "falta para terminar" lo escribió el dueño a mano */
+  faltaEsManual: boolean;
   /** inversionActual + presupuestoRestante */
   cierreEstimado: number;
   /** precio al que apuntamos vender (listingPrice) o venta real si está vendida */
@@ -219,13 +222,16 @@ export interface ObraProyeccion {
 /**
  * Proyección central de la obra. Base de cálculo no negociable:
  *   inversionActual  = compra + costosObra + gastosMensuales
- *   cierreEstimado   = inversionActual + presupuestoRestante
+ *   cierreEstimado   = inversionActual + faltaParaTerminar
  *   ganancia         = ventaReferencia − cierreEstimado
  *   margenProyectado = ganancia / ventaReferencia
  *
- * Un costo dentro de presupuesto NO mueve el margen (pasa plata de
- * presupuestoRestante a costosObra). El margen se mueve solo cuando un rubro
- * se excede, aparece un costo sin presupuestar o cambia la venta objetivo.
+ * `faltaParaTerminar` es la estimación que el dueño escribe a mano (igual que
+ * la venta objetivo). Solo si no está cargada se cae al presupuesto por rubro,
+ * que suele estar incompleto y subestimaría el cierre.
+ *
+ * Un costo dentro de lo estimado NO mueve el margen (pasa plata de "falta" a
+ * "costos"): el margen se mueve cuando cambia la estimación o la venta objetivo.
  */
 export function computeObraProyeccion(params: {
   buyPrice: number | null | undefined;
@@ -233,17 +239,20 @@ export function computeObraProyeccion(params: {
   totalExpenses: number;
   /** venta objetivo (listingPrice); si la obra está vendida pasar salePrice */
   ventaReferencia: number | null | undefined;
+  /** estimación manual de lo que falta pagar para terminar (costToFinish) */
+  faltaParaTerminar?: number | null;
   partidas: { id: string; name: string; category: string; estimatedAmount?: number | null; cotizaciones?: { amount: number; currency?: string | null; amountUsd?: number | null; isChosen?: boolean }[] }[];
   costs: { amount: number; currency?: string | null; amountUsd?: number | null; partidaId?: string | null }[];
 }): ObraProyeccion {
   const inversionActual = safe(params.buyPrice) + safe(params.totalCosts) + safe(params.totalExpenses);
   const budget = computeBudgetProjection(params.partidas, params.costs);
 
-  // Restante por rubro con piso en 0: un rubro excedido no "devuelve" plata.
-  const presupuestoRestante = budget.byRubro.reduce(
-    (sum, r) => sum + Math.max(0, r.projected - r.executed),
-    0
-  );
+  // La estimación manual manda. El presupuesto por rubro es solo el respaldo.
+  const faltaEsManual = params.faltaParaTerminar != null && safe(params.faltaParaTerminar) >= 0;
+  const presupuestoRestante = faltaEsManual
+    ? safe(params.faltaParaTerminar)
+    // Restante por rubro con piso en 0: un rubro excedido no "devuelve" plata.
+    : budget.byRubro.reduce((sum, r) => sum + Math.max(0, r.projected - r.executed), 0);
 
   const cierreEstimado = inversionActual + presupuestoRestante;
   const ventaReferencia = safe(params.ventaReferencia);
@@ -253,6 +262,7 @@ export function computeObraProyeccion(params: {
   return {
     inversionActual,
     presupuestoRestante,
+    faltaEsManual,
     cierreEstimado,
     ventaReferencia,
     ganancia,
@@ -263,38 +273,63 @@ export function computeObraProyeccion(params: {
   };
 }
 
-export interface GastoVsAvance {
-  /** % del presupuesto de obra ya gastado */
-  usadoPct: number;
+export interface RitmoObra {
   /** avance físico ponderado 0-100 */
   avancePct: number;
-  /** usadoPct − avancePct, en puntos porcentuales */
-  deltaPp: number;
-  /** true cuando el gasto le lleva más de 15pp al avance */
+  /** costos de obra ya ejecutados */
+  costosObra: number;
+  /** hay datos suficientes para proyectar (avance > 0 y algo gastado) */
+  hayDatos: boolean;
+  /** costosObra / avance: costo total de obra si sigue a este ritmo */
+  obraAlRitmo: number | null;
+  /** lo que faltaría pagar según el ritmo (obraAlRitmo − costosObra) */
+  faltaSegunRitmo: number | null;
+  /** compra + gastos + obraAlRitmo */
+  cierreAlRitmo: number | null;
+  /** margen que quedaría si la obra sigue a este ritmo */
+  margenAlRitmo: number | null;
+  semaforo: SemaforoMargen | null;
+  /** true cuando seguir a este ritmo deja el margen bajo el umbral sano */
   alerta: boolean;
-  /** costosObra / avance: cuánto cerraría la obra al ritmo actual (null sin avance) */
-  proyeccionAlRitmo: number | null;
 }
 
-/** Alerta más útil del panel: comparar plata gastada contra obra construida. */
-export function computeGastoVsAvance(params: {
+/**
+ * Ritmo de obra: proyecta el costo total de la obra a partir de lo YA GASTADO
+ * y el avance físico, sin mirar el presupuesto por rubro (que suele estar
+ * incompleto y da porcentajes sin sentido). Responde "si seguimos así, ¿en
+ * cuánto cierra y qué margen queda?".
+ */
+export function computeRitmoObra(params: {
   /** costos de obra ejecutados (total) */
   costosObra: number;
-  /** presupuesto de obra total */
-  presupuestoTotal: number;
+  buyPrice: number | null | undefined;
+  totalExpenses: number;
+  /** venta objetivo o venta real */
+  ventaReferencia: number | null | undefined;
   etapas: EtapasAvance | null | undefined;
-}): GastoVsAvance {
+}): RitmoObra {
   const avancePct = computeAvancePonderado(params.etapas);
-  const usadoPct =
-    params.presupuestoTotal > 0 ? (safe(params.costosObra) / params.presupuestoTotal) * 100 : 0;
-  const deltaPp = usadoPct - avancePct;
-  const proyeccionAlRitmo =
-    avancePct > 0 ? safe(params.costosObra) / (avancePct / 100) : null;
+  const costosObra = safe(params.costosObra);
+  const hayDatos = avancePct > 0 && costosObra > 0;
+
+  if (!hayDatos) {
+    return {
+      avancePct, costosObra, hayDatos: false,
+      obraAlRitmo: null, faltaSegunRitmo: null, cierreAlRitmo: null,
+      margenAlRitmo: null, semaforo: null, alerta: false,
+    };
+  }
+
+  const obraAlRitmo = costosObra / (avancePct / 100);
+  const faltaSegunRitmo = Math.max(0, obraAlRitmo - costosObra);
+  const cierreAlRitmo = safe(params.buyPrice) + safe(params.totalExpenses) + obraAlRitmo;
+  const venta = safe(params.ventaReferencia);
+  const margenAlRitmo = venta > 0 ? ((venta - cierreAlRitmo) / venta) * 100 : null;
+  const semaforo = margenAlRitmo != null ? semaforoMargen(margenAlRitmo) : null;
+
   return {
-    usadoPct,
-    avancePct,
-    deltaPp,
-    alerta: deltaPp > 15,
-    proyeccionAlRitmo,
+    avancePct, costosObra, hayDatos: true,
+    obraAlRitmo, faltaSegunRitmo, cierreAlRitmo, margenAlRitmo, semaforo,
+    alerta: margenAlRitmo != null && margenAlRitmo < 10,
   };
 }
