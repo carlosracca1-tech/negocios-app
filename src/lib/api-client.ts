@@ -1,4 +1,4 @@
-import { Project, Cost, Investor, ProjectAccess, TimelineEvent, User, Expense, ParsedReceipt, Partida, Cotizacion, ParsedBudget, AiRecommendation, BudgetProjection } from "@/types";
+import { Project, Cost, Investor, ProjectAccess, TimelineEvent, User, Expense, ParsedReceipt, Partida, Cotizacion, ParsedBudget, AiRecommendation, BudgetProjection, EtapasAvance } from "@/types";
 
 // ============================================================================
 // BASE API HELPERS
@@ -104,6 +104,7 @@ export const projectsApi = {
       salePrice: number;
       listingPrice: number;
       address: string;
+      etapas: EtapasAvance;
     }>
   ): Promise<Project> {
     return apiPatch(`/api/projects/${id}`, data);

@@ -61,6 +61,8 @@ model Project {
   buyDate       DateTime
   saleDate      DateTime?
   buyerName     String?
+  /// Avance físico por etapa (0-100 c/u): { estructura, instalaciones, obraGruesa, terminaciones, exterior }
+  etapas        Json?
   lastUpdate    DateTime @default(now())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

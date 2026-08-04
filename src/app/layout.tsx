@@ -32,6 +32,11 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         />
+        {/* Pantalla 2a: DM Sans (UI) + JetBrains Mono (números tabulares) */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        />
       </head>
       <body>
         <Providers>

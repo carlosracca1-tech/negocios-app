@@ -19,6 +19,7 @@ import RegisterSaleModal from "@/components/RegisterSaleModal";
 import AddInvestorModal from "@/components/AddInvestorModal";
 import ProjectAlerts from "@/components/ProjectAlerts";
 import PresupuestosPanel from "@/components/PresupuestosPanel";
+import ObraDetalle from "@/components/ObraDetalle";
 import { fmt, fmtSign, fmtPct, daysAgo, safeNum } from "@/lib/format";
 import { statusConfig } from "@/lib/constants";
 
@@ -468,7 +469,38 @@ export default function ProjectPage({ params }: PageProps) {
             padding: "24px",
           }}
         >
-          {activeSection === "resumen" && (
+          {/* Pantalla 2a (SISTEMA.md): detalle de obra unificado para Casas */}
+          {activeSection === "resumen" && p.type === "Casa" && (
+            <div>
+              <ObraDetalle
+                projectId={params.id}
+                projectName={p.name}
+                status={p.status || "activo"}
+                buyPrice={buyPrice}
+                totalCosts={totalCosts}
+                totalExpenses={totalExpensesUsd}
+                listingPrice={p.listingPrice}
+                salePrice={p.salePrice}
+                etapas={p.etapas}
+                costs={costsArray}
+                expenses={expensesArray}
+                partidas={p.partidas || []}
+                canEdit={canEdit}
+                onRefetch={() => refetch()}
+                onVerCostos={() => setActiveSection("costos")}
+                onVerPresupuestos={() => setActiveSection("presupuestos")}
+              />
+
+              {/* Capital compact widget */}
+              {investorsArray.length > 0 && (
+                <div style={{ marginTop: 24 }}>
+                  <CapitalPanel investors={investorsArray} totalInvested={inv} compact />
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeSection === "resumen" && p.type !== "Casa" && (
             <div>
               <ProjectAlerts
                 buyPrice={buyPrice}

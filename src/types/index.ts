@@ -7,6 +7,15 @@ export interface User {
   updatedAt: Date;
 }
 
+/** Avance físico por etapa de obra (0-100 cada una) — pantalla 2a */
+export interface EtapasAvance {
+  estructura?: number;
+  instalaciones?: number;
+  obraGruesa?: number;
+  terminaciones?: number;
+  exterior?: number;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -14,7 +23,9 @@ export interface Project {
   status: "activo" | "pausado" | "vendido";
   buyPrice: number;
   salePrice: number | null;
+  /** Venta objetivo: precio al que apuntamos vender (etiqueta UI: "venta objetivo") */
   listingPrice: number | null;
+  etapas?: EtapasAvance | null;
   address: string | null;
   buyDate: Date;
   saleDate?: Date | null;
@@ -36,6 +47,7 @@ export interface Project {
   investors?: Investor[];
   access?: ProjectAccess[];
   timeline?: TimelineEvent[];
+  partidas?: Partida[];
 }
 
 export interface Cost {
@@ -50,6 +62,7 @@ export interface Cost {
   costType: string;
   date: Date;
   createdAt: Date;
+  partidaId?: string | null;
 }
 
 export interface Investor {

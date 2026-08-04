@@ -49,3 +49,5 @@ prisma/*.db-journal
 
 # TypeScript incremental build info
 tsconfig.tsbuildinfo
+.vercel
+.env*

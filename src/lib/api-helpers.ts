@@ -107,6 +107,15 @@ export const createProjectSchema = z.object({
   status: z.enum(["activo", "pausado", "vendido"]).optional().default("activo"),
 });
 
+/** Avance físico por etapa de obra (0-100 cada una) — pantalla 2a */
+export const etapasSchema = z.object({
+  estructura: z.number().min(0).max(100).optional(),
+  instalaciones: z.number().min(0).max(100).optional(),
+  obraGruesa: z.number().min(0).max(100).optional(),
+  terminaciones: z.number().min(0).max(100).optional(),
+  exterior: z.number().min(0).max(100).optional(),
+});
+
 export const updateProjectSchema = z.object({
   name: z.string().min(1).optional(),
   status: z.enum(["activo", "pausado", "vendido"]).optional(),
@@ -115,6 +124,7 @@ export const updateProjectSchema = z.object({
   address: z.string().optional().nullable(),
   saleDate: z.string().datetime().optional().nullable(),
   buyerName: z.string().optional().nullable(),
+  etapas: etapasSchema.optional(),
 });
 
 const allCategories = [

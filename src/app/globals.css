@@ -457,3 +457,354 @@ input:focus, select:focus, textarea:focus {
   .kpi-card .kpi-value { font-size: 14px !important; }
   .kpi-card { padding: 9px 10px !important; }
 }
+
+/* ============================================================
+   PANTALLA 2a — Detalle de obra (SISTEMA.md)
+   DM Sans para UI, JetBrains Mono para todo número tabular.
+   Usa las variables del tema para respetar dark/light.
+   ============================================================ */
+
+.obra2a {
+  font-family: 'DM Sans', 'Inter', -apple-system, sans-serif;
+  animation: fadeIn 0.3s ease;
+}
+.obra2a .mono {
+  font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 1. Frase de estado */
+.obra2a-frase {
+  font-size: 25px;
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-bottom: 22px;
+  max-width: 900px;
+}
+.obra2a-frase b { font-weight: 700; color: var(--text-primary); font-size: 22px; }
+
+/* Tarjetas y kickers */
+.obra2a-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+.obra2a-kicker {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-quaternary);
+}
+
+/* 2. Héroe */
+.obra2a-hero {
+  display: grid;
+  grid-template-columns: 1.62fr 1fr;
+  gap: 18px;
+}
+.obra2a-heroRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.obra2a-heroCifra { font-size: 54px; font-weight: 700; line-height: 1.05; letter-spacing: -1px; }
+.obra2a-heroSub { font-size: 13px; color: var(--text-tertiary); margin-top: 6px; }
+.obra2a-avanceCifra { font-size: 32px; font-weight: 700; color: var(--info); margin-top: 6px; }
+
+/* Venta objetivo (Tweak) */
+.obra2a-ventaBox { text-align: right; }
+.obra2a-ventaValor {
+  background: var(--surface-2);
+  border: 1px solid var(--border-input, var(--border-default));
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.obra2a-ventaValor:disabled { cursor: default; }
+.obra2a-lapiz { margin-left: 8px; font-size: 12px; color: var(--text-quaternary); }
+.obra2a-ventaInput {
+  width: 120px;
+  padding: 8px 10px !important;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 9px !important;
+}
+.obra2a-btnGuardar {
+  background: var(--success);
+  border: 1px solid var(--success);
+  color: var(--accent-on);
+  border-radius: 8px;
+  padding: 7px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.obra2a-btnMini {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.obra2a-btnMini:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.obra2a-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--info);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Cascada de margen */
+.obra2a-cascada {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+.obra2a-cascadaCol { flex: 1; min-width: 0; }
+.obra2a-cascadaTrack { display: flex; flex-direction: column; justify-content: flex-end; }
+.obra2a-cascadaVal {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.obra2a-cascadaLabel {
+  font-size: 10px;
+  color: var(--text-quaternary);
+  text-align: center;
+  margin-top: 6px;
+  line-height: 1.2;
+}
+
+/* Avance por etapas */
+.obra2a-etapaRow {
+  display: grid;
+  grid-template-columns: minmax(0, 96px) 30px minmax(0, 1fr) 42px;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+}
+.obra2a-etapaNombre { font-size: 13px; color: var(--text-secondary); }
+.obra2a-etapaPeso { font-size: 10px; color: var(--text-quaternary); text-align: right; }
+.obra2a-etapaBarra {
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.obra2a-etapaPct { font-size: 12px; font-weight: 700; color: var(--text-primary); text-align: right; }
+.obra2a-etapaInput {
+  width: 42px;
+  padding: 3px 5px !important;
+  font-size: 12px;
+  text-align: right;
+  border-radius: 6px !important;
+}
+
+/* Fondos de estado: color al 6-9% + borde izquierdo 2px */
+.obra2a-estado {
+  margin-top: 14px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.obra2a-estado b { color: var(--text-primary); }
+.obra2a-estado.ok   { background: rgba(52, 211, 153, 0.07); border-left: 2px solid var(--success); }
+.obra2a-estado.warn { background: rgba(245, 165, 36, 0.08); border-left: 2px solid var(--warning); }
+.obra2a-estado.info { background: rgba(59, 130, 246, 0.07); border-left: 2px solid var(--info); }
+
+/* 3. Escenarios de venta */
+.obra2a-escenarios {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.obra2a-escenario {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 14px;
+}
+.obra2a-escenario.objetivo { border-color: var(--border-strong); background: var(--surface-3); }
+.obra2a-chipObjetivo {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  background: var(--surface-1);
+  border: 1px solid var(--border-default);
+  border-radius: 20px;
+  padding: 2px 8px;
+  margin-bottom: 7px;
+}
+.obra2a-escenarioPrecio { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+.obra2a-escenarioGan { font-size: 13px; font-weight: 700; margin-top: 4px; }
+.obra2a-escenarioMargen { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+
+/* 4. Lecciones */
+.obra2a-lecciones {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.obra2a-leccion {
+  border-radius: 10px;
+  padding: 13px 14px;
+  font-size: 12px;
+}
+.obra2a-leccion.ok   { background: rgba(52, 211, 153, 0.07); border-left: 2px solid var(--success); }
+.obra2a-leccion.warn { background: rgba(245, 165, 36, 0.08); border-left: 2px solid var(--warning); }
+.obra2a-leccion.info { background: rgba(59, 130, 246, 0.07); border-left: 2px solid var(--info); }
+.obra2a-leccionTitulo { font-weight: 700; color: var(--text-primary); font-size: 13px; margin-bottom: 4px; }
+.obra2a-leccionTexto { color: var(--text-secondary); line-height: 1.5; }
+
+/* 5. Separador + Vista socios */
+.obra2a-separador {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 26px;
+}
+.obra2a-separadorLinea { flex: 1; height: 1px; background: var(--border-default); }
+.obra2a-separadorLabel {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--text-quaternary);
+}
+.obra2a-switchWrap { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.obra2a-switchLabel { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.obra2a-switch {
+  width: 36px;
+  height: 20px;
+  border-radius: 20px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-default);
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+}
+.obra2a-switch .obra2a-switchDot {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+.obra2a-switch.on { background: var(--success-soft); border-color: var(--success-border); }
+.obra2a-switch.on .obra2a-switchDot { transform: translateX(16px); background: var(--success); }
+
+.obra2a-socioNota {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  background: var(--surface-1);
+  border: 1px dashed var(--border-default);
+}
+
+/* Presupuesto vs real por rubro */
+.obra2a-rubroRow {
+  display: grid;
+  grid-template-columns: minmax(0, 150px) minmax(0, 1fr) 70px 84px 44px;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border-faint);
+}
+.obra2a-rubroRow:last-of-type { border-bottom: none; }
+.obra2a-rubroNombre { font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.obra2a-rubroBarra {
+  position: relative;
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: 3px;
+}
+.obra2a-rubroMeta {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 12px;
+  background: var(--text-primary);
+  opacity: 0.55;
+}
+.obra2a-rubroReal { font-size: 12px; font-weight: 700; text-align: right; }
+.obra2a-rubroProy { font-size: 11px; color: var(--text-quaternary); text-align: right; }
+.obra2a-rubroPct { font-size: 11px; text-align: right; }
+.obra2a-rubroTotales {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* Ritmo de gasto */
+.obra2a-ritmo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.obra2a-ritmoLabel { font-size: 11px; color: var(--text-tertiary); margin-bottom: 3px; }
+.obra2a-ritmoVal { font-size: 19px; font-weight: 700; color: var(--text-primary); }
+
+/* Tabla de últimos costos */
+.obra2a-tabla { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.obra2a-tabla td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--border-faint);
+  font-size: 13px;
+}
+.obra2a-tabla tr:last-child td { border-bottom: none; }
+.obra2a-tdFecha { color: var(--text-quaternary); font-size: 11px; width: 48px; }
+.obra2a-tdConcepto { color: var(--text-primary); }
+.obra2a-tdCat { color: var(--text-tertiary); font-size: 11px; }
+.obra2a-tdMonto { text-align: right; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+.obra2a-tdArs { font-weight: 400; font-size: 10px; color: var(--text-quaternary); }
+
+.obra2a-vacio { font-size: 12px; color: var(--text-tertiary); margin-top: 10px; }
+
+/* Responsive: una sola columna, targets 44px+ */
+@media (max-width: 900px) {
+  .obra2a-hero { grid-template-columns: 1fr; }
+  .obra2a-frase { font-size: 19px; }
+  .obra2a-frase b { font-size: 17px; }
+  .obra2a-heroCifra { font-size: 42px; }
+  .obra2a-escenarios { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .obra2a-lecciones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .obra2a-cascadaVal { font-size: 8px; }
+}
+@media (max-width: 540px) {
+  .obra2a-escenarios { grid-template-columns: 1fr 1fr; }
+  .obra2a-lecciones { grid-template-columns: 1fr; }
+  .obra2a-ritmo { grid-template-columns: 1fr; gap: 8px; }
+  .obra2a-rubroRow { grid-template-columns: minmax(0, 1fr) 70px 44px; }
+  .obra2a-rubroRow .obra2a-rubroBarra { display: none; }
+  .obra2a-rubroRow .obra2a-rubroProy { display: none; }
+  .obra2a-tdCat { display: none; }
+  .obra2a-switch { min-width: 44px; min-height: 24px; }
+}

@@ -36,3 +36,31 @@ export const daysAgo = (dateStr: string | Date): string => {
   if (diff < 30) return `${Math.floor(diff / 7)}sem`;
   return `${Math.floor(diff / 30)}m`;
 };
+
+// ============================================================================
+// Formato es-AR (pantalla 2a): miles con punto, decimales con coma.
+// USD siempre es el número principal.
+// ============================================================================
+
+/** "USD 285.250" — miles con punto, sin decimales */
+export const fmtUsd = (n: number | null | undefined): string => {
+  const v = safeNum(n);
+  return "USD " + Math.round(Math.abs(v)).toLocaleString("de-DE");
+};
+
+/** "285.250" — solo el número, miles con punto */
+export const fmtNum = (n: number | null | undefined): string => {
+  return Math.round(Math.abs(safeNum(n))).toLocaleString("de-DE");
+};
+
+/** "+USD 41.154" / "−USD 12.000" */
+export const fmtUsdSign = (n: number | null | undefined): string => {
+  const v = safeNum(n);
+  return (v >= 0 ? "+" : "−") + "USD " + Math.round(Math.abs(v)).toLocaleString("de-DE");
+};
+
+/** "12,1%" — un decimal, coma decimal */
+export const fmtPctAr = (n: number | null | undefined, decimals = 1): string => {
+  const v = safeNum(n);
+  return v.toFixed(decimals).replace(".", ",") + "%";
+};

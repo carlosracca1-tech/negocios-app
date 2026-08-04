@@ -6,7 +6,7 @@ import {
   checkProjectAccess,
   updateProjectSchema,
 } from "@/lib/api-helpers";
-import { computeProjectFinancials, safe } from "@/lib/financial";
+import { computeProjectFinancials, safe, computeAvancePonderado, EtapasAvance } from "@/lib/financial";
 import { rethrowNextError } from "@/lib/route-utils";
 import { notifyProjectUsers } from "@/lib/notifications";
 
@@ -174,6 +174,28 @@ export async function PATCH(
         projectId,
         action: "Estado actualizado",
         detail: `Estado cambió de "${currentProject.status}" a "${data.status}"`,
+      });
+    }
+
+    // Check for etapas (avance físico) update — pantalla 2a
+    if (data.etapas) {
+      const avance = computeAvancePonderado(data.etapas as EtapasAvance);
+      timelineEvents.push({
+        projectId,
+        action: "Avance actualizado",
+        detail: `Avance físico ponderado: ${avance.toFixed(0)}%`,
+      });
+    }
+
+    // Check for venta objetivo change — pantalla 2a
+    if (
+      data.listingPrice != null &&
+      data.listingPrice !== currentProject.listingPrice
+    ) {
+      timelineEvents.push({
+        projectId,
+        action: "Venta objetivo actualizada",
+        detail: `Venta objetivo: $${data.listingPrice.toLocaleString("de-DE")}`,
       });
     }
 
