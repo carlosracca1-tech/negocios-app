@@ -59,7 +59,8 @@ export default function AddCostModal({
 
   const [concept, setConcept] = useState("");
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState<"ARS" | "USD">("USD");
+  // La obra se paga en pesos: ARS es el default al cargar un costo nuevo.
+  const [currency, setCurrency] = useState<"ARS" | "USD">("ARS");
   const [category, setCategory] = useState(categories[0]?.value || "Obra");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   // Tipo de cambio original guardado (sólo se usa en modo edición de un costo en ARS)
@@ -117,7 +118,7 @@ export default function AddCostModal({
     if (isOpen && !costToEdit) {
       setConcept("");
       setAmount("");
-      setCurrency("USD");
+      setCurrency("ARS");
       setEditRate("");
       setDate(new Date().toISOString().split("T")[0]);
     }
@@ -139,7 +140,7 @@ export default function AddCostModal({
   const resetForm = () => {
     setConcept("");
     setAmount("");
-    setCurrency("USD");
+    setCurrency("ARS");
     setCategory(categories[0]?.value || "Obra");
     setCostType(filteredCostTypes[0]?.value || "material");
     setDate(new Date().toISOString().split("T")[0]);
