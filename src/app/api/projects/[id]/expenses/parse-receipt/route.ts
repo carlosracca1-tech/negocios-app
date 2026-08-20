@@ -5,6 +5,7 @@ import {
   isAdmin,
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
+import { AI_MODEL, describeAnthropicError } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -122,7 +123,7 @@ IMPORTANTE:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: AI_MODEL,
         max_tokens: 1024,
         messages: [
           {
@@ -135,9 +136,9 @@ IMPORTANTE:
 
     if (!response.ok) {
       const errBody = await response.text();
-      console.error("Anthropic API error:", errBody);
+      console.error("Anthropic API error (comprobante):", response.status, errBody);
       return NextResponse.json(
-        { error: "Failed to analyze receipt. Check your API key." },
+        { error: describeAnthropicError(response.status, errBody) },
         { status: 502 }
       );
     }

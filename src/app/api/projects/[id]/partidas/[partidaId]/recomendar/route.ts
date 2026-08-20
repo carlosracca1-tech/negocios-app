@@ -6,6 +6,7 @@ import {
   checkProjectAccess,
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
+import { AI_MODEL, describeAnthropicError } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -74,7 +75,7 @@ export async function POST(
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: AI_MODEL,
         max_tokens: 1024,
         messages: [
           {
@@ -99,9 +100,9 @@ Responde SOLO con este JSON, sin texto adicional ni markdown:
 
     if (!response.ok) {
       const errBody = await response.text();
-      console.error("Anthropic API error:", errBody);
+      console.error("Anthropic API error (recomendacion):", response.status, errBody);
       return NextResponse.json(
-        { error: "Failed to get AI recommendation." },
+        { error: describeAnthropicError(response.status, errBody) },
         { status: 502 }
       );
     }

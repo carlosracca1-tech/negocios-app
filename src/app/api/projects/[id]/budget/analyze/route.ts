@@ -7,6 +7,7 @@ import {
 import { rethrowNextError } from "@/lib/route-utils";
 import { prisma } from "@/lib/prisma";
 import { categoriesByProjectType } from "@/lib/constants";
+import { AI_MODEL, describeAnthropicError } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -114,7 +115,7 @@ IMPORTANTE:
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: AI_MODEL,
           max_tokens: 2048,
           messages: [{ role: "user", content: [{ type: "text", text: textPrompt }] }],
         }),
@@ -122,9 +123,9 @@ IMPORTANTE:
 
       if (!textResponse.ok) {
         const errBody = await textResponse.text();
-        console.error("Anthropic API error (texto):", errBody);
+        console.error("Anthropic API error (texto):", textResponse.status, errBody);
         return NextResponse.json(
-          { error: "No se pudo analizar el texto. Revisá la API key." },
+          { error: describeAnthropicError(textResponse.status, errBody) },
           { status: 502 }
         );
       }
@@ -199,7 +200,7 @@ IMPORTANTE:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: AI_MODEL,
         max_tokens: 2048,
         messages: [
           {
@@ -212,9 +213,9 @@ IMPORTANTE:
 
     if (!response.ok) {
       const errBody = await response.text();
-      console.error("Anthropic API error:", errBody);
+      console.error("Anthropic API error:", response.status, errBody);
       return NextResponse.json(
-        { error: "Failed to analyze budget. Check your API key." },
+        { error: describeAnthropicError(response.status, errBody) },
         { status: 502 }
       );
     }
