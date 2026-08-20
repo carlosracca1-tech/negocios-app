@@ -7,7 +7,13 @@ import {
 import { rethrowNextError } from "@/lib/route-utils";
 import { prisma } from "@/lib/prisma";
 import { categoriesByProjectType } from "@/lib/constants";
-import { AI_MODEL, describeAnthropicError } from "@/lib/ai";
+import {
+  AI_MODEL,
+  describeAnthropicError,
+  textoDeRespuesta,
+  extraerJson,
+  errorDeLectura,
+} from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -100,7 +106,11 @@ ${jsonShape}
 
 IMPORTANTE:
 - En Argentina los montos se dicen en PESOS por defecto. Usa currency "ARS" salvo que el texto diga explicitamente dolares, USD, u$s o verdes.
+- FORMATO ARGENTINO: el punto es separador de MILES y la coma es decimal. "16.000.000" son dieciseis millones (16000000), NO dieciseis. "1.500.000" es 1500000. "1,5" es uno coma cinco.
 - Expandi las abreviaturas de monto a numero entero: "16 millones" / "16M" / "16 palos" = 16000000. "500 mil" / "500k" = 500000. "1,5 millones" = 1500000.
+- El monto que buscas es el TOTAL del presupuesto. Si el texto lista varios trabajos y despues dice un precio unico ("todo le cuesta X"), ese es el total.
+- El texto puede venir desprolijo: sin puntuacion, con errores de tipeo, en varias lineas sueltas o copiado de un WhatsApp. Interpretalo igual, es como habla la gente de obra.
+- Si el proveedor aclara que algo NO esta incluido o queda "a definir" (materiales, por ejemplo), agregalo a scopeItems con included: false.
 - El monto debe ser un numero, no string, sin puntos ni comas.
 - provider: el nombre del proveedor como lo nombra el usuario, prolijo y capitalizado (ej: "el albañil juan" -> "Albañil Juan").
 - suggestedPartidaName: describi el trabajo. NUNCA incluyas el nombre del proveedor ni numeros de orden.
@@ -116,8 +126,13 @@ IMPORTANTE:
         },
         body: JSON.stringify({
           model: AI_MODEL,
-          max_tokens: 2048,
-          messages: [{ role: "user", content: [{ type: "text", text: textPrompt }] }],
+          max_tokens: 4096,
+          messages: [
+            { role: "user", content: [{ type: "text", text: textPrompt }] },
+            // Prefill: arrancamos la respuesta con "{" para que el modelo
+            // continue el JSON y no agregue introducciones ni markdown.
+            { role: "assistant", content: "{" },
+          ],
         }),
       });
 
@@ -131,16 +146,18 @@ IMPORTANTE:
       }
 
       const textResult = await textResponse.json();
-      const outText = textResult.content?.[0]?.text || "";
-      try {
-        const cleaned = outText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        return NextResponse.json({ data: JSON.parse(cleaned) });
-      } catch {
+      // El prefill se descuenta de la respuesta: hay que volver a ponerlo.
+      const outText = "{" + textoDeRespuesta(textResult);
+      const parsedText = extraerJson(outText);
+
+      if (!parsedText) {
+        console.error("Respuesta ilegible (texto):", textResult?.stop_reason, outText);
         return NextResponse.json(
-          { error: "No pude interpretar el presupuesto. Probá dando un poco más de detalle.", rawText: outText },
+          { error: errorDeLectura(outText, textResult?.stop_reason), rawText: outText },
           { status: 422 }
         );
       }
+      return NextResponse.json({ data: parsedText });
     }
 
     // ==================== MODO DOCUMENTO (PDF / imagen) ====================
@@ -201,12 +218,13 @@ IMPORTANTE:
       },
       body: JSON.stringify({
         model: AI_MODEL,
-        max_tokens: 2048,
+        max_tokens: 4096,
         messages: [
           {
             role: "user",
             content: [docContent, { type: "text" as const, text: promptText }],
           },
+          { role: "assistant", content: "{" },
         ],
       }),
     });
@@ -221,18 +239,17 @@ IMPORTANTE:
     }
 
     const result = await response.json();
-    const text = result.content?.[0]?.text || "";
+    const text = "{" + textoDeRespuesta(result);
+    const parsed = extraerJson(text);
 
-    try {
-      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      const parsed = JSON.parse(cleaned);
-      return NextResponse.json({ data: parsed });
-    } catch {
+    if (!parsed) {
+      console.error("Respuesta ilegible (documento):", result?.stop_reason, text);
       return NextResponse.json(
-        { error: "Could not parse budget data", rawText: text },
+        { error: errorDeLectura(text, result?.stop_reason), rawText: text },
         { status: 422 }
       );
     }
+    return NextResponse.json({ data: parsed });
   } catch (error) {
     rethrowNextError(error);
     console.error("Error analyzing budget:", error);

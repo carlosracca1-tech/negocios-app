@@ -54,3 +54,111 @@ export function describeAnthropicError(status: number, body: string): string {
   }
   return `Error ${status} de la API de Anthropic${apiMessage ? `: ${apiMessage}` : ""}.`;
 }
+
+// ============================================================================
+// Lectura de la respuesta
+// ============================================================================
+
+interface AnthropicBlock {
+  type?: string;
+  text?: string;
+}
+
+/**
+ * Junta TODO el texto de la respuesta.
+ * No asume que content[0] sea el texto: si algun dia se activa el modo
+ * "thinking", el primer bloque es de razonamiento y el texto viene despues.
+ */
+export function textoDeRespuesta(result: { content?: AnthropicBlock[] }): string {
+  const blocks = Array.isArray(result?.content) ? result.content : [];
+  return blocks
+    .filter((b) => b?.type === "text" && typeof b.text === "string")
+    .map((b) => b.text as string)
+    .join("")
+    .trim();
+}
+
+/**
+ * Extrae el primer objeto JSON completo de la respuesta del modelo.
+ *
+ * Tolera lo que los modelos suelen agregar aunque se les pida que no:
+ * cercas de markdown (```json), una frase de introduccion antes del objeto
+ * y texto suelto despues. Recorre las llaves contando anidamiento y
+ * respetando comillas y escapes, asi no se corta en la primera "}" que
+ * aparezca dentro de un string.
+ *
+ * Devuelve null si no hay un objeto JSON valido.
+ */
+export function extraerJson<T = unknown>(raw: string): T | null {
+  if (!raw) return null;
+
+  // Sacar cercas de markdown por si vinieron.
+  let s = raw.replace(/```json/gi, "```").trim();
+  if (s.includes("```")) {
+    const partes = s.split("```");
+    // El bloque cercado suele ser el segundo pedazo.
+    const candidato = partes.find((p) => p.trim().startsWith("{"));
+    if (candidato) s = candidato.trim();
+  }
+
+  const inicio = s.indexOf("{");
+  if (inicio === -1) return null;
+
+  let nivel = 0;
+  let enString = false;
+  let escapado = false;
+
+  for (let i = inicio; i < s.length; i++) {
+    const c = s[i];
+
+    if (escapado) {
+      escapado = false;
+      continue;
+    }
+    if (c === "\\") {
+      if (enString) escapado = true;
+      continue;
+    }
+    if (c === '"') {
+      enString = !enString;
+      continue;
+    }
+    if (enString) continue;
+
+    if (c === "{") nivel++;
+    else if (c === "}") {
+      nivel--;
+      if (nivel === 0) {
+        try {
+          return JSON.parse(s.slice(inicio, i + 1)) as T;
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+
+  // Llaves sin cerrar: respuesta cortada.
+  return null;
+}
+
+/** Recorte del texto crudo para poder diagnosticar sin llenar la pantalla. */
+export function vistaPrevia(raw: string, max = 300): string {
+  const s = (raw || "").replace(/\s+/g, " ").trim();
+  if (!s) return "(respuesta vacía)";
+  return s.length > max ? `${s.slice(0, max)}…` : s;
+}
+
+/**
+ * Mensaje de error cuando el modelo respondio pero no pudimos leer el JSON.
+ * Incluye el motivo real para no mandar a buscar el problema al lugar equivocado.
+ */
+export function errorDeLectura(raw: string, stopReason?: string | null): string {
+  if (stopReason === "max_tokens") {
+    return "La respuesta de la IA se cortó por ser demasiado larga. Probá describiendo el presupuesto de forma más breve.";
+  }
+  if (!raw) {
+    return "La IA devolvió una respuesta vacía. Probá de nuevo en unos segundos.";
+  }
+  return `No pude interpretar la respuesta de la IA. Devolvió: ${vistaPrevia(raw, 200)}`;
+}

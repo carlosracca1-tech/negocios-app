@@ -6,7 +6,13 @@ import {
   checkProjectAccess,
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
-import { AI_MODEL, describeAnthropicError } from "@/lib/ai";
+import {
+  AI_MODEL,
+  describeAnthropicError,
+  textoDeRespuesta,
+  extraerJson,
+  errorDeLectura,
+} from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -76,7 +82,7 @@ export async function POST(
       },
       body: JSON.stringify({
         model: AI_MODEL,
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [
           {
             role: "user",
@@ -108,11 +114,19 @@ Responde SOLO con este JSON, sin texto adicional ni markdown:
     }
 
     const result = await response.json();
-    const text = result.content?.[0]?.text || "";
+    const text = textoDeRespuesta(result);
+    const parsedOrNull = extraerJson<{ recommendedCotizacionId?: string; reasoning?: string; savingsNote?: string }>(text);
+
+    if (!parsedOrNull) {
+      console.error("Respuesta ilegible (recomendacion):", result?.stop_reason, text);
+      return NextResponse.json(
+        { error: errorDeLectura(text, result?.stop_reason), rawText: text },
+        { status: 422 }
+      );
+    }
 
     try {
-      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = parsedOrNull;
 
       // Persist aiRecommended + aiReasoning
       await prisma.$transaction(async (tx) => {

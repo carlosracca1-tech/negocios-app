@@ -5,7 +5,13 @@ import {
   isAdmin,
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
-import { AI_MODEL, describeAnthropicError } from "@/lib/ai";
+import {
+  AI_MODEL,
+  describeAnthropicError,
+  textoDeRespuesta,
+  extraerJson,
+  errorDeLectura,
+} from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -124,7 +130,7 @@ IMPORTANTE:
       },
       body: JSON.stringify({
         model: AI_MODEL,
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [
           {
             role: "user",
@@ -144,20 +150,17 @@ IMPORTANTE:
     }
 
     const result = await response.json();
-    const text = result.content?.[0]?.text || "";
+    const text = textoDeRespuesta(result);
+    const parsed = extraerJson(text);
 
-    // Try to parse the JSON from Claude's response
-    try {
-      // Remove possible markdown code fences
-      const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      const parsed = JSON.parse(cleaned);
-      return NextResponse.json({ data: parsed });
-    } catch {
+    if (!parsed) {
+      console.error("Respuesta ilegible (comprobante):", result?.stop_reason, text);
       return NextResponse.json(
-        { error: "Could not parse receipt data", rawText: text },
+        { error: errorDeLectura(text, result?.stop_reason), rawText: text },
         { status: 422 }
       );
     }
+    return NextResponse.json({ data: parsed });
   } catch (error) {
     rethrowNextError(error);
     console.error("Error parsing receipt:", error);
