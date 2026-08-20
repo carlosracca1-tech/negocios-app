@@ -191,7 +191,7 @@ export interface AutoImputarResultado {
   dejar: {
     costId: string;
     concept: string;
-    motivo: "sin_coincidencia" | "ambiguo" | "sin_monto";
+    motivo: "sin_coincidencia" | "ambiguo" | "sin_monto" | "compra_de_materiales";
     candidatos?: string[];
   }[];
   resumen: {

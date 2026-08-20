@@ -74,6 +74,7 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
   const ambiguos = (plan?.dejar || []).filter((d) => d.motivo === "ambiguo");
   const sinMonto = (plan?.dejar || []).filter((d) => d.motivo === "sin_monto");
   const sinMatch = (plan?.dejar || []).filter((d) => d.motivo === "sin_coincidencia");
+  const compras = (plan?.dejar || []).filter((d) => d.motivo === "compra_de_materiales");
 
   return (
     <div
@@ -233,6 +234,20 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
                       <strong style={{ color: "var(--warning)" }}>{sinMonto.length} sin tocar por falta de monto</strong>
                       {" "}— el proveedor tiene varios presupuestos pero ninguno tiene el monto
                       cargado, así que no puedo saber cuándo se completa el primero.
+                    </div>
+                  )}
+                  {compras.length > 0 && (
+                    <div>
+                      <strong>{compras.length} sin tocar por ser compra de materiales</strong> — el
+                      concepto arranca con &quot;materiales&quot; o &quot;compra&quot;, así que es
+                      plata que gastaste vos, no que le pagaste al proveedor. Imputarlas inflaría su
+                      avance. Si alguna sí era parte de lo pactado, asignala a mano.
+                      <div style={{ marginTop: 5, color: "var(--text-tertiary)" }}>
+                        {compras.slice(0, 4).map((d) => (
+                          <div key={d.costId}>· {d.concept}</div>
+                        ))}
+                        {compras.length > 4 && <div>· y {compras.length - 4} más</div>}
+                      </div>
                     </div>
                   )}
                   {sinMatch.length > 0 && (

@@ -114,7 +114,30 @@ export function tieneNumeroDeOrden(concepto: string): boolean {
  * el concepto entero y el matcheo se hace con la regla estricta.
  */
 export function palabrasProveedorDelCosto(concepto: string): string[] {
-  return palabrasClave((concepto || "").split("#")[0]);
+  // Lo previo al #, y si ahi adentro hay un guion, solo lo previo al guion:
+  // "Colocador - semana #3" -> "Colocador".
+  const antesDelNumero = (concepto || "").split("#")[0];
+  const antesDelGuion = antesDelNumero.split(/\s[-–—]\s/)[0];
+  return palabrasClave(antesDelGuion);
+}
+
+/**
+ * Palabras con las que arranca una COMPRA, no un pago a un proveedor.
+ *
+ * "Materiales PLOMERO - trabajo plomeria #3" es una compra de materiales
+ * para el trabajo del plomero, no plata que cobro Luis. Si se imputa a su
+ * presupuesto, el % de avance dice que le pagaste mas de lo que le pagaste.
+ *
+ * Solo cuenta si el concepto EMPIEZA con una de estas palabras. Si el
+ * proveedor va adelante ("Electricista #4 - Materiales y mano de obra"),
+ * eso si es un pago al electricista e incluye sus materiales.
+ */
+const ARRANQUES_DE_COMPRA = ["material", "materiales", "compra", "corralon", "corralón"];
+
+/** ¿El concepto es una compra de materiales y no un pago al proveedor? */
+export function esCompraDeMateriales(concepto: string): boolean {
+  const primera = normalizar(concepto).split(" ")[0];
+  return ARRANQUES_DE_COMPRA.includes(primera);
 }
 
 /** Cuantas palabras comparten dos nombres de proveedor. */
@@ -174,7 +197,7 @@ export function numeroDePartida(nombre: string): number {
   return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
 }
 
-export type MotivoNoImputado = "sin_coincidencia" | "ambiguo" | "sin_monto";
+export type MotivoNoImputado = "sin_coincidencia" | "ambiguo" | "sin_monto" | "compra_de_materiales";
 
 export interface Imputacion {
   costId: string;
@@ -262,6 +285,17 @@ export function planificarImputacion(
   const ambiguos: { costo: CostoParaImputar; candidatos: { partida: PartidaParaImputar; porque: string[] }[] }[] = [];
 
   pendientes.forEach((costo) => {
+    // Una compra de materiales no es plata que cobro el proveedor:
+    // imputarla a su presupuesto inflaria el avance pagado.
+    if (esCompraDeMateriales(costo.concept)) {
+      dejar.push({
+        costId: costo.id,
+        concept: costo.concept,
+        motivo: "compra_de_materiales",
+      });
+      return;
+    }
+
     const palabras = new Set(normalizar(costo.concept).split(" "));
 
     // Puntaje de cada presupuesto contra este costo; gana el mas especifico.
