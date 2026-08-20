@@ -55,15 +55,24 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
 
   if (!isOpen) return null;
 
+  const fmtArs = (n: number) => "$" + Math.round(n).toLocaleString("es-AR");
+
   // Agrupado por presupuesto, para que se lea de un vistazo.
-  const porPartida = new Map<string, { nombre: string; conceptos: string[] }>();
+  const porPartida = new Map<
+    string,
+    { nombre: string; items: { concept: string; montoArs: number; porCascada?: boolean; excede?: boolean }[] }
+  >();
   (plan?.imputar || []).forEach((i) => {
-    const g = porPartida.get(i.partidaId) || { nombre: i.partidaName, conceptos: [] };
-    g.conceptos.push(i.concept);
+    const g = porPartida.get(i.partidaId) || { nombre: i.partidaName, items: [] };
+    g.items.push({ concept: i.concept, montoArs: i.montoArs, porCascada: i.porCascada, excede: i.excede });
     porPartida.set(i.partidaId, g);
   });
 
+  const resumenPorId = new Map((plan?.resumen || []).map((r) => [r.partidaId, r]));
+  const hayCascada = (plan?.imputar || []).some((i) => i.porCascada);
+
   const ambiguos = (plan?.dejar || []).filter((d) => d.motivo === "ambiguo");
+  const sinMonto = (plan?.dejar || []).filter((d) => d.motivo === "sin_monto");
   const sinMatch = (plan?.dejar || []).filter((d) => d.motivo === "sin_coincidencia");
 
   return (
@@ -145,27 +154,66 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
                       {plan.imputar.length === 1 ? "costo" : "costos"}. Revisá antes de confirmar:
                     </div>
                   )}
-                  {Array.from(porPartida.entries()).map(([id, g]) => (
-                    <div key={id} style={{
-                      background: "var(--surface-1)", border: "1px solid var(--border-faint)",
-                      borderRadius: 10, padding: "11px 13px", marginBottom: 9,
+                  {hayCascada && (
+                    <div style={{
+                      fontSize: 11.5, color: "var(--text-tertiary)", lineHeight: 1.5,
+                      background: "var(--surface-1)", border: "1px dashed var(--border-default)",
+                      borderRadius: 9, padding: "9px 12px", marginBottom: 12,
                     }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>
-                        {g.nombre}
-                        <span style={{ color: "var(--text-tertiary)", fontWeight: 500, marginLeft: 6 }}>
-                          · {g.conceptos.length} {g.conceptos.length === 1 ? "costo" : "costos"}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
-                        {g.conceptos.slice(0, 6).map((c, i) => <div key={i}>· {c}</div>)}
-                        {g.conceptos.length > 6 && <div>· y {g.conceptos.length - 6} más</div>}
-                      </div>
+                      Hay un proveedor con más de un presupuesto: los pagos se cargan por fecha
+                      al primero hasta completarlo y de ahí siguen en el siguiente.
                     </div>
-                  ))}
+                  )}
+
+                  {Array.from(porPartida.entries()).map(([id, g]) => {
+                    const r = resumenPorId.get(id);
+                    const totalTrasImputar = r ? r.previoArs + r.nuevoArs : 0;
+                    const pct = r && r.presupuestoArs > 0
+                      ? Math.round((totalTrasImputar / r.presupuestoArs) * 100)
+                      : null;
+                    const excedido = pct !== null && pct > 100;
+
+                    return (
+                      <div key={id} style={{
+                        background: "var(--surface-1)", border: "1px solid var(--border-faint)",
+                        borderRadius: 10, padding: "11px 13px", marginBottom: 9,
+                      }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text-primary)", marginBottom: 3 }}>
+                          {g.nombre}
+                          <span style={{ color: "var(--text-tertiary)", fontWeight: 500, marginLeft: 6 }}>
+                            · {g.items.length} {g.items.length === 1 ? "costo" : "costos"}
+                          </span>
+                        </div>
+
+                        {r && r.presupuestoArs > 0 && (
+                          <div style={{ fontSize: 11.5, marginBottom: 7, color: "var(--text-secondary)" }}>
+                            {fmtArs(r.nuevoArs)} sobre un presupuesto de {fmtArs(r.presupuestoArs)}
+                            {" — queda al "}
+                            <strong style={{ color: excedido ? "var(--danger)" : pct !== null && pct >= 90 ? "var(--warning)" : "var(--success)" }}>
+                              {pct}%
+                            </strong>
+                          </div>
+                        )}
+
+                        <div style={{ fontSize: 11.5, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
+                          {g.items.slice(0, 6).map((it, i) => (
+                            <div key={i} style={{ display: "flex", gap: 8 }}>
+                              <span style={{ flex: 1, minWidth: 0 }}>· {it.concept}</span>
+                              <span className="tabular" style={{ whiteSpace: "nowrap" }}>
+                                {fmtArs(it.montoArs)}
+                                {it.excede && <span style={{ color: "var(--warning)" }}> ▸ completa</span>}
+                              </span>
+                            </div>
+                          ))}
+                          {g.items.length > 6 && <div>· y {g.items.length - 6} más</div>}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </>
               )}
 
-              {(ambiguos.length > 0 || sinMatch.length > 0) && (
+              {(ambiguos.length > 0 || sinMonto.length > 0 || sinMatch.length > 0) && (
                 <div style={{
                   marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--border-faint)",
                   fontSize: 11.5, color: "var(--text-tertiary)", lineHeight: 1.6,
@@ -178,6 +226,13 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
                         <div key={i}>· {a.concept} → {(a.candidatos || []).join(" / ")}</div>
                       ))}
                       {ambiguos.length > 4 && <div>· y {ambiguos.length - 4} más</div>}
+                    </div>
+                  )}
+                  {sinMonto.length > 0 && (
+                    <div style={{ marginBottom: 8 }}>
+                      <strong style={{ color: "var(--warning)" }}>{sinMonto.length} sin tocar por falta de monto</strong>
+                      {" "}— el proveedor tiene varios presupuestos pero ninguno tiene el monto
+                      cargado, así que no puedo saber cuándo se completa el primero.
                     </div>
                   )}
                   {sinMatch.length > 0 && (

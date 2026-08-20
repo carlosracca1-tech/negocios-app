@@ -39,13 +39,33 @@ export async function POST(
     const [partidas, costs] = await Promise.all([
       prisma.partida.findMany({
         where: { projectId },
-        include: { cotizaciones: { select: { provider: true } } },
+        include: {
+          cotizaciones: {
+            select: {
+              provider: true,
+              amount: true,
+              currency: true,
+              exchangeRate: true,
+              amountUsd: true,
+              isChosen: true,
+            },
+          },
+        },
         orderBy: { order: "asc" },
       }),
       prisma.cost.findMany({
         where: { projectId },
-        select: { id: true, concept: true, partidaId: true },
-        orderBy: { date: "desc" },
+        select: {
+          id: true,
+          concept: true,
+          partidaId: true,
+          amount: true,
+          currency: true,
+          exchangeRate: true,
+          amountUsd: true,
+          date: true,
+        },
+        orderBy: { date: "asc" },
       }),
     ]);
 

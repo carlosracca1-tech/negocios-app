@@ -184,12 +184,23 @@ export interface AutoImputarResultado {
     partidaId: string;
     partidaName: string;
     porque: string[];
+    montoArs: number;
+    porCascada?: boolean;
+    excede?: boolean;
   }[];
   dejar: {
     costId: string;
     concept: string;
-    motivo: "sin_coincidencia" | "ambiguo";
+    motivo: "sin_coincidencia" | "ambiguo" | "sin_monto";
     candidatos?: string[];
+  }[];
+  resumen: {
+    partidaId: string;
+    partidaName: string;
+    presupuestoArs: number;
+    previoArs: number;
+    nuevoArs: number;
+    cantidadNueva: number;
   }[];
 }
 

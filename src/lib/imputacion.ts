@@ -5,7 +5,13 @@
  * asignar (queda visible en el aviso amarillo) que meterlo en el presupuesto
  * equivocado y ensuciar el % de avance, que es justamente el numero que se
  * usa para decidir si se esta pagando de mas.
+ *
+ * Excepcion: cuando el MISMO proveedor tiene varios presupuestos, no hay
+ * ambiguedad real sino orden. Los pagos van llenando el primero y cuando se
+ * completa siguen en el segundo (ver repartirEnCascada).
  */
+
+import { costArs, partidaProjectedArs } from "./financial";
 
 /** Palabras genericas que aparecen en cualquier obra y no identifican a nadie. */
 const PALABRAS_VACIAS = new Set([
@@ -38,23 +44,35 @@ export function palabrasClave(texto: string): string[] {
 export interface PartidaParaImputar {
   id: string;
   name: string;
-  cotizaciones?: { provider?: string | null }[];
+  order?: number;
+  cotizaciones?: {
+    provider?: string | null;
+    amount: number;
+    currency?: string | null;
+    exchangeRate?: number | null;
+    amountUsd?: number | null;
+    isChosen?: boolean;
+  }[];
 }
 
 export interface CostoParaImputar {
   id: string;
   concept: string;
   partidaId?: string | null;
+  amount: number;
+  currency?: string | null;
+  exchangeRate?: number | null;
+  amountUsd?: number | null;
+  date?: string | Date;
 }
 
 /**
  * Señas de identidad de un presupuesto: los nombres por los que se lo puede
  * reconocer en el concepto de un costo.
  *
- * Del nombre "Albañil Juan #1 - Revoques" se queda con "Albañil Juan": lo que
- * va antes del # es el proveedor. La descripcion posterior se descarta porque
- * describe el trabajo, no a quien lo hace, y generaria falsos positivos.
- * Suma tambien los proveedores de las cotizaciones.
+ * De "Albañil Juan #1 - Revoques" se queda con "Albañil Juan": lo previo al #
+ * es el proveedor. La descripcion posterior se descarta porque describe el
+ * trabajo, no a quien lo hace, y generaria falsos positivos.
  */
 export function señasDePartida(p: PartidaParaImputar): string[][] {
   const señas: string[][] = [];
@@ -80,7 +98,13 @@ function coincide(seña: string[], palabrasDelConcepto: Set<string>): boolean {
   return seña.length > 0 && seña.every((p) => palabrasDelConcepto.has(p));
 }
 
-export type MotivoNoImputado = "sin_coincidencia" | "ambiguo";
+/** Numero del presupuesto dentro del proveedor: "Albañil Juan #2 - ..." -> 2 */
+export function numeroDePartida(nombre: string): number {
+  const m = nombre.match(/#(\d+)/);
+  return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
+}
+
+export type MotivoNoImputado = "sin_coincidencia" | "ambiguo" | "sin_monto";
 
 export interface Imputacion {
   costId: string;
@@ -89,27 +113,55 @@ export interface Imputacion {
   partidaName: string;
   /** las palabras que hicieron el match, para poder auditarlo */
   porque: string[];
+  /** monto del costo en pesos */
+  montoArs: number;
+  /** true si entro por cascada tras completarse un presupuesto anterior */
+  porCascada?: boolean;
+  /** true si con este costo el presupuesto queda excedido */
+  excede?: boolean;
 }
 
 export interface NoImputado {
   costId: string;
   concept: string;
   motivo: MotivoNoImputado;
-  /** si fue ambiguo, los presupuestos que competian */
   candidatos?: string[];
+}
+
+/** Como queda cada presupuesto despues de imputar. */
+export interface ResumenPartida {
+  partidaId: string;
+  partidaName: string;
+  presupuestoArs: number;
+  /** lo que ya tenia imputado antes de esta corrida */
+  previoArs: number;
+  /** lo que suma esta corrida */
+  nuevoArs: number;
+  cantidadNueva: number;
 }
 
 export interface PlanDeImputacion {
   imputar: Imputacion[];
   dejar: NoImputado[];
+  resumen: ResumenPartida[];
+}
+
+function fechaDe(c: CostoParaImputar): number {
+  if (!c.date) return 0;
+  const t = new Date(c.date).getTime();
+  return isNaN(t) ? 0 : t;
 }
 
 /**
  * Arma el plan sin escribir nada.
  *
  * Solo toca costos que hoy no tienen presupuesto: nunca pisa una imputacion
- * que ya hizo el usuario. Si a un costo le calzan dos presupuestos distintos,
- * lo deja quieto y lo reporta como ambiguo.
+ * que ya hizo el usuario.
+ *
+ * Cuando a un costo le calzan varios presupuestos DEL MISMO proveedor, no se
+ * descarta: se reparte en cascada por fecha, llenando el #1 hasta agotar su
+ * monto y siguiendo por el #2. Si los candidatos son de proveedores distintos
+ * ahi si es ambiguedad real y no se toca.
  */
 export function planificarImputacion(
   costos: CostoParaImputar[],
@@ -122,41 +174,132 @@ export function planificarImputacion(
   const imputar: Imputacion[] = [];
   const dejar: NoImputado[] = [];
 
-  costos
+  // Cuanto lleva consumido cada presupuesto por costos ya imputados a mano.
+  const consumido = new Map<string, number>();
+  partidas.forEach((p) => consumido.set(p.id, 0));
+  costos.forEach((c) => {
+    if (c.partidaId && consumido.has(c.partidaId)) {
+      consumido.set(c.partidaId, (consumido.get(c.partidaId) || 0) + costArs(c));
+    }
+  });
+  const previo = new Map(consumido);
+
+  const pendientes = costos
     .filter((c) => !c.partidaId)
-    .forEach((costo) => {
-      const palabras = new Set(normalizar(costo.concept).split(" "));
+    .sort((a, b) => fechaDe(a) - fechaDe(b)); // los pagos viejos llenan primero
 
-      const candidatos = conSeñas
-        .map((x) => {
-          const señaQueCalza = x.señas.find((s) => coincide(s, palabras));
-          return señaQueCalza ? { partida: x.partida, porque: señaQueCalza } : null;
-        })
-        .filter((x): x is { partida: PartidaParaImputar; porque: string[] } => x !== null);
+  // --- 1) los que tienen un unico candidato ---
+  const ambiguos: { costo: CostoParaImputar; candidatos: { partida: PartidaParaImputar; porque: string[] }[] }[] = [];
 
-      // Varias señas pueden apuntar al mismo presupuesto: eso no es ambiguedad.
-      const idsDistintos = new Set(candidatos.map((c) => c.partida.id));
+  pendientes.forEach((costo) => {
+    const palabras = new Set(normalizar(costo.concept).split(" "));
 
-      if (idsDistintos.size === 1) {
-        const elegido = candidatos[0];
-        imputar.push({
-          costId: costo.id,
-          concept: costo.concept,
-          partidaId: elegido.partida.id,
-          partidaName: elegido.partida.name,
-          porque: elegido.porque,
-        });
-      } else if (idsDistintos.size > 1) {
-        dejar.push({
-          costId: costo.id,
-          concept: costo.concept,
-          motivo: "ambiguo",
-          candidatos: Array.from(new Set(candidatos.map((c) => c.partida.name))),
-        });
-      } else {
-        dejar.push({ costId: costo.id, concept: costo.concept, motivo: "sin_coincidencia" });
-      }
+    const candidatos = conSeñas
+      .map((x) => {
+        const señaQueCalza = x.señas.find((s) => coincide(s, palabras));
+        return señaQueCalza ? { partida: x.partida, porque: señaQueCalza } : null;
+      })
+      .filter((x): x is { partida: PartidaParaImputar; porque: string[] } => x !== null);
+
+    const unicos = new Map<string, { partida: PartidaParaImputar; porque: string[] }>();
+    candidatos.forEach((c) => { if (!unicos.has(c.partida.id)) unicos.set(c.partida.id, c); });
+    const lista = Array.from(unicos.values());
+
+    if (lista.length === 1) {
+      const elegido = lista[0];
+      imputar.push({
+        costId: costo.id,
+        concept: costo.concept,
+        partidaId: elegido.partida.id,
+        partidaName: elegido.partida.name,
+        porque: elegido.porque,
+        montoArs: costArs(costo),
+      });
+      consumido.set(elegido.partida.id, (consumido.get(elegido.partida.id) || 0) + costArs(costo));
+    } else if (lista.length > 1) {
+      ambiguos.push({ costo, candidatos: lista });
+    } else {
+      dejar.push({ costId: costo.id, concept: costo.concept, motivo: "sin_coincidencia" });
+    }
+  });
+
+  // --- 2) los ambiguos: cascada si son del mismo proveedor ---
+  ambiguos.forEach(({ costo, candidatos }) => {
+    // Todos los candidatos comparten proveedor si comparten la misma seña.
+    const firmas = new Set(candidatos.map((c) => c.porque.slice().sort().join(" ")));
+    const mismoProveedor = firmas.size === 1;
+
+    if (!mismoProveedor) {
+      dejar.push({
+        costId: costo.id,
+        concept: costo.concept,
+        motivo: "ambiguo",
+        candidatos: candidatos.map((c) => c.partida.name),
+      });
+      return;
+    }
+
+    // Orden de llenado: por #N, y si no tienen numero por 'order'.
+    const enOrden = candidatos.slice().sort((a, b) => {
+      const na = numeroDePartida(a.partida.name);
+      const nb = numeroDePartida(b.partida.name);
+      if (na !== nb) return na - nb;
+      return (a.partida.order ?? 0) - (b.partida.order ?? 0);
     });
 
-  return { imputar, dejar };
+    const topes = enOrden.map((c) => partidaProjectedArs(c.partida));
+    if (topes.every((t) => t <= 0)) {
+      // Sin montos cargados no se puede saber cuando se completa uno.
+      dejar.push({
+        costId: costo.id,
+        concept: costo.concept,
+        motivo: "sin_monto",
+        candidatos: enOrden.map((c) => c.partida.name),
+      });
+      return;
+    }
+
+    const monto = costArs(costo);
+
+    // El primero que todavia tenga saldo. Si estan todos llenos, va al ultimo:
+    // los pagos que sobran son excedente del presupuesto mas reciente.
+    let destinoIdx = enOrden.findIndex(
+      (c, i) => topes[i] > 0 && (consumido.get(c.partida.id) || 0) < topes[i]
+    );
+    const porCascada = destinoIdx > 0;
+    if (destinoIdx === -1) destinoIdx = enOrden.length - 1;
+
+    const destino = enOrden[destinoIdx];
+    const yaTenia = consumido.get(destino.partida.id) || 0;
+    const tope = topes[destinoIdx];
+
+    imputar.push({
+      costId: costo.id,
+      concept: costo.concept,
+      partidaId: destino.partida.id,
+      partidaName: destino.partida.name,
+      porque: destino.porque,
+      montoArs: monto,
+      porCascada,
+      excede: tope > 0 && yaTenia + monto > tope,
+    });
+    consumido.set(destino.partida.id, yaTenia + monto);
+  });
+
+  // --- 3) resumen por presupuesto ---
+  const resumen: ResumenPartida[] = partidas
+    .map((p) => {
+      const nuevos = imputar.filter((i) => i.partidaId === p.id);
+      return {
+        partidaId: p.id,
+        partidaName: p.name,
+        presupuestoArs: partidaProjectedArs(p),
+        previoArs: previo.get(p.id) || 0,
+        nuevoArs: nuevos.reduce((s, i) => s + i.montoArs, 0),
+        cantidadNueva: nuevos.length,
+      };
+    })
+    .filter((r) => r.cantidadNueva > 0);
+
+  return { imputar, dejar, resumen };
 }

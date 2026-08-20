@@ -98,7 +98,8 @@ export function cotizacionArs(cot: CotizacionLike): number {
 interface PartidaLike {
   id: string;
   name: string;
-  category: string;
+  /** solo se usa para agrupar/colorear, no interviene en los montos */
+  category?: string;
   estimatedAmount?: number | null;
   cotizaciones?: CotizacionLike[];
 }
@@ -220,7 +221,7 @@ export function computeBudgetProjection(
     return {
       partidaId: p.id,
       name: p.name,
-      category: p.category,
+      category: p.category || "",
       projected,
       executed,
       deviation,
