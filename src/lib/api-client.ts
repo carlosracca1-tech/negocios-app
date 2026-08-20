@@ -135,6 +135,7 @@ export const costsApi = {
       date: string;
       currency?: "ARS" | "USD";
       exchangeRate?: number | null;
+      partidaId?: string | null;
     }
   ): Promise<Cost> {
     return apiPost(`/api/projects/${projectId}/costs`, data);
@@ -151,6 +152,7 @@ export const costsApi = {
       date: string;
       currency: "ARS" | "USD";
       exchangeRate: number | null;
+      partidaId: string | null;
     }>
   ): Promise<Cost> {
     return apiPatch(`/api/projects/${projectId}/costs/${costId}`, data);

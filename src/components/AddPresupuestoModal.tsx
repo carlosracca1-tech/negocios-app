@@ -33,6 +33,8 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
   const [parsed, setParsed] = useState<ParsedBudget | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Carga a mano: sin PDF, el usuario tipea el presupuesto directamente.
+  const [manual, setManual] = useState(false);
 
   // Editable fields from extraction
   const [provider, setProvider] = useState("");
@@ -87,6 +89,11 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
     setParsed(null);
     setError(null);
     setSaving(false);
+    setManual(false);
+    setProvider("");
+    setPartidaName("");
+    setAmount(0);
+    setCurrency("ARS");
   }, []);
 
   const handleClose = () => {
@@ -140,8 +147,16 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
     }
   };
 
+  const abrirManual = () => {
+    setManual(true);
+    setParsed(null);
+    setError(null);
+    setCurrency("ARS");
+    setCategory(categories[0]?.value || "Obra");
+    setStep("extracted");
+  };
+
   const handleConfirm = async () => {
-    if (!parsed) return;
     setSaving(true);
     setError(null);
 
@@ -176,13 +191,13 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
         amount,
         currency,
         exchangeRate,
-        scopeItems: parsed.scopeItems,
-        leadTimeDays: parsed.leadTimeDays,
-        leadTimeText: parsed.leadTimeText,
-        paymentTerms: parsed.paymentTerms,
-        warranty: parsed.warranty,
-        validityDays: parsed.validityDays,
-        notes: parsed.notes,
+        scopeItems: parsed?.scopeItems ?? null,
+        leadTimeDays: parsed?.leadTimeDays ?? null,
+        leadTimeText: parsed?.leadTimeText ?? null,
+        paymentTerms: parsed?.paymentTerms ?? null,
+        warranty: parsed?.warranty ?? null,
+        validityDays: parsed?.validityDays ?? null,
+        notes: parsed?.notes ?? null,
       });
 
       handleClose();
@@ -225,7 +240,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
-            Subir presupuesto
+            {manual ? "Cargar presupuesto" : "Subir presupuesto"}
           </h3>
           <button
             onClick={handleClose}
@@ -238,7 +253,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
         {/* Body */}
         <div style={{ padding: 20, overflowY: "auto", flex: 1, minHeight: 0 }}>
           {/* File chip / drop zone */}
-          {!file ? (
+          {manual ? null : !file ? (
             <div
               onClick={() => fileRef.current?.click()}
               onDragOver={(e) => e.preventDefault()}
@@ -307,6 +322,23 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
             </div>
           )}
 
+          {/* Cargar a mano — sin PDF */}
+          {step === "idle" && !file && !manual && (
+            <div style={{ textAlign: "center", marginTop: -8, marginBottom: 18 }}>
+              <button
+                type="button"
+                onClick={abrirManual}
+                style={{
+                  background: "none", border: "none", padding: 0,
+                  color: "var(--text-secondary)", fontSize: 12.5, cursor: "pointer",
+                  textDecoration: "underline", textUnderlineOffset: 3,
+                }}
+              >
+                No tengo PDF — cargar el presupuesto a mano
+              </button>
+            </div>
+          )}
+
           {/* Error */}
           {error && (
             <div style={{
@@ -357,18 +389,25 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
           )}
 
           {/* Extracted data */}
-          {step === "extracted" && parsed && (
+          {step === "extracted" && (parsed || manual) && (
             <div style={{ animation: "fadeIn 0.4s" }}>
               <div style={{
-                background: "var(--success-soft)", border: "1px solid var(--success-border)",
+                background: manual ? "var(--surface-2)" : "var(--success-soft)",
+                border: manual ? "1px solid var(--border-default)" : "1px solid var(--success-border)",
                 borderRadius: 10, padding: "11px 14px", fontSize: 12.5,
-                color: "var(--success)", marginBottom: 16,
+                color: manual ? "var(--text-secondary)" : "var(--success)", marginBottom: 16,
                 display: "flex", gap: 8, alignItems: "center",
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-                Listo — lo extraje del PDF. Revisa y confirma.
+                {manual ? (
+                  <>✎ Carga manual — completá el proveedor, el rubro y el monto en pesos.</>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    Listo — lo extraje del PDF. Revisa y confirma.
+                  </>
+                )}
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 13 }}>
@@ -468,10 +507,10 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
                     )}
                   </div>
                 )}
-                {currency === "USD" && parsed.leadTimeText && (
+                {currency === "USD" && parsed?.leadTimeText && (
                   <div>
                     <label style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.6, color: "var(--text-tertiary)", marginBottom: 5, display: "block" }}>Tiempo de obra</label>
-                    <div style={{ ...modalInputStyle, background: "var(--surface-2)" }}>{parsed.leadTimeText || `${parsed.leadTimeDays} dias`}</div>
+                    <div style={{ ...modalInputStyle, background: "var(--surface-2)" }}>{parsed?.leadTimeText || `${parsed?.leadTimeDays} dias`}</div>
                   </div>
                 )}
               </div>
@@ -503,17 +542,17 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
 
               {/* Payment + warranty */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                {parsed.paymentTerms && (
+                {parsed?.paymentTerms && (
                   <div>
                     <label style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.6, color: "var(--text-tertiary)", marginBottom: 5, display: "block" }}>Forma de pago</label>
-                    <div style={{ ...modalInputStyle, background: "var(--surface-2)" }}>{parsed.paymentTerms}</div>
+                    <div style={{ ...modalInputStyle, background: "var(--surface-2)" }}>{parsed?.paymentTerms}</div>
                   </div>
                 )}
-                {(parsed.warranty || parsed.validityDays) && (
+                {(parsed?.warranty || parsed?.validityDays) && (
                   <div>
                     <label style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.6, color: "var(--text-tertiary)", marginBottom: 5, display: "block" }}>Garantia / Validez</label>
                     <div style={{ ...modalInputStyle, background: "var(--surface-2)" }}>
-                      {[parsed.warranty, parsed.validityDays ? `vig. ${parsed.validityDays} dias` : ""].filter(Boolean).join(" · ")}
+                      {[parsed?.warranty, parsed?.validityDays ? `vig. ${parsed?.validityDays} dias` : ""].filter(Boolean).join(" · ")}
                     </div>
                   </div>
                 )}
@@ -532,7 +571,9 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
           <span style={{ fontSize: 11.5, color: "var(--text-tertiary)", flex: 1, minWidth: 140 }}>
             {step === "idle" && "Analizo el PDF y completo todo. Vos solo confirmas."}
             {step === "analyzing" && "Procesando el documento con IA..."}
-            {step === "extracted" && `Se carga al rubro ${category} · ${partidaName}`}
+            {step === "extracted" && (partidaName
+              ? `Se carga al rubro ${category} · ${partidaName}`
+              : "Completá el rubro y el monto para guardar")}
           </span>
           <div style={{ display: "flex", gap: 8 }}>
             <button

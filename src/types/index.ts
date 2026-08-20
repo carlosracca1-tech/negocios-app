@@ -200,10 +200,17 @@ export interface BudgetRubro {
   partidaId: string;
   name: string;
   category: string;
+  /** USD — referencia */
   projected: number;
   executed: number;
   deviation: number;
   pct: number;
+  /** PESOS — moneda real del acuerdo con el proveedor */
+  projectedArs: number;
+  executedArs: number;
+  deviationArs: number;
+  pctArs: number;
+  costCount: number;
 }
 
 export interface BudgetProjection {
@@ -211,4 +218,11 @@ export interface BudgetProjection {
   totalExecuted: number;
   deviation: number;
   byRubro: BudgetRubro[];
+  totalProjectedArs: number;
+  totalExecutedArs: number;
+  deviationArs: number;
+  pctArs: number;
+  unassignedArs: number;
+  unassignedUsd: number;
+  unassignedCount: number;
 }

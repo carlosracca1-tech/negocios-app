@@ -1,9 +1,14 @@
 "use client";
 
-import { Cost } from "@/types";
+import { Cost, Partida } from "@/types";
 import { useState, useMemo } from "react";
 import { fmt } from "@/lib/format";
 import { catColors } from "@/lib/constants";
+import { costArs } from "@/lib/financial";
+
+/** "$1.234.567" — pesos nominales, formato es-AR */
+const fmtArsNum = (n: number) =>
+  "$" + Math.round(n).toLocaleString("es-AR", { maximumFractionDigits: 0 });
 
 const costTypeLabels: Record<string, string> = {
   material: "Mat",
@@ -23,18 +28,33 @@ const costTypeFullLabels: Record<string, string> = {
 
 interface CostsTableProps {
   costs: Cost[];
+  /** Presupuestos del proyecto, para mostrar y filtrar la imputación de cada costo. */
+  partidas?: Partida[];
   onAddClick: () => void;
   onEditClick?: (cost: Cost) => void;
   onDelete?: (cost: Cost) => void;
   canEdit?: boolean;
 }
 
-export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, canEdit = true }: CostsTableProps) {
+export default function CostsTable({ costs, partidas = [], onAddClick, onEditClick, onDelete, canEdit = true }: CostsTableProps) {
   const showActions = canEdit && Boolean(onEditClick || onDelete);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterType, setFilterType] = useState("");
+  // "" = todos | "__none__" = sin imputar | <partidaId>
+  const [filterPartida, setFilterPartida] = useState("");
   const [sortField, setSortField] = useState<"date" | "amount">("date");
+
+  const partidaNombre = useMemo(() => {
+    const m = new Map<string, string>();
+    partidas.forEach((p) => m.set(p.id, p.name));
+    return m;
+  }, [partidas]);
+
+  const sinImputar = useMemo(
+    () => costs.filter((c) => !c.partidaId || !partidaNombre.has(c.partidaId)).length,
+    [costs, partidaNombre]
+  );
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   // Extract unique categories from actual costs
@@ -79,6 +99,12 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
       result = result.filter((c) => c.costType === filterType);
     }
 
+    if (filterPartida === "__none__") {
+      result = result.filter((c) => !c.partidaId);
+    } else if (filterPartida) {
+      result = result.filter((c) => c.partidaId === filterPartida);
+    }
+
     // Sort
     result.sort((a, b) => {
       let cmp = 0;
@@ -91,14 +117,20 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
     });
 
     return result;
-  }, [costs, search, filterCategory, filterType, sortField, sortDir]);
+  }, [costs, search, filterCategory, filterType, filterPartida, sortField, sortDir]);
 
-  // Totals for filtered results (always in USD)
+  // Totals for filtered results — USD (normalizado) y ARS (histórico, cada gasto a su TC)
   const totalFiltered = useMemo(() => filteredCosts.reduce((s, c) => s + usdValue(c), 0), [filteredCosts]);
   const totalMaterials = useMemo(() => filteredCosts.reduce((s, c) => s + (c.costType === "material" || c.costType === "repuesto" ? usdValue(c) : 0), 0), [filteredCosts]);
   const totalLabor = useMemo(() => filteredCosts.reduce((s, c) => s + (c.costType === "mano_de_obra" ? usdValue(c) : 0), 0), [filteredCosts]);
 
-  const hasActiveFilters = search || filterCategory || filterType;
+  const totalFilteredArs = useMemo(() => filteredCosts.reduce((s, c) => s + costArs(c), 0), [filteredCosts]);
+  const totalMaterialsArs = useMemo(() => filteredCosts.reduce((s, c) => s + (c.costType === "material" || c.costType === "repuesto" ? costArs(c) : 0), 0), [filteredCosts]);
+  const totalLaborArs = useMemo(() => filteredCosts.reduce((s, c) => s + (c.costType === "mano_de_obra" ? costArs(c) : 0), 0), [filteredCosts]);
+  // Gastos sin TC cargado: no se pueden expresar en pesos, se avisa para no mentir el total.
+  const sinTc = useMemo(() => filteredCosts.filter((c) => costArs(c) === 0).length, [filteredCosts]);
+
+  const hasActiveFilters = Boolean(search || filterCategory || filterType || filterPartida);
 
   const handleSort = (field: "date" | "amount") => {
     if (sortField === field) {
@@ -113,6 +145,7 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
     setSearch("");
     setFilterCategory("");
     setFilterType("");
+    setFilterPartida("");
   };
 
   const fmtArs = (cost: Cost) => {
@@ -220,6 +253,35 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
           ))}
         </select>
 
+        {/* Filtro por presupuesto */}
+        {partidas.length > 0 && (
+          <select
+            value={filterPartida}
+            onChange={(e) => setFilterPartida(e.target.value)}
+            style={{
+              padding: "9px 28px 9px 12px",
+              background: "var(--surface-2)",
+              border: "1px solid var(--border-default)",
+              borderRadius: 8,
+              color: filterPartida ? "var(--text-primary)" : "var(--text-tertiary)",
+              fontSize: 13,
+              outline: "none",
+              cursor: "pointer",
+              appearance: "none",
+              maxWidth: 200,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a6b82' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right 8px center",
+            }}
+          >
+            <option value="">Presupuesto</option>
+            <option value="__none__">Sin imputar ({sinImputar})</option>
+            {partidas.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        )}
+
         {/* Add button */}
         {canEdit && (
           <button
@@ -282,12 +344,48 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
               </button>
             </span>
           )}
+          {filterPartida && (
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              padding: "3px 10px", background: "var(--surface-2)",
+              border: "1px solid var(--border-strong)", borderRadius: 6,
+              fontSize: 11, color: "var(--text-primary)",
+            }}>
+              {filterPartida === "__none__" ? "Sin imputar" : partidaNombre.get(filterPartida) || "Presupuesto"}
+              <button
+                onClick={() => setFilterPartida("")}
+                style={{ background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer", fontSize: 13, lineHeight: 1, padding: 0, marginLeft: 2 }}
+              >
+                ×
+              </button>
+            </span>
+          )}
           <button
             onClick={clearFilters}
             style={{ background: "none", border: "none", color: "var(--text-tertiary)", fontSize: 11, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}
           >
             Limpiar
           </button>
+        </div>
+      )}
+
+      {/* Aviso: gastos sin imputar a ningun presupuesto */}
+      {partidas.length > 0 && sinImputar > 0 && !filterPartida && (
+        <div
+          onClick={() => setFilterPartida("__none__")}
+          style={{
+            display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+            padding: "9px 12px", borderRadius: 9, marginBottom: 12,
+            background: "var(--warning-soft)", border: "1px solid var(--warning-border)",
+            fontSize: 12, color: "var(--warning)",
+          }}
+        >
+          <span>⚠</span>
+          <span style={{ flex: 1 }}>
+            {sinImputar} {sinImputar === 1 ? "costo no está imputado" : "costos no están imputados"} a
+            ningún presupuesto, así que no suman en <strong>Presupuestado vs Real</strong>.
+          </span>
+          <span style={{ textDecoration: "underline", textUnderlineOffset: 2, whiteSpace: "nowrap" }}>Ver cuáles</span>
         </div>
       )}
 
@@ -338,6 +436,13 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
                 </td>
                 <td style={{ padding: "10px 8px", color: "var(--text-primary)", fontWeight: 500 }}>
                   {cost.concept}
+                  {partidas.length > 0 && (
+                    <div style={{ fontSize: 10.5, marginTop: 2, color: cost.partidaId && partidaNombre.has(cost.partidaId) ? "var(--text-quaternary)" : "var(--warning)" }}>
+                      {cost.partidaId && partidaNombre.has(cost.partidaId)
+                        ? `↳ ${partidaNombre.get(cost.partidaId)}`
+                        : "↳ sin presupuesto"}
+                    </div>
+                  )}
                 </td>
                 <td style={{ padding: "10px 8px", textAlign: "center" }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-secondary)" }}>
@@ -414,27 +519,43 @@ export default function CostsTable({ costs, onAddClick, onEditClick, onDelete, c
           marginTop: 8,
           borderTop: "2px solid var(--border-default)",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>
               TOTAL{hasActiveFilters ? ` (${filteredCosts.length})` : ""}
             </span>
-            <div style={{ display: "flex", gap: 14, fontSize: 12, color: "var(--text-tertiary)" }}>
+            <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--text-tertiary)", flexWrap: "wrap" }}>
               {totalMaterials > 0 && (
                 <span>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--text-primary)", display: "inline-block", marginRight: 4, verticalAlign: "middle" }} />
                   Mat {fmt(totalMaterials)}
+                  <span style={{ color: "var(--text-quaternary)", marginLeft: 5 }}>· {fmtArsNum(totalMaterialsArs)}</span>
                 </span>
               )}
               {totalLabor > 0 && (
                 <span>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--success)", display: "inline-block", marginRight: 4, verticalAlign: "middle" }} />
                   MO {fmt(totalLabor)}
+                  <span style={{ color: "var(--text-quaternary)", marginLeft: 5 }}>· {fmtArsNum(totalLaborArs)}</span>
                 </span>
               )}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{fmt(totalFiltered)}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
+              {fmt(totalFiltered)}
+            </div>
+            <div
+              title="Suma de lo que realmente pagaste en pesos, cada gasto al tipo de cambio del día en que se cargó."
+              style={{ fontSize: 13, fontWeight: 600, color: "var(--text-tertiary)", marginTop: 2, fontVariantNumeric: "tabular-nums" }}
+            >
+              {fmtArsNum(totalFilteredArs)}
+              <span style={{ fontSize: 10, fontWeight: 500, color: "var(--text-quaternary)", marginLeft: 5 }}>ARS</span>
+            </div>
+            {sinTc > 0 && (
+              <div style={{ fontSize: 10.5, color: "var(--warning)", marginTop: 3 }}>
+                {sinTc} {sinTc === 1 ? "gasto sin" : "gastos sin"} tipo de cambio — no suman en ARS
+              </div>
+            )}
           </div>
         </div>
       )}

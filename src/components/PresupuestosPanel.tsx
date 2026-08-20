@@ -282,7 +282,7 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
           }}>
             Presupuestado vs. Real
             <span style={{ fontSize: 12, color: "var(--text-tertiary)", fontWeight: 400 }}>
-              — ejecutado contra proyectado, por rubro
+              — cuánto llevás pagado de cada presupuesto, en pesos
             </span>
             <span style={{ flex: 1, height: 1, background: "var(--border-default)" }} />
           </div>

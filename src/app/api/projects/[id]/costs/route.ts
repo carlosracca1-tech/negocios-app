@@ -91,6 +91,21 @@ export async function POST(
 
     const data = validation.data;
 
+    // Si viene imputado a un presupuesto, verificar que la partida sea de este proyecto.
+    let partidaId: string | null = data.partidaId ?? null;
+    if (partidaId) {
+      const partida = await prisma.partida.findFirst({
+        where: { id: partidaId, projectId },
+        select: { id: true },
+      });
+      if (!partida) {
+        return NextResponse.json(
+          { error: "El presupuesto seleccionado no pertenece a este proyecto" },
+          { status: 422 }
+        );
+      }
+    }
+
     // Calcular amountUsd para normalizar a moneda base
     let amountUsd: number | null = null;
     if (data.currency === "ARS" && data.exchangeRate && data.exchangeRate > 0) {
@@ -112,6 +127,7 @@ export async function POST(
           category: data.category,
           costType: data.costType,
           date: new Date(data.date),
+          partidaId,
         },
       });
 

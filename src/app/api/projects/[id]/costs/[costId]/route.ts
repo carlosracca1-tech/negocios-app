@@ -54,6 +54,20 @@ export async function PATCH(
 
     const data = validation.data;
 
+    // Si se cambia la imputacion a presupuesto, validar que la partida sea de este proyecto.
+    if (data.partidaId) {
+      const partida = await prisma.partida.findFirst({
+        where: { id: data.partidaId, projectId },
+        select: { id: true },
+      });
+      if (!partida) {
+        return NextResponse.json(
+          { error: "El presupuesto seleccionado no pertenece a este proyecto" },
+          { status: 422 }
+        );
+      }
+    }
+
     // Recalcular amountUsd si cambian amount, currency o exchangeRate
     const newAmount = data.amount ?? cost.amount;
     const newCurrency = data.currency ?? (cost as any).currency ?? "USD";
@@ -79,6 +93,8 @@ export async function PATCH(
           category: data.category,
           costType: data.costType,
           date: data.date ? new Date(data.date) : undefined,
+          // undefined = no tocar; null = desimputar del presupuesto
+          partidaId: data.partidaId === undefined ? undefined : data.partidaId,
         },
       });
 

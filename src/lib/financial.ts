@@ -69,6 +69,7 @@ export function computeProjectFinancials(
 interface CotizacionLike {
   amount: number;
   currency?: string | null;
+  exchangeRate?: number | null;
   amountUsd?: number | null;
   isChosen?: boolean;
 }
@@ -79,6 +80,19 @@ export function cotizacionUsd(cot: CotizacionLike): number {
     return safe(cot.amountUsd);
   }
   return safe(cot.amount);
+}
+
+/**
+ * Normaliza una cotizacion a PESOS NOMINALES.
+ * La obra se pacta en pesos: este es el numero que se le debe al proveedor.
+ * Si la cotizacion vino en USD, se pasa a pesos con el TC guardado en su momento.
+ */
+export function cotizacionArs(cot: CotizacionLike): number {
+  if (cot.currency === "ARS") return safe(cot.amount);
+  if (cot.exchangeRate && cot.exchangeRate > 0) {
+    return safe(cot.amount) * safe(cot.exchangeRate);
+  }
+  return 0;
 }
 
 interface PartidaLike {
@@ -100,21 +114,69 @@ export function partidaProjectedUsd(partida: PartidaLike): number {
   return safe(partida.estimatedAmount);
 }
 
+/**
+ * Presupuesto de una partida en PESOS: elegida > menor cotizacion > 0.
+ * No usa estimatedAmount porque ese campo es USD y no guarda TC de referencia.
+ */
+export function partidaProjectedArs(partida: PartidaLike): number {
+  const cots = partida.cotizaciones || [];
+  const chosen = cots.find((c) => c.isChosen);
+  if (chosen) return cotizacionArs(chosen);
+  const arsList = cots.map(cotizacionArs).filter((n) => n > 0);
+  if (arsList.length > 0) return Math.min(...arsList);
+  return 0;
+}
+
 interface CostLike {
   amount: number;
   currency?: string | null;
+  exchangeRate?: number | null;
   amountUsd?: number | null;
   partidaId?: string | null;
+}
+
+/**
+ * Monto de un costo en PESOS NOMINALES (lo que realmente salio del bolsillo).
+ * Si se cargo en USD, se convierte con el TC del dia en que se cargo.
+ */
+export function costArs(cost: CostLike): number {
+  if (cost.currency === "ARS") return safe(cost.amount);
+  if (cost.exchangeRate && cost.exchangeRate > 0) {
+    return safe(cost.amount) * safe(cost.exchangeRate);
+  }
+  return 0;
+}
+
+/** Monto de un costo en USD (misma logica que usa la tabla de costos). */
+export function costUsd(cost: CostLike): number {
+  if (cost.amountUsd != null) return safe(cost.amountUsd);
+  if (cost.currency === "ARS" && cost.exchangeRate && cost.exchangeRate > 0) {
+    return safe(cost.amount) / safe(cost.exchangeRate);
+  }
+  return safe(cost.amount);
 }
 
 export interface BudgetRubroResult {
   partidaId: string;
   name: string;
   category: string;
+  /** presupuesto en USD (referencia) */
   projected: number;
+  /** pagado en USD (referencia) */
   executed: number;
   deviation: number;
   pct: number;
+  // --- PESOS: la moneda real del contrato con el proveedor ---
+  /** presupuesto en pesos nominales */
+  projectedArs: number;
+  /** pagado en pesos nominales */
+  executedArs: number;
+  /** presupuesto - pagado, en pesos (negativo = te pasaste) */
+  deviationArs: number;
+  /** % pagado sobre el presupuesto, en pesos */
+  pctArs: number;
+  /** cantidad de costos imputados a esta partida */
+  costCount: number;
 }
 
 export interface BudgetProjectionResult {
@@ -122,6 +184,17 @@ export interface BudgetProjectionResult {
   totalExecuted: number;
   deviation: number;
   byRubro: BudgetRubroResult[];
+  // --- PESOS ---
+  totalProjectedArs: number;
+  totalExecutedArs: number;
+  deviationArs: number;
+  pctArs: number;
+  /** pagado en pesos que NO esta imputado a ningun presupuesto */
+  unassignedArs: number;
+  /** idem en USD */
+  unassignedUsd: number;
+  /** cuantos costos quedaron sin imputar */
+  unassignedCount: number;
 }
 
 /** Compute budget projection across all partidas vs executed costs */
@@ -130,25 +203,64 @@ export function computeBudgetProjection(
   costs: CostLike[]
 ): BudgetProjectionResult {
   const byRubro: BudgetRubroResult[] = partidas.map((p) => {
+    const propios = costs.filter((c) => c.partidaId === p.id);
+
+    // --- USD (referencia) ---
     const projected = partidaProjectedUsd(p);
-    const executed = costs
-      .filter((c) => c.partidaId === p.id)
-      .reduce((sum, c) => {
-        if (c.currency === "ARS" && c.amountUsd != null) {
-          return sum + safe(c.amountUsd);
-        }
-        return sum + safe(c.amount);
-      }, 0);
+    const executed = propios.reduce((sum, c) => sum + costUsd(c), 0);
     const deviation = projected - executed;
     const pct = projected > 0 ? (executed / projected) * 100 : 0;
-    return { partidaId: p.id, name: p.name, category: p.category, projected, executed, deviation, pct };
+
+    // --- PESOS (moneda real del acuerdo) ---
+    const projectedArs = partidaProjectedArs(p);
+    const executedArs = propios.reduce((sum, c) => sum + costArs(c), 0);
+    const deviationArs = projectedArs - executedArs;
+    const pctArs = projectedArs > 0 ? (executedArs / projectedArs) * 100 : 0;
+
+    return {
+      partidaId: p.id,
+      name: p.name,
+      category: p.category,
+      projected,
+      executed,
+      deviation,
+      pct,
+      projectedArs,
+      executedArs,
+      deviationArs,
+      pctArs,
+      costCount: propios.length,
+    };
   });
 
   const totalProjected = byRubro.reduce((s, r) => s + r.projected, 0);
   const totalExecuted = byRubro.reduce((s, r) => s + r.executed, 0);
   const deviation = totalProjected - totalExecuted;
 
-  return { totalProjected, totalExecuted, deviation, byRubro };
+  const totalProjectedArs = byRubro.reduce((s, r) => s + r.projectedArs, 0);
+  const totalExecutedArs = byRubro.reduce((s, r) => s + r.executedArs, 0);
+  const deviationArs = totalProjectedArs - totalExecutedArs;
+  const pctArs = totalProjectedArs > 0 ? (totalExecutedArs / totalProjectedArs) * 100 : 0;
+
+  // Costos que no fueron imputados a ninguna partida existente.
+  const idsValidos = new Set(partidas.map((p) => p.id));
+  const huerfanos = costs.filter((c) => !c.partidaId || !idsValidos.has(c.partidaId));
+  const unassignedArs = huerfanos.reduce((s, c) => s + costArs(c), 0);
+  const unassignedUsd = huerfanos.reduce((s, c) => s + costUsd(c), 0);
+
+  return {
+    totalProjected,
+    totalExecuted,
+    deviation,
+    byRubro,
+    totalProjectedArs,
+    totalExecutedArs,
+    deviationArs,
+    pctArs,
+    unassignedArs,
+    unassignedUsd,
+    unassignedCount: huerfanos.length,
+  };
 }
 
 // ============================================================================
@@ -241,8 +353,8 @@ export function computeObraProyeccion(params: {
   ventaReferencia: number | null | undefined;
   /** estimación manual de lo que falta pagar para terminar (costToFinish) */
   faltaParaTerminar?: number | null;
-  partidas: { id: string; name: string; category: string; estimatedAmount?: number | null; cotizaciones?: { amount: number; currency?: string | null; amountUsd?: number | null; isChosen?: boolean }[] }[];
-  costs: { amount: number; currency?: string | null; amountUsd?: number | null; partidaId?: string | null }[];
+  partidas: { id: string; name: string; category: string; estimatedAmount?: number | null; cotizaciones?: { amount: number; currency?: string | null; exchangeRate?: number | null; amountUsd?: number | null; isChosen?: boolean }[] }[];
+  costs: { amount: number; currency?: string | null; exchangeRate?: number | null; amountUsd?: number | null; partidaId?: string | null }[];
 }): ObraProyeccion {
   const inversionActual = safe(params.buyPrice) + safe(params.totalCosts) + safe(params.totalExpenses);
   const budget = computeBudgetProjection(params.partidas, params.costs);

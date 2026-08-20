@@ -758,6 +758,7 @@ export default function ProjectPage({ params }: PageProps) {
           {activeSection === "costos" && (
             <CostsTable
               costs={costsArray}
+              partidas={p.partidas || []}
               onAddClick={() => { setEditingCost(null); setShowAddCostModal(true); }}
               onEditClick={(cost) => { setEditingCost(cost); setShowAddCostModal(true); }}
               onDelete={async (cost) => {
@@ -837,6 +838,7 @@ export default function ProjectPage({ params }: PageProps) {
       <AddCostModal
         projectId={params.id}
         projectType={p?.type}
+        partidas={p.partidas || []}
         isOpen={showAddCostModal}
         onClose={() => { setShowAddCostModal(false); setEditingCost(null); }}
         onSuccess={() => refetch()}

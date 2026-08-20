@@ -149,6 +149,8 @@ export const createCostSchema = z.object({
   date: z.string().datetime("Invalid date format"),
   currency: z.enum(["ARS", "USD"]).optional().default("USD"),
   exchangeRate: z.number().positive().optional().nullable(),
+  /** Presupuesto (partida) al que se imputa el costo. Opcional. */
+  partidaId: z.string().min(1).optional().nullable(),
 });
 
 export const updateCostSchema = z.object({
@@ -159,6 +161,7 @@ export const updateCostSchema = z.object({
   date: z.string().datetime().optional(),
   currency: z.enum(["ARS", "USD"]).optional(),
   exchangeRate: z.number().positive().optional().nullable(),
+  partidaId: z.string().min(1).optional().nullable(),
 });
 
 export const addInvestorSchema = z.object({
