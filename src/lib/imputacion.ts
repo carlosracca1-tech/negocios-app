@@ -98,6 +98,76 @@ function coincide(seña: string[], palabrasDelConcepto: Set<string>): boolean {
   return seña.length > 0 && seña.every((p) => palabrasDelConcepto.has(p));
 }
 
+/** ¿El concepto sigue la convención "Proveedor #N - detalle"? */
+export function tieneNumeroDeOrden(concepto: string): boolean {
+  return /#\s*\d/.test(concepto || "");
+}
+
+/**
+ * Proveedor segun la convención de nombres: lo que va ANTES del #.
+ *
+ *   "Carpinterias Aberturas #3 - Primer semana" -> [carpinterias, aberturas]
+ *   "Electricista #4 - Materiales y mano de obra" -> [electricista]
+ *   "Colocador - semana #3" -> [colocador]   ("semana" es palabra vacia)
+ *
+ * Sin # no se puede saber donde termina el proveedor, asi que se devuelve
+ * el concepto entero y el matcheo se hace con la regla estricta.
+ */
+export function palabrasProveedorDelCosto(concepto: string): string[] {
+  return palabrasClave((concepto || "").split("#")[0]);
+}
+
+/** Cuantas palabras comparten dos nombres de proveedor. */
+function palabrasEnComun(a: string[], b: string[]): number {
+  const setB = new Set(b);
+  return a.filter((p) => setB.has(p)).length;
+}
+
+/**
+ * Puntaje de afinidad entre un costo y un presupuesto. 0 = no tienen nada que ver.
+ *
+ * Con numero de orden se comparan proveedor contra proveedor, y alcanza con
+ * que compartan una palabra: "Carpinterias Aberturas" y "Aberturas de
+ * aluminio" son el mismo proveedor aunque no se escriban igual. Comparar
+ * nombres cortos entre si es seguro; el que gana es el de mayor puntaje.
+ *
+ * Sin numero de orden no se sabe donde termina el proveedor dentro del
+ * concepto, asi que se exige la regla estricta: todas las palabras del
+ * presupuesto tienen que estar en el concepto.
+ */
+export function puntaje(
+  concepto: string,
+  señas: string[][],
+  palabrasDelConcepto: Set<string>
+): { score: number; porque: string[] } {
+  let mejor = { score: 0, porque: [] as string[] };
+
+  if (tieneNumeroDeOrden(concepto)) {
+    const delCosto = palabrasProveedorDelCosto(concepto);
+    señas.forEach((s) => {
+      const n = palabrasEnComun(s, delCosto);
+      if (n > mejor.score) {
+        mejor = { score: n, porque: s.filter((p) => delCosto.includes(p)) };
+      }
+    });
+    if (mejor.score > 0) return mejor;
+  }
+
+  señas.forEach((s) => {
+    if (coincide(s, palabrasDelConcepto) && s.length > mejor.score) {
+      mejor = { score: s.length, porque: s };
+    }
+  });
+
+  return mejor;
+}
+
+/** Identidad del proveedor de un presupuesto, para saber si dos son el mismo. */
+function identidadProveedor(p: PartidaParaImputar): string {
+  const señas = señasDePartida(p);
+  return señas.length > 0 ? señas[0].slice().sort().join(" ") : p.id;
+}
+
 /** Numero del presupuesto dentro del proveedor: "Albañil Juan #2 - ..." -> 2 */
 export function numeroDePartida(nombre: string): number {
   const m = nombre.match(/#(\d+)/);
@@ -194,16 +264,15 @@ export function planificarImputacion(
   pendientes.forEach((costo) => {
     const palabras = new Set(normalizar(costo.concept).split(" "));
 
-    const candidatos = conSeñas
-      .map((x) => {
-        const señaQueCalza = x.señas.find((s) => coincide(s, palabras));
-        return señaQueCalza ? { partida: x.partida, porque: señaQueCalza } : null;
-      })
-      .filter((x): x is { partida: PartidaParaImputar; porque: string[] } => x !== null);
+    // Puntaje de cada presupuesto contra este costo; gana el mas especifico.
+    const conPuntaje = conSeñas
+      .map((x) => ({ partida: x.partida, ...puntaje(costo.concept, x.señas, palabras) }))
+      .filter((x) => x.score > 0);
 
-    const unicos = new Map<string, { partida: PartidaParaImputar; porque: string[] }>();
-    candidatos.forEach((c) => { if (!unicos.has(c.partida.id)) unicos.set(c.partida.id, c); });
-    const lista = Array.from(unicos.values());
+    const mejorScore = conPuntaje.reduce((m, x) => Math.max(m, x.score), 0);
+    const lista = conPuntaje
+      .filter((x) => x.score === mejorScore)
+      .map((x) => ({ partida: x.partida, porque: x.porque }));
 
     if (lista.length === 1) {
       const elegido = lista[0];
@@ -226,7 +295,7 @@ export function planificarImputacion(
   // --- 2) los ambiguos: cascada si son del mismo proveedor ---
   ambiguos.forEach(({ costo, candidatos }) => {
     // Todos los candidatos comparten proveedor si comparten la misma seña.
-    const firmas = new Set(candidatos.map((c) => c.porque.slice().sort().join(" ")));
+    const firmas = new Set(candidatos.map((c) => identidadProveedor(c.partida)));
     const mismoProveedor = firmas.size === 1;
 
     if (!mismoProveedor) {
