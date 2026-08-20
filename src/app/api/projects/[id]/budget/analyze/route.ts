@@ -13,6 +13,7 @@ import {
   textoDeRespuesta,
   extraerJson,
   errorDeLectura,
+  SYSTEM_JSON,
 } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
@@ -127,11 +128,9 @@ IMPORTANTE:
         body: JSON.stringify({
           model: AI_MODEL,
           max_tokens: 4096,
+          system: SYSTEM_JSON,
           messages: [
             { role: "user", content: [{ type: "text", text: textPrompt }] },
-            // Prefill: arrancamos la respuesta con "{" para que el modelo
-            // continue el JSON y no agregue introducciones ni markdown.
-            { role: "assistant", content: "{" },
           ],
         }),
       });
@@ -146,8 +145,7 @@ IMPORTANTE:
       }
 
       const textResult = await textResponse.json();
-      // El prefill se descuenta de la respuesta: hay que volver a ponerlo.
-      const outText = "{" + textoDeRespuesta(textResult);
+      const outText = textoDeRespuesta(textResult);
       const parsedText = extraerJson(outText);
 
       if (!parsedText) {
@@ -219,12 +217,12 @@ IMPORTANTE:
       body: JSON.stringify({
         model: AI_MODEL,
         max_tokens: 4096,
+        system: SYSTEM_JSON,
         messages: [
           {
             role: "user",
             content: [docContent, { type: "text" as const, text: promptText }],
           },
-          { role: "assistant", content: "{" },
         ],
       }),
     });
@@ -239,7 +237,7 @@ IMPORTANTE:
     }
 
     const result = await response.json();
-    const text = "{" + textoDeRespuesta(result);
+    const text = textoDeRespuesta(result);
     const parsed = extraerJson(text);
 
     if (!parsed) {

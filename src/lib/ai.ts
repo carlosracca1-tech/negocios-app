@@ -15,6 +15,19 @@ export const AI_MODEL = "claude-sonnet-5";
 
 export const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
+/**
+ * Instrucción de sistema para los endpoints que esperan JSON.
+ *
+ * Antes se forzaba con un prefill de mensaje "assistant" arrancado en "{",
+ * pero claude-sonnet-5 lo rechaza: "This model does not support assistant
+ * message prefill". Se pide por system y despues extraerJson() tolera lo que
+ * el modelo agregue igual.
+ */
+export const SYSTEM_JSON =
+  "Respondés únicamente con un objeto JSON válido que empiece con { y termine con }. " +
+  "Sin explicaciones antes ni después, sin bloques de código markdown, sin ```json. " +
+  "Si un dato no está disponible usá null, nunca inventes valores.";
+
 export function anthropicHeaders(apiKey: string) {
   return {
     "Content-Type": "application/json",

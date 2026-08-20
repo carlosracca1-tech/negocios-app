@@ -12,6 +12,7 @@ import {
   textoDeRespuesta,
   extraerJson,
   errorDeLectura,
+  SYSTEM_JSON,
 } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
@@ -83,6 +84,7 @@ export async function POST(
       body: JSON.stringify({
         model: AI_MODEL,
         max_tokens: 2048,
+        system: SYSTEM_JSON,
         messages: [
           {
             role: "user",
