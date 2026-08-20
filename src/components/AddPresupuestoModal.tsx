@@ -46,6 +46,8 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
   // Modo de entrada elegido: "pdf" | "texto" | "manual"
   const [modo, setModo] = useState<"pdf" | "texto" | "manual">("pdf");
   const [texto, setTexto] = useState("");
+  // Pestaña de la pantalla inicial. Arranca en texto: es el camino mas rapido.
+  const [tab, setTab] = useState<"texto" | "pdf">("texto");
 
   // Editable fields from extraction
   const [provider, setProvider] = useState("");
@@ -103,6 +105,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
     setManual(false);
     setModo("pdf");
     setTexto("");
+    setTab("texto");
     setProvider("");
     setPartidaName("");
     setAmount(0);
@@ -334,7 +337,13 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
-            {manual ? "Cargar presupuesto" : modo === "texto" ? "Presupuesto por texto" : "Subir presupuesto"}
+            {manual
+              ? "Cargar a mano"
+              : step === "idle"
+                ? "Cargar presupuesto"
+                : modo === "texto"
+                  ? "Presupuesto por texto"
+                  : "Subir presupuesto"}
           </h3>
           <button
             onClick={handleClose}
@@ -346,8 +355,38 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
 
         {/* Body */}
         <div style={{ padding: 20, overflowY: "auto", flex: 1, minHeight: 0 }}>
+          {/* Pestañas: contármelo en texto o subir el PDF */}
+          {step === "idle" && !manual && !file && (
+            <div style={{
+              display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6,
+              background: "var(--surface-1)", border: "1px solid var(--border-faint)",
+              borderRadius: 10, padding: 4, marginBottom: 18,
+            }}>
+              {([
+                { key: "texto" as const, label: "✦ Contámelo", sub: "en tus palabras" },
+                { key: "pdf" as const, label: "Subir PDF", sub: "del proveedor" },
+              ]).map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setTab(t.key)}
+                  style={{
+                    padding: "9px 10px", borderRadius: 8, cursor: "pointer",
+                    border: tab === t.key ? "1px solid var(--border-strong)" : "1px solid transparent",
+                    background: tab === t.key ? "var(--surface-3)" : "transparent",
+                    color: tab === t.key ? "var(--text-primary)" : "var(--text-tertiary)",
+                    transition: "all 0.15s", textAlign: "center", lineHeight: 1.3,
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{t.label}</div>
+                  <div style={{ fontSize: 10.5, opacity: 0.75, marginTop: 1 }}>{t.sub}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* File chip / drop zone */}
-          {manual ? null : !file ? (
+          {manual || (step === "idle" && tab !== "pdf" && !file) ? null : !file ? (
             <div
               onClick={() => fileRef.current?.click()}
               onDragOver={(e) => e.preventDefault()}
@@ -416,16 +455,9 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
             </div>
           )}
 
-          {/* Contarselo a la IA en texto — alternativa al PDF */}
-          {step === "idle" && !file && !manual && (
-            <div style={{ marginTop: -6, marginBottom: 18 }}>
-              {/* separador "o" */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                <span style={{ flex: 1, height: 1, background: "var(--border-default)" }} />
-                <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontWeight: 600 }}>o contámelo</span>
-                <span style={{ flex: 1, height: 1, background: "var(--border-default)" }} />
-              </div>
-
+          {/* Contarselo a la IA en texto */}
+          {step === "idle" && !file && !manual && tab === "texto" && (
+            <div style={{ marginBottom: 18 }}>
               <textarea
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
@@ -728,7 +760,10 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
           background: "var(--surface-solid)",
         }}>
           <span style={{ fontSize: 11.5, color: "var(--text-tertiary)", flex: 1, minWidth: 140 }}>
-            {step === "idle" && "Subí el PDF o contámelo en texto. Yo completo todo, vos confirmás."}
+            {step === "idle" && !manual && (tab === "texto"
+              ? "Contámelo en tus palabras. Yo completo todo, vos confirmás."
+              : "Subí el PDF del proveedor y lo analizo por vos.")}
+            {step === "idle" && manual && "Completá los campos y guardá."}
             {step === "analyzing" && (modo === "texto" ? "Interpretando lo que escribiste..." : "Procesando el documento con IA...")}
             {step === "extracted" && (partidaName
               ? `Se carga al rubro ${category} · ${partidaName}`
@@ -745,7 +780,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
             >
               Cancelar
             </button>
-            {step === "idle" && (
+            {step === "idle" && tab === "pdf" && !manual && (
               <button
                 onClick={handleAnalyze}
                 disabled={!file}
