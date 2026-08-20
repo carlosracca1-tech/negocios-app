@@ -449,6 +449,22 @@ export const budgetApi = {
     return json.data;
   },
 
+  /** Igual que analyze() pero a partir de una descripción escrita a mano. */
+  async analyzeText(projectId: string, text: string): Promise<ParsedBudget> {
+    const formData = new FormData();
+    formData.append("text", text);
+    const res = await fetch(`/api/projects/${projectId}/budget/analyze`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.error || `API error: ${res.status}`);
+    }
+    const json = await res.json();
+    return json.data;
+  },
+
   async recomendar(projectId: string, partidaId: string): Promise<AiRecommendation> {
     return apiPost(`/api/projects/${projectId}/partidas/${partidaId}/recomendar`, {});
   },

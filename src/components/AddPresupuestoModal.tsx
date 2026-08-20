@@ -17,6 +17,14 @@ interface Props {
 
 type Step = "idle" | "analyzing" | "extracted" | "saving";
 
+const analyzeTextSteps = [
+  "Leyendo lo que escribiste...",
+  "Identificando proveedor y trabajo...",
+  "Interpretando el monto y la moneda...",
+  "Armando el alcance...",
+  "Asignando al rubro...",
+];
+
 const analyzeSteps = [
   "Leyendo el documento...",
   "Extrayendo alcance y partidas...",
@@ -35,6 +43,9 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
   const [saving, setSaving] = useState(false);
   // Carga a mano: sin PDF, el usuario tipea el presupuesto directamente.
   const [manual, setManual] = useState(false);
+  // Modo de entrada elegido: "pdf" | "texto" | "manual"
+  const [modo, setModo] = useState<"pdf" | "texto" | "manual">("pdf");
+  const [texto, setTexto] = useState("");
 
   // Editable fields from extraction
   const [provider, setProvider] = useState("");
@@ -90,6 +101,8 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
     setError(null);
     setSaving(false);
     setManual(false);
+    setModo("pdf");
+    setTexto("");
     setProvider("");
     setPartidaName("");
     setAmount(0);
@@ -108,6 +121,8 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
 
   const handleAnalyze = async () => {
     if (!file) return;
+    setModo("pdf");
+    setManual(false);
     setStep("analyzing");
     setError(null);
     setActiveStep(0);
@@ -149,6 +164,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
 
   const abrirManual = () => {
     setManual(true);
+    setModo("manual");
     setParsed(null);
     setError(null);
     setCurrency("ARS");
@@ -156,15 +172,93 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
     setStep("extracted");
   };
 
+  /**
+   * Numeracion correlativa por proveedor dentro del proyecto.
+   * "Albañil Juan" con un presupuesto previo => #2.
+   */
+  const siguienteNumero = useCallback(
+    (prov: string) => {
+      const base = prov.trim().toLowerCase();
+      if (!base) return 1;
+      let max = 0;
+      partidas.forEach((p) => {
+        const m = p.name.trim().toLowerCase().match(/^(.*?)\s*#(\d+)/);
+        if (m && m[1] === base) {
+          const n = parseInt(m[2], 10);
+          if (!isNaN(n) && n > max) max = n;
+        }
+      });
+      return max + 1;
+    },
+    [partidas]
+  );
+
+  const handleAnalyzeTexto = async () => {
+    const limpio = texto.trim();
+    if (limpio.length < 10) {
+      setError("Contame un poco más: quién te lo pasó, por cuánto y por qué trabajo.");
+      return;
+    }
+    setModo("texto");
+    setManual(false);
+    setStep("analyzing");
+    setError(null);
+    setActiveStep(0);
+    setDoneSteps(new Set());
+
+    const stepInterval = setInterval(() => {
+      setActiveStep((prev) => {
+        if (prev < analyzeTextSteps.length - 1) {
+          setDoneSteps((ds) => new Set(ds).add(prev));
+          return prev + 1;
+        }
+        return prev;
+      });
+    }, 450);
+
+    try {
+      const result = await budgetApi.analyzeText(projectId, limpio);
+      clearInterval(stepInterval);
+      setDoneSteps(new Set(analyzeTextSteps.map((_, i) => i)));
+      setActiveStep(-1);
+
+      setParsed(result);
+      const prov = result.provider || "";
+      setProvider(prov);
+      setCategory(result.category || categories[0]?.value || "");
+      // "Albañil Juan #1 - Revoques y contrapisos"
+      const desc = (result.suggestedPartidaName || "").trim();
+      const n = siguienteNumero(prov);
+      setPartidaName(
+        prov ? `${prov} #${n}${desc ? ` - ${desc}` : ""}` : desc
+      );
+      setAmount(result.amount || 0);
+      setCurrency(result.currency || "ARS");
+
+      setTimeout(() => setStep("extracted"), 350);
+    } catch (err) {
+      clearInterval(stepInterval);
+      setStep("idle");
+      setActiveStep(-1);
+      setDoneSteps(new Set());
+      setError(err instanceof Error ? err.message : "Error al analizar");
+    }
+  };
+
   const handleConfirm = async () => {
     setSaving(true);
     setError(null);
 
     try {
-      // Find or create partida
-      const existingPartida = partidas.find(
-        (p) => p.category === category && p.name.toLowerCase() === partidaName.toLowerCase()
-      );
+      // En modo PDF se reutiliza el rubro existente, para poder comparar cotizaciones
+      // de distintos proveedores lado a lado. En texto/manual cada carga es un
+      // presupuesto nuevo aparte, con su propio avance.
+      const existingPartida =
+        modo === "pdf"
+          ? partidas.find(
+              (p) => p.category === category && p.name.toLowerCase() === partidaName.toLowerCase()
+            )
+          : undefined;
 
       let partidaId: string;
       if (existingPartida) {
@@ -240,7 +334,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
-            {manual ? "Cargar presupuesto" : "Subir presupuesto"}
+            {manual ? "Cargar presupuesto" : modo === "texto" ? "Presupuesto por texto" : "Subir presupuesto"}
           </h3>
           <button
             onClick={handleClose}
@@ -322,20 +416,72 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
             </div>
           )}
 
-          {/* Cargar a mano — sin PDF */}
+          {/* Contarselo a la IA en texto — alternativa al PDF */}
           {step === "idle" && !file && !manual && (
-            <div style={{ textAlign: "center", marginTop: -8, marginBottom: 18 }}>
-              <button
-                type="button"
-                onClick={abrirManual}
+            <div style={{ marginTop: -6, marginBottom: 18 }}>
+              {/* separador "o" */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <span style={{ flex: 1, height: 1, background: "var(--border-default)" }} />
+                <span style={{ fontSize: 11, color: "var(--text-tertiary)", fontWeight: 600 }}>o contámelo</span>
+                <span style={{ flex: 1, height: 1, background: "var(--border-default)" }} />
+              </div>
+
+              <textarea
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                maxLength={4000}
+                rows={4}
+                placeholder="El albañil Juan me presupuestó 16 millones por los revoques, contrapisos y carpetas. No incluye materiales."
                 style={{
-                  background: "none", border: "none", padding: 0,
-                  color: "var(--text-secondary)", fontSize: 12.5, cursor: "pointer",
-                  textDecoration: "underline", textUnderlineOffset: 3,
+                  ...modalInputStyle,
+                  minHeight: 92,
+                  resize: "vertical",
+                  lineHeight: 1.5,
+                  fontFamily: "inherit",
                 }}
-              >
-                No tengo PDF — cargar el presupuesto a mano
-              </button>
+                onFocus={focusInput as any}
+                onBlur={blurInput as any}
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") handleAnalyzeTexto();
+                }}
+              />
+
+              <div style={{
+                display: "flex", alignItems: "center", gap: 10,
+                marginTop: 9, flexWrap: "wrap",
+              }}>
+                <button
+                  type="button"
+                  onClick={handleAnalyzeTexto}
+                  disabled={texto.trim().length < 10}
+                  style={{
+                    padding: "8px 14px", borderRadius: 8, border: "none",
+                    background: texto.trim().length >= 10 ? "var(--accent)" : "var(--surface-3)",
+                    color: texto.trim().length >= 10 ? "var(--accent-on)" : "var(--text-tertiary)",
+                    fontSize: 13, fontWeight: 600,
+                    cursor: texto.trim().length >= 10 ? "pointer" : "not-allowed",
+                  }}
+                >
+                  ✦ Analizar con IA
+                </button>
+                <span style={{ fontSize: 11, color: "var(--text-tertiary)", flex: 1, minWidth: 120 }}>
+                  Decime quién, cuánto y por qué trabajo. Los montos los tomo en pesos.
+                </span>
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: 14 }}>
+                <button
+                  type="button"
+                  onClick={abrirManual}
+                  style={{
+                    background: "none", border: "none", padding: 0,
+                    color: "var(--text-tertiary)", fontSize: 12, cursor: "pointer",
+                    textDecoration: "underline", textUnderlineOffset: 3,
+                  }}
+                >
+                  Prefiero cargarlo a mano, campo por campo
+                </button>
+              </div>
             </div>
           )}
 
@@ -353,7 +499,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
           {/* Analyzing steps */}
           {step === "analyzing" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-              {analyzeSteps.map((s, i) => {
+              {(modo === "texto" ? analyzeTextSteps : analyzeSteps).map((s, i) => {
                 const isDone = doneSteps.has(i);
                 const isActive = i === activeStep;
                 return (
@@ -400,6 +546,8 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
               }}>
                 {manual ? (
                   <>✎ Carga manual — completá el proveedor, el rubro y el monto en pesos.</>
+                ) : modo === "texto" ? (
+                  <>✦ Listo — lo saqué de tu descripción. Revisá y confirmá.</>
                 ) : (
                   <>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -409,6 +557,17 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
                   </>
                 )}
               </div>
+
+              {/* Lo que escribio el usuario, para poder contrastar */}
+              {modo === "texto" && texto.trim() && (
+                <div style={{
+                  fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.5,
+                  borderLeft: "2px solid var(--border-strong)", paddingLeft: 11,
+                  marginBottom: 15, fontStyle: "italic",
+                }}>
+                  {texto.trim()}
+                </div>
+              )}
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 13 }}>
                 <div>
@@ -569,8 +728,8 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
           background: "var(--surface-solid)",
         }}>
           <span style={{ fontSize: 11.5, color: "var(--text-tertiary)", flex: 1, minWidth: 140 }}>
-            {step === "idle" && "Analizo el PDF y completo todo. Vos solo confirmas."}
-            {step === "analyzing" && "Procesando el documento con IA..."}
+            {step === "idle" && "Subí el PDF o contámelo en texto. Yo completo todo, vos confirmás."}
+            {step === "analyzing" && (modo === "texto" ? "Interpretando lo que escribiste..." : "Procesando el documento con IA...")}
             {step === "extracted" && (partidaName
               ? `Se carga al rubro ${category} · ${partidaName}`
               : "Completá el rubro y el monto para guardar")}

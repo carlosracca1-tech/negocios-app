@@ -51,11 +51,98 @@ export async function POST(
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const rawText = ((formData.get("text") as string | null) || "").trim();
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    if (!file && !rawText) {
+      return NextResponse.json(
+        { error: "Mandá un archivo o describí el presupuesto en texto." },
+        { status: 400 }
+      );
     }
 
+    if (!file && rawText.length > 4000) {
+      return NextResponse.json(
+        { error: "El texto es demasiado largo (máximo 4000 caracteres)." },
+        { status: 400 }
+      );
+    }
+
+    // Forma del JSON, compartida por los dos modos (documento y texto libre).
+    const jsonShape = `{
+  "provider": "nombre del proveedor/empresa",
+  "category": "una de: ${validCategories.join("|")}",
+  "suggestedPartidaName": "descripcion corta del trabajo, 2 a 5 palabras, SIN el nombre del proveedor (ej: Revoques y contrapisos)",
+  "amount": 0,
+  "currency": "ARS o USD",
+  "scopeItems": [{ "label": "descripcion del item", "included": true }],
+  "leadTimeDays": null,
+  "leadTimeText": "texto libre del tiempo de entrega o null",
+  "paymentTerms": "condiciones de pago o null",
+  "warranty": "garantia o null",
+  "validityDays": null,
+  "notes": "detalles relevantes adicionales o null"
+}`;
+
+    // ======================= MODO TEXTO LIBRE =======================
+    if (!file) {
+      const textPrompt = `Sos un experto en presupuestos de obra en Argentina. El usuario te describe en lenguaje coloquial un presupuesto que le paso un proveedor. Extrae la informacion en JSON.
+
+Texto del usuario:
+<<<
+${rawText}
+>>>
+
+Categorias validas para este proyecto (tipo ${project.type}): ${validCategories.join(", ")}
+
+Responde SOLO con este JSON, sin texto adicional ni markdown:
+${jsonShape}
+
+IMPORTANTE:
+- En Argentina los montos se dicen en PESOS por defecto. Usa currency "ARS" salvo que el texto diga explicitamente dolares, USD, u$s o verdes.
+- Expandi las abreviaturas de monto a numero entero: "16 millones" / "16M" / "16 palos" = 16000000. "500 mil" / "500k" = 500000. "1,5 millones" = 1500000.
+- El monto debe ser un numero, no string, sin puntos ni comas.
+- provider: el nombre del proveedor como lo nombra el usuario, prolijo y capitalizado (ej: "el albañil juan" -> "Albañil Juan").
+- suggestedPartidaName: describi el trabajo. NUNCA incluyas el nombre del proveedor ni numeros de orden.
+- scopeItems: un item por cada trabajo que menciona el usuario. Si dice que algo NO esta incluido, included: false.
+- Si un dato no aparece en el texto, poné null. No inventes plazos, garantias ni condiciones de pago.`;
+
+      const textResponse = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2048,
+          messages: [{ role: "user", content: [{ type: "text", text: textPrompt }] }],
+        }),
+      });
+
+      if (!textResponse.ok) {
+        const errBody = await textResponse.text();
+        console.error("Anthropic API error (texto):", errBody);
+        return NextResponse.json(
+          { error: "No se pudo analizar el texto. Revisá la API key." },
+          { status: 502 }
+        );
+      }
+
+      const textResult = await textResponse.json();
+      const outText = textResult.content?.[0]?.text || "";
+      try {
+        const cleaned = outText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        return NextResponse.json({ data: JSON.parse(cleaned) });
+      } catch {
+        return NextResponse.json(
+          { error: "No pude interpretar el presupuesto. Probá dando un poco más de detalle.", rawText: outText },
+          { status: 422 }
+        );
+      }
+    }
+
+    // ==================== MODO DOCUMENTO (PDF / imagen) ====================
     const buffer = Buffer.from(await file.arrayBuffer());
     const base64 = buffer.toString("base64");
 
