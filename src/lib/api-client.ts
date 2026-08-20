@@ -161,7 +161,37 @@ export const costsApi = {
   async delete(projectId: string, costId: string): Promise<void> {
     return apiDelete(`/api/projects/${projectId}/costs/${costId}`);
   },
+
+  /**
+   * Imputa automáticamente los costos que no tienen presupuesto.
+   * Con aplicar=false devuelve solo el plan, sin escribir nada.
+   */
+  async autoImputar(
+    projectId: string,
+    aplicar: boolean
+  ): Promise<AutoImputarResultado> {
+    return apiPost(`/api/projects/${projectId}/costs/auto-imputar`, { aplicar });
+  },
 };
+
+export interface AutoImputarResultado {
+  aplicado: boolean;
+  sinPresupuestos: boolean;
+  totalCostos: number;
+  imputar: {
+    costId: string;
+    concept: string;
+    partidaId: string;
+    partidaName: string;
+    porque: string[];
+  }[];
+  dejar: {
+    costId: string;
+    concept: string;
+    motivo: "sin_coincidencia" | "ambiguo";
+    candidatos?: string[];
+  }[];
+}
 
 // ============================================================================
 // INVESTORS API

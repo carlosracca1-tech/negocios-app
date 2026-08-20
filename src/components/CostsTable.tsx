@@ -31,12 +31,14 @@ interface CostsTableProps {
   /** Presupuestos del proyecto, para mostrar y filtrar la imputación de cada costo. */
   partidas?: Partida[];
   onAddClick: () => void;
+  /** Abre la vista previa de imputacion automatica. */
+  onAutoImputar?: () => void;
   onEditClick?: (cost: Cost) => void;
   onDelete?: (cost: Cost) => void;
   canEdit?: boolean;
 }
 
-export default function CostsTable({ costs, partidas = [], onAddClick, onEditClick, onDelete, canEdit = true }: CostsTableProps) {
+export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImputar, onEditClick, onDelete, canEdit = true }: CostsTableProps) {
   const showActions = canEdit && Boolean(onEditClick || onDelete);
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
@@ -372,20 +374,40 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onEditCli
       {/* Aviso: gastos sin imputar a ningun presupuesto */}
       {partidas.length > 0 && sinImputar > 0 && !filterPartida && (
         <div
-          onClick={() => setFilterPartida("__none__")}
           style={{
-            display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 10,
             padding: "9px 12px", borderRadius: 9, marginBottom: 12,
             background: "var(--warning-soft)", border: "1px solid var(--warning-border)",
-            fontSize: 12, color: "var(--warning)",
+            fontSize: 12, color: "var(--warning)", flexWrap: "wrap",
           }}
         >
           <span>⚠</span>
-          <span style={{ flex: 1 }}>
+          <span style={{ flex: 1, minWidth: 180 }}>
             {sinImputar} {sinImputar === 1 ? "costo no está imputado" : "costos no están imputados"} a
             ningún presupuesto, así que no suman en <strong>Presupuestado vs Real</strong>.
           </span>
-          <span style={{ textDecoration: "underline", textUnderlineOffset: 2, whiteSpace: "nowrap" }}>Ver cuáles</span>
+          {canEdit && onAutoImputar && (
+            <button
+              onClick={onAutoImputar}
+              style={{
+                background: "var(--warning)", border: "none", borderRadius: 7,
+                padding: "6px 12px", fontSize: 11.5, fontWeight: 700,
+                color: "var(--bg)", cursor: "pointer", whiteSpace: "nowrap",
+              }}
+            >
+              ✦ Imputar automáticamente
+            </button>
+          )}
+          <button
+            onClick={() => setFilterPartida("__none__")}
+            style={{
+              background: "none", border: "none", color: "var(--warning)",
+              fontSize: 11.5, cursor: "pointer", textDecoration: "underline",
+              textUnderlineOffset: 2, whiteSpace: "nowrap", padding: 0,
+            }}
+          >
+            Ver cuáles
+          </button>
         </div>
       )}
 

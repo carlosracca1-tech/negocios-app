@@ -13,6 +13,7 @@ import AccessPanel from "@/components/AccessPanel";
 import CapitalPanel from "@/components/CapitalPanel";
 import ShareModal from "@/components/ShareModal";
 import AddCostModal from "@/components/AddCostModal";
+import AutoImputarModal from "@/components/AutoImputarModal";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import ExpensesPanel from "@/components/ExpensesPanel";
 import RegisterSaleModal from "@/components/RegisterSaleModal";
@@ -85,6 +86,7 @@ export default function ProjectPage({ params }: PageProps) {
   const [activeSection, setActiveSection] = useState("resumen");
   const [showShareModal, setShowShareModal] = useState(false);
   const [showAddCostModal, setShowAddCostModal] = useState(false);
+  const [showAutoImputarModal, setShowAutoImputarModal] = useState(false);
   const [showRegisterSaleModal, setShowRegisterSaleModal] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<import("@/types").Expense | null>(null);
@@ -759,6 +761,7 @@ export default function ProjectPage({ params }: PageProps) {
             <CostsTable
               costs={costsArray}
               partidas={p.partidas || []}
+              onAutoImputar={() => setShowAutoImputarModal(true)}
               onAddClick={() => { setEditingCost(null); setShowAddCostModal(true); }}
               onEditClick={(cost) => { setEditingCost(cost); setShowAddCostModal(true); }}
               onDelete={async (cost) => {
@@ -832,6 +835,13 @@ export default function ProjectPage({ params }: PageProps) {
         projectId={params.id}
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
+        onSuccess={() => refetch()}
+      />
+
+      <AutoImputarModal
+        projectId={params.id}
+        isOpen={showAutoImputarModal}
+        onClose={() => setShowAutoImputarModal(false)}
         onSuccess={() => refetch()}
       />
 
