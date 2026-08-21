@@ -8,6 +8,7 @@ import KPICard from "./KPICard";
 import PartidaCard from "./PartidaCard";
 import PresupuestadoVsReal from "./PresupuestadoVsReal";
 import AddPresupuestoModal from "./AddPresupuestoModal";
+import EditPresupuestoModal from "./EditPresupuestoModal";
 
 interface Props {
   projectId: string;
@@ -24,6 +25,8 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
   const [showModal, setShowModal] = useState(false);
   const [elegirLoading, setElegirLoading] = useState(false);
   const [recomendandoId, setRecomendandoId] = useState<string | null>(null);
+  // Partida que se esta editando (null = modal cerrado).
+  const [editando, setEditando] = useState<Partida | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -265,6 +268,8 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
               partida={p}
               onElegir={handleElegir}
               onRecomendar={handleRecomendar}
+              onEditar={setEditando}
+              canEdit={canEdit}
               loading={elegirLoading}
               recomendando={recomendandoId === p.id}
             />
@@ -320,6 +325,15 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
       )}
 
       {/* Modal */}
+      <EditPresupuestoModal
+        projectId={projectId}
+        projectType={projectType}
+        partida={editando}
+        isOpen={editando !== null}
+        onClose={() => setEditando(null)}
+        onSuccess={fetchData}
+      />
+
       <AddPresupuestoModal
         projectId={projectId}
         projectType={projectType}

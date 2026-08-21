@@ -10,6 +10,9 @@ interface Props {
   partida: Partida;
   onElegir: (partidaId: string, cotId: string) => void;
   onRecomendar: (partidaId: string) => void;
+  /** Abre el modal para corregir el rubro o el monto (agregados de ultimo momento). */
+  onEditar?: (partida: Partida) => void;
+  canEdit?: boolean;
   loading?: boolean;
   recomendando?: boolean;
 }
@@ -22,7 +25,7 @@ const catIcons: Record<string, string> = {
   Electrónica: "📡", Neumaticos: "🛞", Neumáticos: "🛞",
 };
 
-export default function PartidaCard({ partida, onElegir, onRecomendar, loading, recomendando }: Props) {
+export default function PartidaCard({ partida, onElegir, onRecomendar, onEditar, canEdit = true, loading, recomendando }: Props) {
   const [open, setOpen] = useState(false);
   const cots = (partida.cotizaciones || []) as Cotizacion[];
   const usds = cots.map(cotizacionUsd);
@@ -126,6 +129,31 @@ export default function PartidaCard({ partida, onElegir, onRecomendar, loading, 
             </div>
           )}
         </div>
+
+        {canEdit && onEditar && (
+          <button
+            title="Editar presupuesto"
+            onClick={(e) => { e.stopPropagation(); onEditar(partida); }}
+            style={{
+              background: "none", border: "1px solid var(--border-faint)", borderRadius: 8,
+              width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: "var(--text-tertiary)", flexShrink: 0, transition: "all 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--text-primary)";
+              e.currentTarget.style.borderColor = "var(--border-strong)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-tertiary)";
+              e.currentTarget.style.borderColor = "var(--border-faint)";
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
+        )}
 
         <svg
           width="16" height="16" viewBox="0 0 24 24" fill="none"
