@@ -18,6 +18,14 @@ const costTypeLabels: Record<string, string> = {
   repuesto: "Rep",
 };
 
+/**
+ * Tipos de costo que NO necesitan estar imputados a un presupuesto.
+ * Un material es una compra suelta: solo se imputa si el usuario lo aclara,
+ * asi que no cuenta como "pendiente" ni ensucia la tabla con avisos.
+ */
+const TIPOS_SIN_PRESUPUESTO = new Set<string>(["material"]);
+const requierePresupuesto = (costType: string) => !TIPOS_SIN_PRESUPUESTO.has(costType);
+
 const costTypeFullLabels: Record<string, string> = {
   material: "Material",
   mano_de_obra: "Mano de obra",
@@ -53,8 +61,12 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
     return m;
   }, [partidas]);
 
+  // Solo cuentan los tipos que si necesitan presupuesto (materiales quedan afuera).
   const sinImputar = useMemo(
-    () => costs.filter((c) => !c.partidaId || !partidaNombre.has(c.partidaId)).length,
+    () =>
+      costs.filter(
+        (c) => requierePresupuesto(c.costType) && (!c.partidaId || !partidaNombre.has(c.partidaId))
+      ).length,
     [costs, partidaNombre]
   );
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -102,7 +114,7 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
     }
 
     if (filterPartida === "__none__") {
-      result = result.filter((c) => !c.partidaId);
+      result = result.filter((c) => requierePresupuesto(c.costType) && !c.partidaId);
     } else if (filterPartida) {
       result = result.filter((c) => c.partidaId === filterPartida);
     }
@@ -371,46 +383,6 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
         </div>
       )}
 
-      {/* Aviso: gastos sin imputar a ningun presupuesto */}
-      {partidas.length > 0 && sinImputar > 0 && !filterPartida && (
-        <div
-          style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "9px 12px", borderRadius: 9, marginBottom: 12,
-            background: "var(--warning-soft)", border: "1px solid var(--warning-border)",
-            fontSize: 12, color: "var(--warning)", flexWrap: "wrap",
-          }}
-        >
-          <span>⚠</span>
-          <span style={{ flex: 1, minWidth: 180 }}>
-            {sinImputar} {sinImputar === 1 ? "costo no está imputado" : "costos no están imputados"} a
-            ningún presupuesto, así que no suman en <strong>Presupuestado vs Real</strong>.
-          </span>
-          {canEdit && onAutoImputar && (
-            <button
-              onClick={onAutoImputar}
-              style={{
-                background: "var(--warning)", border: "none", borderRadius: 7,
-                padding: "6px 12px", fontSize: 11.5, fontWeight: 700,
-                color: "var(--bg)", cursor: "pointer", whiteSpace: "nowrap",
-              }}
-            >
-              ✦ Imputar automáticamente
-            </button>
-          )}
-          <button
-            onClick={() => setFilterPartida("__none__")}
-            style={{
-              background: "none", border: "none", color: "var(--warning)",
-              fontSize: 11.5, cursor: "pointer", textDecoration: "underline",
-              textUnderlineOffset: 2, whiteSpace: "nowrap", padding: 0,
-            }}
-          >
-            Ver cuáles
-          </button>
-        </div>
-      )}
-
       {/* Results info */}
       <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 10 }}>
         {hasActiveFilters
@@ -458,13 +430,16 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
                 </td>
                 <td style={{ padding: "10px 8px", color: "var(--text-primary)", fontWeight: 500 }}>
                   {cost.concept}
-                  {partidas.length > 0 && (
-                    <div style={{ fontSize: 10.5, marginTop: 2, color: cost.partidaId && partidaNombre.has(cost.partidaId) ? "var(--text-quaternary)" : "var(--warning)" }}>
-                      {cost.partidaId && partidaNombre.has(cost.partidaId)
-                        ? `↳ ${partidaNombre.get(cost.partidaId)}`
-                        : "↳ sin presupuesto"}
-                    </div>
-                  )}
+                  {partidas.length > 0 &&
+                    (cost.partidaId && partidaNombre.has(cost.partidaId) ? (
+                      <div style={{ fontSize: 10.5, marginTop: 2, color: "var(--text-quaternary)" }}>
+                        {`↳ ${partidaNombre.get(cost.partidaId)}`}
+                      </div>
+                    ) : requierePresupuesto(cost.costType) ? (
+                      <div style={{ fontSize: 10.5, marginTop: 2, color: "var(--text-quaternary)" }}>
+                        ↳ sin presupuesto
+                      </div>
+                    ) : null)}
                 </td>
                 <td style={{ padding: "10px 8px", textAlign: "center" }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-secondary)" }}>
@@ -579,6 +554,45 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Nota al pie: solo para los tipos que si deberian estar imputados */}
+      {partidas.length > 0 && sinImputar > 0 && !filterPartida && (
+        <div
+          style={{
+            display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+            marginTop: 12, fontSize: 11, color: "var(--text-quaternary)",
+          }}
+        >
+          <span>
+            {sinImputar} {sinImputar === 1 ? "costo sin imputar" : "costos sin imputar"} a un presupuesto — no suma en Presupuestado vs Real.
+          </span>
+          <button
+            onClick={() => setFilterPartida("__none__")}
+            style={{
+              background: "none", border: "none", color: "var(--text-tertiary)",
+              fontSize: 11, cursor: "pointer", textDecoration: "underline",
+              textUnderlineOffset: 2, padding: 0, whiteSpace: "nowrap",
+            }}
+          >
+            Ver cuáles
+          </button>
+          {canEdit && onAutoImputar && (
+            <>
+              <span style={{ opacity: 0.5 }}>·</span>
+              <button
+                onClick={onAutoImputar}
+                style={{
+                  background: "none", border: "none", color: "var(--text-tertiary)",
+                  fontSize: 11, cursor: "pointer", textDecoration: "underline",
+                  textUnderlineOffset: 2, padding: 0, whiteSpace: "nowrap",
+                }}
+              >
+                Imputar automáticamente
+              </button>
+            </>
+          )}
         </div>
       )}
 
