@@ -11,7 +11,7 @@
  * completa siguen en el segundo (ver repartirEnCascada).
  */
 
-import { costArs, partidaProjectedArs } from "./financial";
+import { costEn, partidaCurrency, partidaProjectedNative, type Moneda } from "./financial";
 
 /** Palabras genericas que aparecen en cualquier obra y no identifican a nadie. */
 const PALABRAS_VACIAS = new Set([
@@ -206,8 +206,10 @@ export interface Imputacion {
   partidaName: string;
   /** las palabras que hicieron el match, para poder auditarlo */
   porque: string[];
-  /** monto del costo en pesos */
-  montoArs: number;
+  /** monto del costo, expresado en la moneda de la partida destino */
+  monto: number;
+  /** moneda en la que esta pactada la partida destino */
+  moneda: Moneda;
   /** true si entro por cascada tras completarse un presupuesto anterior */
   porCascada?: boolean;
   /** true si con este costo el presupuesto queda excedido */
@@ -225,11 +227,14 @@ export interface NoImputado {
 export interface ResumenPartida {
   partidaId: string;
   partidaName: string;
-  presupuestoArs: number;
-  /** lo que ya tenia imputado antes de esta corrida */
-  previoArs: number;
-  /** lo que suma esta corrida */
-  nuevoArs: number;
+  /** moneda en la que esta pactada la partida */
+  moneda: Moneda;
+  /** presupuesto en la moneda de la partida */
+  presupuesto: number;
+  /** lo que ya tenia imputado antes de esta corrida, en la moneda de la partida */
+  previo: number;
+  /** lo que suma esta corrida, en la moneda de la partida */
+  nuevo: number;
   cantidadNueva: number;
 }
 
@@ -267,12 +272,21 @@ export function planificarImputacion(
   const imputar: Imputacion[] = [];
   const dejar: NoImputado[] = [];
 
+  // Cada presupuesto se mide en SU moneda: uno pactado en dolares se llena con
+  // dolares y uno en pesos con pesos. Mezclarlos inflaba el avance por devaluacion.
+  const monedaDe = new Map<string, Moneda>();
+  partidas.forEach((p) => monedaDe.set(p.id, partidaCurrency(p)));
+  const monedaPartida = (id: string): Moneda => monedaDe.get(id) || "USD";
+
   // Cuanto lleva consumido cada presupuesto por costos ya imputados a mano.
   const consumido = new Map<string, number>();
   partidas.forEach((p) => consumido.set(p.id, 0));
   costos.forEach((c) => {
     if (c.partidaId && consumido.has(c.partidaId)) {
-      consumido.set(c.partidaId, (consumido.get(c.partidaId) || 0) + costArs(c));
+      consumido.set(
+        c.partidaId,
+        (consumido.get(c.partidaId) || 0) + costEn(c, monedaPartida(c.partidaId))
+      );
     }
   });
   const previo = new Map(consumido);
@@ -310,15 +324,18 @@ export function planificarImputacion(
 
     if (lista.length === 1) {
       const elegido = lista[0];
+      const moneda = monedaPartida(elegido.partida.id);
+      const monto = costEn(costo, moneda);
       imputar.push({
         costId: costo.id,
         concept: costo.concept,
         partidaId: elegido.partida.id,
         partidaName: elegido.partida.name,
         porque: elegido.porque,
-        montoArs: costArs(costo),
+        monto,
+        moneda,
       });
-      consumido.set(elegido.partida.id, (consumido.get(elegido.partida.id) || 0) + costArs(costo));
+      consumido.set(elegido.partida.id, (consumido.get(elegido.partida.id) || 0) + monto);
     } else if (lista.length > 1) {
       ambiguos.push({ costo, candidatos: lista });
     } else {
@@ -350,7 +367,7 @@ export function planificarImputacion(
       return (a.partida.order ?? 0) - (b.partida.order ?? 0);
     });
 
-    const topes = enOrden.map((c) => partidaProjectedArs(c.partida));
+    const topes = enOrden.map((c) => partidaProjectedNative(c.partida));
     if (topes.every((t) => t <= 0)) {
       // Sin montos cargados no se puede saber cuando se completa uno.
       dejar.push({
@@ -362,7 +379,9 @@ export function planificarImputacion(
       return;
     }
 
-    const monto = costArs(costo);
+    // La cascada solo tiene sentido entre presupuestos del mismo proveedor; si
+    // ademas estan en la misma moneda los saldos son comparables directamente.
+    // El monto se evalua contra la moneda del destino que finalmente se elija.
 
     // El primero que todavia tenga saldo. Si estan todos llenos, va al ultimo:
     // los pagos que sobran son excedente del presupuesto mas reciente.
@@ -375,6 +394,8 @@ export function planificarImputacion(
     const destino = enOrden[destinoIdx];
     const yaTenia = consumido.get(destino.partida.id) || 0;
     const tope = topes[destinoIdx];
+    const moneda = monedaPartida(destino.partida.id);
+    const monto = costEn(costo, moneda);
 
     imputar.push({
       costId: costo.id,
@@ -382,7 +403,8 @@ export function planificarImputacion(
       partidaId: destino.partida.id,
       partidaName: destino.partida.name,
       porque: destino.porque,
-      montoArs: monto,
+      monto,
+      moneda,
       porCascada,
       excede: tope > 0 && yaTenia + monto > tope,
     });
@@ -396,9 +418,10 @@ export function planificarImputacion(
       return {
         partidaId: p.id,
         partidaName: p.name,
-        presupuestoArs: partidaProjectedArs(p),
-        previoArs: previo.get(p.id) || 0,
-        nuevoArs: nuevos.reduce((s, i) => s + i.montoArs, 0),
+        moneda: monedaPartida(p.id),
+        presupuesto: partidaProjectedNative(p),
+        previo: previo.get(p.id) || 0,
+        nuevo: nuevos.reduce((s, i) => s + i.monto, 0),
         cantidadNueva: nuevos.length,
       };
     })

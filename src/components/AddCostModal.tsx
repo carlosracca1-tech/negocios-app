@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useCreateCost, useUpdateCost } from "@/hooks/useProjects";
 import { Cost, Partida } from "@/types";
-import { partidaProjectedArs, costArs } from "@/lib/financial";
+import { partidaCurrency, partidaProjectedNative, costEn, type Moneda } from "@/lib/financial";
 import {
   modalInputStyle as inputStyle,
   focusInput,
@@ -157,12 +157,17 @@ export default function AddCostModal({
   };
 
   // Tipo de cambio efectivo: al editar usamos el TC guardado; al crear, el blue del día
+  const savedRate = parseFloat(editRate) || 0;
+  const blueToday = blueRate?.promedio || 0;
   const currentRate =
-    currency === "ARS"
-      ? isEditMode
-        ? parseFloat(editRate) || 0
-        : blueRate?.promedio || 0
-      : 0;
+    currency === "ARS" ? (isEditMode ? savedRate : blueToday) : 0;
+
+  /**
+   * TC que se persiste. Se guarda SIEMPRE, tambien cuando el costo es en USD:
+   * sin esa referencia el costo quedaba invisible para los presupuestos en pesos.
+   */
+  const rateToSave =
+    currency === "ARS" ? currentRate : isEditMode && savedRate > 0 ? savedRate : blueToday;
 
   // Conversión a USD para guardar (acepta coma o punto como decimal)
   const amountNum = parseAmountInput(amount);
@@ -175,33 +180,36 @@ export default function AddCostModal({
 
   // Monto de este costo en pesos nominales (para previsualizar el impacto en el presupuesto)
   const amountArs =
-    currency === "ARS"
-      ? amountNum
-      : currentRate > 0
-        ? amountNum * currentRate
-        : blueRate?.promedio
-          ? amountNum * blueRate.promedio
-          : 0;
+    currency === "ARS" ? amountNum : rateToSave > 0 ? amountNum * rateToSave : 0;
+
+  /** Este costo expresado en la moneda en la que esta pactado el presupuesto. */
+  const amountEn = (moneda: Moneda) => (moneda === "USD" ? usdAmount : amountArs);
 
   /**
-   * Presupuestos disponibles con su estado en PESOS.
+   * Presupuestos disponibles con su estado EN LA MONEDA EN QUE FUERON PACTADOS.
+   * Un presupuesto en dolares se mide en dolares: medirlo contra pesos inflaba
+   * el avance por devaluacion y lo dejaba en cero cuando no tenia TC guardado.
    * pagado = suma de los costos ya imputados (excluyendo el que estamos editando).
    */
   const partidaOpciones = useMemo(() => {
     return partidas.map((p) => {
-      const presupuesto = partidaProjectedArs(p);
+      const moneda = partidaCurrency(p);
+      const presupuesto = partidaProjectedNative(p);
       const pagado = (p.costs || [])
         .filter((c) => !costToEdit || c.id !== costToEdit.id)
-        .reduce((sum, c) => sum + costArs(c), 0);
+        .reduce((sum, c) => sum + costEn(c, moneda), 0);
       const restante = presupuesto - pagado;
       const pct = presupuesto > 0 ? (pagado / presupuesto) * 100 : 0;
-      return { id: p.id, name: p.name, category: p.category, presupuesto, pagado, restante, pct };
+      return { id: p.id, name: p.name, category: p.category, moneda, presupuesto, pagado, restante, pct };
     });
   }, [partidas, costToEdit]);
 
   const partidaSel = partidaOpciones.find((p) => p.id === partidaId) || null;
-  const fmtArsNum = (n: number) =>
-    "$" + Math.round(n).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+  /** Formatea en la moneda del presupuesto: U$D con decimales, AR$ redondeado. */
+  const fmtMon = (n: number, moneda: Moneda) =>
+    moneda === "USD"
+      ? "U$D " + n.toLocaleString("es-AR", { maximumFractionDigits: 0 })
+      : "$" + Math.round(n).toLocaleString("es-AR", { maximumFractionDigits: 0 });
 
   const canSubmit =
     concept.trim().length > 0 &&
@@ -219,7 +227,7 @@ export default function AddCostModal({
         costType,
         date: new Date(date).toISOString(),
         currency,
-        exchangeRate: currency === "ARS" ? currentRate : null,
+        exchangeRate: rateToSave > 0 ? rateToSave : null,
         partidaId: partidaId || null,
       };
       if (isEditMode && costToEdit) {
@@ -551,7 +559,9 @@ export default function AddCostModal({
                   {partidaOpciones.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
-                      {p.presupuesto > 0 ? ` — restan ${fmtArsNum(p.restante)}` : " — sin monto cargado"}
+                      {p.presupuesto > 0
+                        ? ` — restan ${fmtMon(p.restante, p.moneda)}`
+                        : " — sin monto cargado"}
                     </option>
                   ))}
                 </select>
@@ -575,7 +585,10 @@ export default function AddCostModal({
 
                 {/* Impacto en el presupuesto elegido */}
                 {partidaSel && partidaSel.presupuesto > 0 && (() => {
-                  const pagadoDespues = partidaSel.pagado + amountArs;
+                  const mon = partidaSel.moneda;
+                  const aporte = amountEn(mon);
+                  const fmtP = (n: number) => fmtMon(n, mon);
+                  const pagadoDespues = partidaSel.pagado + aporte;
                   const pctDespues = (pagadoDespues / partidaSel.presupuesto) * 100;
                   const seExcede = pagadoDespues > partidaSel.presupuesto;
                   const barra = Math.min(pctDespues, 100);
@@ -589,7 +602,7 @@ export default function AddCostModal({
                         display: "flex", justifyContent: "space-between",
                         fontSize: 11, color: "var(--text-tertiary)", marginBottom: 7,
                       }}>
-                        <span>Presupuesto {fmtArsNum(partidaSel.presupuesto)}</span>
+                        <span>Presupuesto {fmtP(partidaSel.presupuesto)}</span>
                         <span style={{ color, fontWeight: 700 }}>
                           {pctDespues.toFixed(0).replace(".", ",")}%
                         </span>
@@ -598,18 +611,18 @@ export default function AddCostModal({
                         <div style={{ height: "100%", width: `${barra}%`, background: color, borderRadius: 6, transition: "width 0.2s" }} />
                       </div>
                       <div style={{ fontSize: 11.5, color: "var(--text-secondary)", marginTop: 7, lineHeight: 1.45 }}>
-                        {amountArs > 0 ? (
+                        {aporte > 0 ? (
                           <>
-                            Pagado {fmtArsNum(partidaSel.pagado)} + este gasto {fmtArsNum(amountArs)} ={" "}
-                            <strong style={{ color: "var(--text-primary)" }}>{fmtArsNum(pagadoDespues)}</strong>
+                            Pagado {fmtP(partidaSel.pagado)} + este gasto {fmtP(aporte)} ={" "}
+                            <strong style={{ color: "var(--text-primary)" }}>{fmtP(pagadoDespues)}</strong>
                           </>
                         ) : (
-                          <>Pagado hasta ahora <strong style={{ color: "var(--text-primary)" }}>{fmtArsNum(partidaSel.pagado)}</strong></>
+                          <>Pagado hasta ahora <strong style={{ color: "var(--text-primary)" }}>{fmtP(partidaSel.pagado)}</strong></>
                         )}
                       </div>
                       {seExcede && (
                         <div style={{ fontSize: 11.5, color: "var(--danger)", marginTop: 5, fontWeight: 600 }}>
-                          Te pasas {fmtArsNum(pagadoDespues - partidaSel.presupuesto)} del presupuesto.
+                          Te pasas {fmtP(pagadoDespues - partidaSel.presupuesto)} del presupuesto.
                         </div>
                       )}
                     </div>

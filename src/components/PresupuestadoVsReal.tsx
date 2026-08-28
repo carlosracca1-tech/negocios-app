@@ -11,6 +11,11 @@ interface Props {
 const fmtArs = (n: number) =>
   "$" + Math.round(Math.abs(n)).toLocaleString("es-AR", { maximumFractionDigits: 0 });
 
+/** "U$D 2.240" / "$1.234.567" — cada partida en la moneda en que fue pactada */
+const fmtMon = (n: number, moneda: "ARS" | "USD") =>
+  (moneda === "USD" ? "U$D " : "$") +
+  Math.round(Math.abs(n)).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+
 /** "82%" */
 const fmtPct = (n: number) => `${Math.round(n)}%`;
 
@@ -28,8 +33,8 @@ export default function PresupuestadoVsReal({ projection }: Props) {
   } = projection;
 
   // Solo tienen sentido los rubros con presupuesto cargado en pesos.
-  const conPresupuesto = byRubro.filter((r) => r.projectedArs > 0);
-  const sinMonto = byRubro.filter((r) => r.projectedArs <= 0);
+  const conPresupuesto = byRubro.filter((r) => r.projectedNative > 0);
+  const sinMonto = byRubro.filter((r) => r.projectedNative <= 0);
 
   return (
     <div>
@@ -66,9 +71,10 @@ export default function PresupuestadoVsReal({ projection }: Props) {
         </div>
 
         {conPresupuesto.map((r) => {
-          const pct = r.pctArs;
+          const pct = r.pctNative;
           const barra = Math.min(pct, 100);
-          const excedido = r.executedArs > r.projectedArs;
+          const excedido = r.executedNative > r.projectedNative;
+          const fmtR = (n: number) => fmtMon(n, r.currency);
           const color = excedido
             ? "var(--danger)"
             : pct >= 90
@@ -130,10 +136,10 @@ export default function PresupuestadoVsReal({ projection }: Props) {
               </div>
 
               <div className="tabular" data-label="Presupuesto" style={{ textAlign: "right", fontWeight: 600, color: "var(--text-tertiary)" }}>
-                {fmtArs(r.projectedArs)}
+                {fmtR(r.projectedNative)}
               </div>
               <div className="tabular" data-label="Pagado $" style={{ textAlign: "right", fontWeight: 600, color: "var(--text-primary)" }}>
-                {fmtArs(r.executedArs)}
+                {fmtR(r.executedNative)}
               </div>
               <div
                 className="tabular"
@@ -141,10 +147,10 @@ export default function PresupuestadoVsReal({ projection }: Props) {
                 style={{
                   textAlign: "right",
                   fontWeight: 600,
-                  color: r.deviationArs < 0 ? "var(--danger)" : "var(--text-secondary)",
+                  color: r.deviationNative < 0 ? "var(--danger)" : "var(--text-secondary)",
                 }}
               >
-                {r.deviationArs < 0 ? `−${fmtArs(r.deviationArs)}` : fmtArs(r.deviationArs)}
+                {r.deviationNative < 0 ? `−${fmtR(r.deviationNative)}` : fmtR(r.deviationNative)}
               </div>
             </div>
           );

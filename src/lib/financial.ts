@@ -66,7 +66,7 @@ export function computeProjectFinancials(
 // BUDGET / PRESUPUESTOS
 // ============================================================================
 
-interface CotizacionLike {
+export interface CotizacionLike {
   amount: number;
   currency?: string | null;
   exchangeRate?: number | null;
@@ -95,7 +95,7 @@ export function cotizacionArs(cot: CotizacionLike): number {
   return 0;
 }
 
-interface PartidaLike {
+export interface PartidaLike {
   id: string;
   name: string;
   /** solo se usa para agrupar/colorear, no interviene en los montos */
@@ -128,7 +128,49 @@ export function partidaProjectedArs(partida: PartidaLike): number {
   return 0;
 }
 
-interface CostLike {
+// ---------------------------------------------------------------------------
+// MONEDA NATIVA DE LA PARTIDA
+//
+// Un presupuesto pactado en dolares se mide en dolares y uno pactado en pesos
+// se mide en pesos. Comparar todo contra pesos inflaba el % de avance de las
+// partidas en USD solo por devaluacion, y dejaba en cero (= "sin monto
+// cargado") a las cotizaciones en USD que no tenian tipo de cambio guardado.
+// ---------------------------------------------------------------------------
+
+export type Moneda = "ARS" | "USD";
+
+/** Normaliza una cotizacion a la moneda pedida. */
+export function cotizacionEn(cot: CotizacionLike, moneda: Moneda): number {
+  return moneda === "USD" ? cotizacionUsd(cot) : cotizacionArs(cot);
+}
+
+/** La cotizacion que define el presupuesto: la elegida, o la mas barata en USD. */
+export function cotizacionDeReferencia(partida: PartidaLike): CotizacionLike | null {
+  const cots = partida.cotizaciones || [];
+  if (cots.length === 0) return null;
+  const chosen = cots.find((c) => c.isChosen);
+  if (chosen) return chosen;
+  return cots.reduce((min, c) => (cotizacionUsd(c) < cotizacionUsd(min) ? c : min), cots[0]);
+}
+
+/**
+ * Moneda en la que esta pactada la partida: la de su cotizacion de referencia.
+ * Sin cotizaciones cae en USD, que es la moneda de `estimatedAmount`.
+ */
+export function partidaCurrency(partida: PartidaLike): Moneda {
+  const ref = cotizacionDeReferencia(partida);
+  if (!ref) return "USD";
+  return ref.currency === "ARS" ? "ARS" : "USD";
+}
+
+/** Presupuesto de la partida expresado en SU moneda nativa. */
+export function partidaProjectedNative(partida: PartidaLike): number {
+  const ref = cotizacionDeReferencia(partida);
+  if (!ref) return safe(partida.estimatedAmount);
+  return cotizacionEn(ref, partidaCurrency(partida));
+}
+
+export interface CostLike {
   amount: number;
   currency?: string | null;
   exchangeRate?: number | null;
@@ -157,6 +199,11 @@ export function costUsd(cost: CostLike): number {
   return safe(cost.amount);
 }
 
+/** Monto de un costo expresado en la moneda pedida. */
+export function costEn(cost: CostLike, moneda: Moneda): number {
+  return moneda === "USD" ? costUsd(cost) : costArs(cost);
+}
+
 export interface BudgetRubroResult {
   partidaId: string;
   name: string;
@@ -178,6 +225,17 @@ export interface BudgetRubroResult {
   pctArs: number;
   /** cantidad de costos imputados a esta partida */
   costCount: number;
+  // --- MONEDA NATIVA: en la que realmente se pacto la partida ---
+  /** "USD" o "ARS", segun la cotizacion de referencia */
+  currency: Moneda;
+  /** presupuesto en la moneda de la partida */
+  projectedNative: number;
+  /** pagado en la moneda de la partida */
+  executedNative: number;
+  /** presupuesto - pagado, en la moneda de la partida */
+  deviationNative: number;
+  /** % pagado sobre el presupuesto, en la moneda de la partida */
+  pctNative: number;
 }
 
 export interface BudgetProjectionResult {
@@ -218,6 +276,13 @@ export function computeBudgetProjection(
     const deviationArs = projectedArs - executedArs;
     const pctArs = projectedArs > 0 ? (executedArs / projectedArs) * 100 : 0;
 
+    // --- MONEDA NATIVA DE LA PARTIDA ---
+    const currency = partidaCurrency(p);
+    const projectedNative = partidaProjectedNative(p);
+    const executedNative = propios.reduce((sum, c) => sum + costEn(c, currency), 0);
+    const deviationNative = projectedNative - executedNative;
+    const pctNative = projectedNative > 0 ? (executedNative / projectedNative) * 100 : 0;
+
     return {
       partidaId: p.id,
       name: p.name,
@@ -231,6 +296,11 @@ export function computeBudgetProjection(
       deviationArs,
       pctArs,
       costCount: propios.length,
+      currency,
+      projectedNative,
+      executedNative,
+      deviationNative,
+      pctNative,
     };
   });
 

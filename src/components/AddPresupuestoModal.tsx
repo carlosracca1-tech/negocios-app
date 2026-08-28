@@ -87,9 +87,11 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
     }
   }, [isOpen, blueRate, blueLoading, fetchBlueRate]);
 
-  // Mantener el tipo de cambio sincronizado con el promedio del blue cuando es ARS
+  // El TC se guarda SIEMPRE, tambien en presupuestos pactados en dolares: sin esa
+  // referencia la cotizacion quedaba en cero para todo lo que se mide en pesos
+  // (aparecia como "sin monto cargado").
   useEffect(() => {
-    if (currency === "ARS" && blueRate) {
+    if (blueRate) {
       setExchangeRate(blueRate.promedio);
     }
   }, [currency, blueRate]);
@@ -287,7 +289,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
         provider,
         amount,
         currency,
-        exchangeRate,
+        exchangeRate: exchangeRate && exchangeRate > 0 ? exchangeRate : blueRate?.promedio ?? null,
         scopeItems: parsed?.scopeItems ?? null,
         leadTimeDays: parsed?.leadTimeDays ?? null,
         leadTimeText: parsed?.leadTimeText ?? null,

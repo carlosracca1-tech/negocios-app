@@ -184,7 +184,8 @@ export interface AutoImputarResultado {
     partidaId: string;
     partidaName: string;
     porque: string[];
-    montoArs: number;
+    monto: number;
+    moneda: "ARS" | "USD";
     porCascada?: boolean;
     excede?: boolean;
   }[];
@@ -197,9 +198,10 @@ export interface AutoImputarResultado {
   resumen: {
     partidaId: string;
     partidaName: string;
-    presupuestoArs: number;
-    previoArs: number;
-    nuevoArs: number;
+    moneda: "ARS" | "USD";
+    presupuesto: number;
+    previo: number;
+    nuevo: number;
     cantidadNueva: number;
   }[];
 }

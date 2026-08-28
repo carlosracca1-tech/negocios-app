@@ -211,6 +211,12 @@ export interface BudgetRubro {
   deviationArs: number;
   pctArs: number;
   costCount: number;
+  /** MONEDA NATIVA — aquella en la que se pacto la partida */
+  currency: "ARS" | "USD";
+  projectedNative: number;
+  executedNative: number;
+  deviationNative: number;
+  pctNative: number;
 }
 
 export interface BudgetProjection {

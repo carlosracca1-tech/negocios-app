@@ -55,16 +55,24 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
 
   if (!isOpen) return null;
 
-  const fmtArs = (n: number) => "$" + Math.round(n).toLocaleString("es-AR");
+  /** Cada presupuesto se muestra en la moneda en la que fue pactado. */
+  const fmtMon = (n: number, moneda: "ARS" | "USD") =>
+    moneda === "USD"
+      ? "U$D " + Math.round(n).toLocaleString("es-AR")
+      : "$" + Math.round(n).toLocaleString("es-AR");
 
   // Agrupado por presupuesto, para que se lea de un vistazo.
   const porPartida = new Map<
     string,
-    { nombre: string; items: { concept: string; montoArs: number; porCascada?: boolean; excede?: boolean }[] }
+    {
+      nombre: string;
+      moneda: "ARS" | "USD";
+      items: { concept: string; monto: number; porCascada?: boolean; excede?: boolean }[];
+    }
   >();
   (plan?.imputar || []).forEach((i) => {
-    const g = porPartida.get(i.partidaId) || { nombre: i.partidaName, items: [] };
-    g.items.push({ concept: i.concept, montoArs: i.montoArs, porCascada: i.porCascada, excede: i.excede });
+    const g = porPartida.get(i.partidaId) || { nombre: i.partidaName, moneda: i.moneda, items: [] };
+    g.items.push({ concept: i.concept, monto: i.monto, porCascada: i.porCascada, excede: i.excede });
     porPartida.set(i.partidaId, g);
   });
 
@@ -168,9 +176,9 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
 
                   {Array.from(porPartida.entries()).map(([id, g]) => {
                     const r = resumenPorId.get(id);
-                    const totalTrasImputar = r ? r.previoArs + r.nuevoArs : 0;
-                    const pct = r && r.presupuestoArs > 0
-                      ? Math.round((totalTrasImputar / r.presupuestoArs) * 100)
+                    const totalTrasImputar = r ? r.previo + r.nuevo : 0;
+                    const pct = r && r.presupuesto > 0
+                      ? Math.round((totalTrasImputar / r.presupuesto) * 100)
                       : null;
                     const excedido = pct !== null && pct > 100;
 
@@ -186,9 +194,9 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
                           </span>
                         </div>
 
-                        {r && r.presupuestoArs > 0 && (
+                        {r && r.presupuesto > 0 && (
                           <div style={{ fontSize: 11.5, marginBottom: 7, color: "var(--text-secondary)" }}>
-                            {fmtArs(r.nuevoArs)} sobre un presupuesto de {fmtArs(r.presupuestoArs)}
+                            {fmtMon(r.nuevo, r.moneda)} sobre un presupuesto de {fmtMon(r.presupuesto, r.moneda)}
                             {" — queda al "}
                             <strong style={{ color: excedido ? "var(--danger)" : pct !== null && pct >= 90 ? "var(--warning)" : "var(--success)" }}>
                               {pct}%
@@ -201,7 +209,7 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
                             <div key={i} style={{ display: "flex", gap: 8 }}>
                               <span style={{ flex: 1, minWidth: 0 }}>· {it.concept}</span>
                               <span className="tabular" style={{ whiteSpace: "nowrap" }}>
-                                {fmtArs(it.montoArs)}
+                                {fmtMon(it.monto, g.moneda)}
                                 {it.excede && <span style={{ color: "var(--warning)" }}> ▸ completa</span>}
                               </span>
                             </div>
