@@ -274,9 +274,9 @@ export default function ProjectPage({ params }: PageProps) {
               </button>
             )}
             {/* Venta — success */}
-            {canEdit && p.status !== "vendido" && (
+            {canEdit && (
               <button onClick={() => setShowRegisterSaleModal(true)} style={successBtn}>
-                Venta
+                {p.status === "vendido" ? "Editar venta" : "Venta"}
               </button>
             )}
           </div>
@@ -870,6 +870,10 @@ export default function ProjectPage({ params }: PageProps) {
         onSuccess={() => refetch()}
         investors={investorsArray}
         totalInvestment={inv}
+        initialSalePrice={p.salePrice}
+        initialSaleDate={p.saleDate}
+        initialBuyerName={p.buyerName}
+        isEditing={p.status === "vendido"}
       />
 
       <AddInvestorModal

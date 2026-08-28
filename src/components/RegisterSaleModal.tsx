@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { Investor } from "@/types";
 
@@ -11,6 +11,10 @@ interface RegisterSaleModalProps {
   onSuccess?: () => void;
   investors?: Investor[];
   totalInvestment?: number;
+  initialSalePrice?: number | null;
+  initialSaleDate?: Date | string | null;
+  initialBuyerName?: string | null;
+  isEditing?: boolean;
 }
 
 export default function RegisterSaleModal({
@@ -20,11 +24,25 @@ export default function RegisterSaleModal({
   onSuccess,
   investors = [],
   totalInvestment = 0,
+  initialSalePrice = null,
+  initialSaleDate = null,
+  initialBuyerName = null,
+  isEditing = false,
 }: RegisterSaleModalProps) {
   const [salePrice, setSalePrice] = useState("");
   const [saleDate, setSaleDate] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const { mutate, loading, error } = useUpdateProject();
+
+  // Prefill with current sale data when editing an already sold project
+  useEffect(() => {
+    if (!isOpen) return;
+    setSalePrice(initialSalePrice != null ? String(initialSalePrice) : "");
+    setSaleDate(
+      initialSaleDate ? new Date(initialSaleDate).toISOString().slice(0, 10) : ""
+    );
+    setBuyerName(initialBuyerName ?? "");
+  }, [isOpen, initialSalePrice, initialSaleDate, initialBuyerName]);
 
   // Calculate dividend distribution
   const dividendPreview = useMemo(() => {
@@ -62,18 +80,10 @@ export default function RegisterSaleModal({
         status: "vendido",
       };
 
-      if (saleDate) {
-        updateData.saleDate = new Date(saleDate).toISOString();
-      }
-
-      if (buyerName.trim()) {
-        updateData.buyerName = buyerName.trim();
-      }
+      updateData.saleDate = saleDate ? new Date(saleDate).toISOString() : null;
+      updateData.buyerName = buyerName.trim() || null;
 
       await mutate(projectId, updateData);
-      setSalePrice("");
-      setSaleDate("");
-      setBuyerName("");
       onSuccess?.();
       onClose();
     } catch {
@@ -117,7 +127,7 @@ export default function RegisterSaleModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>
-          Registrar venta
+          {isEditing ? "Editar venta" : "Registrar venta"}
         </h2>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -449,7 +459,7 @@ export default function RegisterSaleModal({
               onMouseEnter={(e) => !loading && (e.currentTarget.style.boxShadow = "0 4px 20px rgba(52, 211, 153, 0.35)")}
               onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(52, 211, 153, 0.2)")}
             >
-              {loading ? "Registrando..." : "Registrar"}
+              {loading ? "Guardando..." : isEditing ? "Guardar cambios" : "Registrar"}
             </button>
           </div>
         </form>
