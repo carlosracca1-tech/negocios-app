@@ -8,6 +8,7 @@ import {
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
 import { notifyProjectUsers } from "@/lib/notifications";
+import { resolverTipoDeCambio } from "@/lib/dolar";
 
 export const dynamic = "force-dynamic";
 
@@ -81,10 +82,14 @@ export async function POST(
 
     const data = validation.data;
 
+    // Igual que en costos: la cotizacion nunca debe quedar sin TC, o el
+    // presupuesto aparece como "sin monto cargado" en la vista en pesos.
+    const exchangeRate = await resolverTipoDeCambio(data.exchangeRate);
+
     // Calcular amountUsd
     let amountUsd: number | null = null;
-    if (data.currency === "ARS" && data.exchangeRate && data.exchangeRate > 0) {
-      amountUsd = data.amount / data.exchangeRate;
+    if (data.currency === "ARS" && exchangeRate && exchangeRate > 0) {
+      amountUsd = data.amount / exchangeRate;
     } else if (data.currency === "USD") {
       amountUsd = data.amount;
     }
@@ -96,7 +101,7 @@ export async function POST(
           provider: data.provider,
           amount: data.amount,
           currency: data.currency || "USD",
-          exchangeRate: data.exchangeRate ?? null,
+          exchangeRate,
           amountUsd,
           scopeItems: data.scopeItems ?? undefined,
           leadTimeDays: data.leadTimeDays ?? null,

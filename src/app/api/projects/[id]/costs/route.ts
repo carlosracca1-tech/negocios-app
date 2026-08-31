@@ -8,6 +8,7 @@ import {
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
 import { notifyProjectUsers } from "@/lib/notifications";
+import { resolverTipoDeCambio } from "@/lib/dolar";
 
 export const dynamic = "force-dynamic";
 
@@ -106,10 +107,15 @@ export async function POST(
       }
     }
 
+    // El TC se guarda SIEMPRE, tambien en cargas USD: sin el, el costo queda
+    // invisible para todo lo que se mide en pesos y no se puede reconstruir
+    // despues. Si el cliente no lo mando, lo completamos con el blue de hoy.
+    const exchangeRate = await resolverTipoDeCambio(data.exchangeRate);
+
     // Calcular amountUsd para normalizar a moneda base
     let amountUsd: number | null = null;
-    if (data.currency === "ARS" && data.exchangeRate && data.exchangeRate > 0) {
-      amountUsd = data.amount / data.exchangeRate;
+    if (data.currency === "ARS" && exchangeRate && exchangeRate > 0) {
+      amountUsd = data.amount / exchangeRate;
     } else if (data.currency === "USD") {
       amountUsd = data.amount;
     }
@@ -122,7 +128,7 @@ export async function POST(
           concept: data.concept,
           amount: data.amount,
           currency: data.currency || "USD",
-          exchangeRate: data.exchangeRate ?? null,
+          exchangeRate,
           amountUsd,
           category: data.category,
           costType: data.costType,
