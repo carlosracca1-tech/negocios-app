@@ -287,6 +287,17 @@ input:focus, select:focus, textarea:focus {
   position: relative;
   overflow: hidden;
 }
+/**
+ * Red de seguridad: el contenedor de las solapas no debe crear un bloque
+ * contenedor para position:fixed. Sin esto, cualquier modal declarado dentro de
+ * un panel queda anclado a la tarjeta (aparece abajo de todo) y ademas lo
+ * recorta el overflow. Los modales usan ModalPortal, esto cubre el resto.
+ */
+.section-content {
+  backdrop-filter: none;
+  overflow: visible;
+}
+
 .glass-card::before {
   content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent, var(--border-strong), transparent);

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { Partida, Cotizacion } from "@/types";
 import { partidasApi, cotizacionesApi } from "@/lib/api-client";
 import { categoriesByProjectType, modalInputStyle, focusInput, blurInput } from "@/lib/constants";
+import ModalPortal from "./ModalPortal";
 
 interface Props {
   projectId: string;
@@ -143,6 +144,7 @@ export default function EditPresupuestoModal({
   };
 
   return (
+    <ModalPortal>
     <div
       onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
       style={{
@@ -353,5 +355,6 @@ export default function EditPresupuestoModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

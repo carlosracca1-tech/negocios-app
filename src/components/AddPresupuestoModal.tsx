@@ -5,6 +5,7 @@ import type { ParsedBudget, Partida, ScopeItem } from "@/types";
 import { budgetApi, partidasApi, cotizacionesApi } from "@/lib/api-client";
 import { categoriesByProjectType } from "@/lib/constants";
 import { modalInputStyle, focusInput, blurInput } from "@/lib/constants";
+import ModalPortal from "./ModalPortal";
 
 interface Props {
   projectId: string;
@@ -313,6 +314,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
   const scope = (parsed?.scopeItems || []) as ScopeItem[];
 
   return (
+    <ModalPortal>
     <div
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
       style={{
@@ -816,5 +818,6 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
