@@ -17,6 +17,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node --require esbuild-register prisma/seed.ts",
     "backfill:tc": "node --require esbuild-register prisma/backfill-tipo-de-cambio.ts",
+    "reparar:costo": "node --require esbuild-register prisma/reparar-costo.ts",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
