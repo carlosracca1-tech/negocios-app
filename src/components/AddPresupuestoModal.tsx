@@ -81,12 +81,22 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
     }
   }, []);
 
-  // Traer el blue al abrir el modal (lo necesitamos si la cotización es en ARS)
+  // Traer el blue al abrir el modal (lo necesitamos si la cotización es en ARS).
+  // Un solo intento por apertura: con blueRate/blueLoading en las deps, un fetch
+  // fallido volvia a disparar el efecto y quedaba en bucle infinito, haciendo
+  // parpadear el modal. Si falla, se reintenta con el boton manual.
+  const yaIntentoAuto = useRef(false);
+
   useEffect(() => {
-    if (isOpen && !blueRate && !blueLoading) {
-      fetchBlueRate();
+    if (!isOpen) {
+      yaIntentoAuto.current = false; // reset para la proxima apertura
+      return;
     }
-  }, [isOpen, blueRate, blueLoading, fetchBlueRate]);
+    if (yaIntentoAuto.current || blueRate) return;
+    yaIntentoAuto.current = true;
+    fetchBlueRate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // El TC se guarda SIEMPRE, tambien en presupuestos pactados en dolares: sin esa
   // referencia la cotizacion quedaba en cero para todo lo que se mide en pesos

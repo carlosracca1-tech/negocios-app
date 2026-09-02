@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useCreateCost, useUpdateCost } from "@/hooks/useProjects";
 import { Cost, Partida } from "@/types";
 import { partidaCurrency, partidaProjectedNative, costEn, type Moneda } from "@/lib/financial";
@@ -112,12 +112,27 @@ export default function AddCostModal({
     }
   }, []);
 
-  // Fetch dólar blue al abrir el modal (sólo al crear; al editar usamos el TC original)
+  // Un solo intento automatico por apertura del modal.
+  //
+  // Antes las deps incluian blueRate/blueLoading: si el fetch fallaba,
+  // blueLoading volvia a false con blueRate todavia en null, el efecto se
+  // disparaba de nuevo y quedaba en bucle infinito de fetches. Ese loop de
+  // renders repintaba el overlay (backdrop-filter blur) decenas de veces por
+  // segundo y hacia parpadear el fondo del modal.
+  //
+  // Si falla, no reintenta solo: para eso esta el boton de refresh manual.
+  const yaIntentoAuto = useRef(false);
+
   useEffect(() => {
-    if (isOpen && !isEditMode && !blueRate && !blueLoading) {
-      fetchBlueRate();
+    if (!isOpen) {
+      yaIntentoAuto.current = false; // reset para la proxima apertura
+      return;
     }
-  }, [isOpen, isEditMode, blueRate, blueLoading, fetchBlueRate]);
+    if (isEditMode || yaIntentoAuto.current || blueRate) return;
+    yaIntentoAuto.current = true;
+    fetchBlueRate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isEditMode]);
 
   // Al abrir en modo creación, limpiar cualquier valor que haya quedado de una edición previa
   useEffect(() => {
