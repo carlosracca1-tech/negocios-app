@@ -18,12 +18,14 @@ export interface AuthUser {
 /**
  * Devuelve el usuario logueado, con su cuenta (organizationId).
  *
- * La organizacion se lee de la base y no del token: asi las sesiones que ya
- * estaban abiertas antes de la migracion tambien quedan bien atadas a su
- * cuenta, sin obligar a nadie a volver a entrar.
+ * La cuenta sale del token de sesion, que va firmado y no se puede falsificar.
+ * Solo si el token no la trae (sesiones abiertas desde antes de la migracion a
+ * multi-cuenta) se va a buscar a la base. Asi el caso normal no paga una
+ * consulta extra por request: cuando la base tarda en despertar, una consulta
+ * de mas es la diferencia entre ver tus proyectos y ver la pantalla vacia.
  *
- * Si el usuario no tiene organizacion devuelve null (queda sin acceso a todo).
- * Es a proposito: preferimos dejar a alguien afuera antes que mostrarle, por un
+ * Si no hay cuenta por ningun lado devuelve null (queda sin acceso a todo). Es
+ * a proposito: preferimos dejar a alguien afuera antes que mostrarle, por un
  * filtro que compara contra null, los datos de otra cuenta.
  */
 export async function getCurrentUser(
@@ -35,8 +37,23 @@ export async function getCurrentUser(
     return null;
   }
 
+  const sesion = session.user;
+
+  if (sesion.organizationId) {
+    return {
+      id: sesion.id,
+      email: sesion.email || "",
+      name: sesion.name || "",
+      role: sesion.role || "vista",
+      organizationId: sesion.organizationId,
+      isSuperAdmin: Boolean(sesion.isSuperAdmin),
+    };
+  }
+
+  // Token viejo, sin cuenta: la completamos desde la base por unica vez. En
+  // cuanto el usuario vuelva a entrar, el token nuevo ya la trae.
   const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: sesion.id },
     select: {
       id: true,
       email: true,

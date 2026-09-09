@@ -37,7 +37,9 @@ function mensajeDeError(body: any, status: number): string {
 }
 
 export async function apiGet<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+  // no-store: sin esto el navegador puede servir una respuesta vieja (por
+  // ejemplo una lista vacia de un momento raro) y parece que se perdieron datos.
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new Error(mensajeDeError(error, res.status));

@@ -15,7 +15,7 @@ export default function Home() {
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
-  const { projects, loading, refetch } = useSharedProjects();
+  const { projects, loading, error, refetch } = useSharedProjects();
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -171,7 +171,7 @@ export default function Home() {
             }} />
             Cargando proyectos...
           </div>
-        ) : (
+        ) : error ? null : (
           <div className="projects-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {/* Add new project card - only for admin */}
             {session?.user?.role === "admin" && (
@@ -223,7 +223,36 @@ export default function Home() {
           </div>
         )}
 
-        {!loading && filtered.length === 0 && (
+        {/* Si la carga fallo NO decimos "no hay proyectos": eso se lee como
+            "perdi todos mis datos". Decimos que no se pudieron cargar. */}
+        {!loading && error && (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-tertiary)" }}>
+            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: "var(--danger)" }}>
+              No se pudieron cargar los proyectos
+            </div>
+            <div style={{ fontSize: 14, marginBottom: 20, maxWidth: 420, margin: "0 auto 20px" }}>
+              Tus datos estan intactos: fallo la consulta al servidor. {error}
+            </div>
+            <button
+              onClick={() => refetch()}
+              style={{
+                background: "var(--accent)",
+                border: "1px solid var(--accent)",
+                borderRadius: 12,
+                padding: "10px 24px",
+                fontSize: 14,
+                fontWeight: 700,
+                color: "var(--accent-on)",
+                cursor: "pointer",
+                boxShadow: "var(--shadow-button)",
+              }}
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-tertiary)" }}>
             <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: "var(--text-primary)" }}>
               No se encontraron proyectos
