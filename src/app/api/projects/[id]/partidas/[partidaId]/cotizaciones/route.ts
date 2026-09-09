@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   getCurrentUser,
-  isAdmin,
   checkProjectAccess,
   createCotizacionSchema,
 } from "@/lib/api-helpers";
@@ -57,11 +56,12 @@ export async function POST(
 
     const { id: projectId, partidaId } = params;
 
-    if (!isAdmin(user)) {
-      const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
-      if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+    // checkProjectAccess ya deja pasar al admin de la cuenta duena del
+    // proyecto. Antes esto estaba envuelto en `if (!isAdmin(user))`, y eso
+    // hacia que el admin de OTRA cuenta se saltara el chequeo entero.
+    const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const partida = await prisma.partida.findFirst({

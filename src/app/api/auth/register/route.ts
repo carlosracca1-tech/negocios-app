@@ -50,6 +50,8 @@ export async function POST(req: NextRequest) {
         email: data.email,
         password: hashedPassword,
         role: data.role, // Admin puede elegir el rol, default "vista"
+        // La cuenta nueva nace dentro de la organizacion de quien la crea.
+        organizationId: currentUser.organizationId,
         // Cuenta nueva: no entra hasta confirmar que el email es real.
         requiresVerification: true,
       },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser, isAdmin } from "@/lib/api-helpers";
+import { getCurrentUser, isAdmin, orgScope } from "@/lib/api-helpers";
 import { computeProjectFinancials, safe } from "@/lib/financial";
 import { rethrowNextError } from "@/lib/route-utils";
 
@@ -28,16 +28,18 @@ export async function GET(request: NextRequest) {
     let projects;
 
     if (isAdmin(user)) {
-      // Admin sees all projects
+      // Admin: todos los proyectos de su cuenta.
       projects = await prisma.project.findMany({
+        where: orgScope(user),
         include: {
           costs: true,
         },
       });
     } else {
-      // Regular user sees projects they have access to
+      // Usuario comun: los de su cuenta a los que tiene acceso.
       projects = await prisma.project.findMany({
         where: {
+          ...orgScope(user),
           access: {
             some: {
               userId: user.id,

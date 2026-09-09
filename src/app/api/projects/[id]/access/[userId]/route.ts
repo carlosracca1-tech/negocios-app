@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser, isAdmin } from "@/lib/api-helpers";
+import { getCurrentUser, isAdmin, findProjectInOrg } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +24,14 @@ export async function DELETE(
     }
 
     const { id: projectId, userId } = params;
+
+    // El proyecto tiene que ser de la cuenta del admin. Sin esto, el admin de
+    // una cuenta podia revocarle el acceso a un usuario de otra.
+    const project = await findProjectInOrg(user, projectId);
+
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
 
     // Verify access exists
     const access = await prisma.projectAccess.findUnique({

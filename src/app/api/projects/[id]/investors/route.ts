@@ -4,6 +4,7 @@ import {
   getCurrentUser,
   isAdmin,
   checkProjectAccess,
+  findProjectInOrg,
   addInvestorSchema,
   updateInvestorSchema,
 } from "@/lib/api-helpers";
@@ -34,8 +35,8 @@ export async function GET(
     const projectId = params.id;
 
     // Verify project exists
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, organizationId: user.organizationId },
     });
 
     if (!project) {
@@ -82,8 +83,8 @@ export async function POST(
     const projectId = params.id;
 
     // Verify project exists
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, organizationId: user.organizationId },
     });
 
     if (!project) {
@@ -134,10 +135,10 @@ export async function POST(
       );
     }
 
-    // If userId provided, verify user exists
+    // Si viene userId, el usuario tiene que existir Y ser de la misma cuenta.
     if (data.userId) {
-      const targetUser = await prisma.user.findUnique({
-        where: { id: data.userId },
+      const targetUser = await prisma.user.findFirst({
+        where: { id: data.userId, organizationId: user.organizationId },
       });
       if (!targetUser) {
         return NextResponse.json(
@@ -206,6 +207,15 @@ export async function DELETE(
     }
 
     const projectId = params.id;
+
+    // El proyecto tiene que ser de la cuenta del admin: sin esto, un admin de
+    // otra cuenta podia leer y tocar inversores ajenos pasando ids de la victima.
+    const projectDeLaCuenta = await findProjectInOrg(user, projectId);
+
+    if (!projectDeLaCuenta) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
     const body = await request.json();
     const { investorId } = body;
 
@@ -272,6 +282,27 @@ export async function PATCH(
     }
 
     const { investorId, ...updateData } = validation.data;
+
+    // El proyecto tiene que ser de la cuenta del admin: sin esto, un admin de
+    // otra cuenta podia leer y tocar inversores ajenos pasando ids de la victima.
+    const projectDeLaCuenta = await findProjectInOrg(user, projectId);
+
+    if (!projectDeLaCuenta) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    // Si viene userId, tiene que ser un usuario de la misma cuenta.
+    if (updateData.userId) {
+      const targetUser = await prisma.user.findFirst({
+        where: { id: updateData.userId, organizationId: user.organizationId },
+      });
+      if (!targetUser) {
+        return NextResponse.json(
+          { error: "Usuario no encontrado" },
+          { status: 404 }
+        );
+      }
+    }
 
     // Verify investor exists and belongs to project
     const investor = await prisma.investor.findUnique({

@@ -52,6 +52,8 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role as "admin" | "colaborador" | "vista",
+          organizationId: user.organizationId,
+          isSuperAdmin: user.isSuperAdmin,
         };
       },
     }),
@@ -72,6 +74,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user.role as "admin" | "colaborador" | "vista") || "vista";
+        token.organizationId = user.organizationId ?? null;
+        token.isSuperAdmin = user.isSuperAdmin ?? false;
       }
       return token;
     },
@@ -79,6 +83,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role;
+        session.user.organizationId = (token.organizationId as string | null) ?? null;
+        session.user.isSuperAdmin = Boolean(token.isSuperAdmin);
       }
       return session;
     },

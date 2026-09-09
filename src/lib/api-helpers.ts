@@ -9,26 +9,91 @@ export interface AuthUser {
   email: string;
   name: string;
   role: string;
+  /** Cuenta a la que pertenece. Nunca es null en un usuario operativo. */
+  organizationId: string;
+  /** Dueno del sistema: puede crear cuentas nuevas, no ve datos ajenos. */
+  isSuperAdmin: boolean;
 }
 
 /**
- * Get the authenticated user from the request
+ * Devuelve el usuario logueado, con su cuenta (organizationId).
+ *
+ * La organizacion se lee de la base y no del token: asi las sesiones que ya
+ * estaban abiertas antes de la migracion tambien quedan bien atadas a su
+ * cuenta, sin obligar a nadie a volver a entrar.
+ *
+ * Si el usuario no tiene organizacion devuelve null (queda sin acceso a todo).
+ * Es a proposito: preferimos dejar a alguien afuera antes que mostrarle, por un
+ * filtro que compara contra null, los datos de otra cuenta.
  */
 export async function getCurrentUser(
   req?: NextRequest
 ): Promise<AuthUser | null> {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      organizationId: true,
+      isSuperAdmin: true,
+    },
+  });
+
+  if (!dbUser || !dbUser.organizationId) {
     return null;
   }
 
   return {
-    id: session.user.id,
-    email: session.user.email || "",
-    name: session.user.name || "",
-    role: session.user.role || "vista",
+    id: dbUser.id,
+    email: dbUser.email,
+    name: dbUser.name,
+    role: dbUser.role,
+    organizationId: dbUser.organizationId,
+    isSuperAdmin: dbUser.isSuperAdmin,
   };
+}
+
+/**
+ * Filtro de cuenta para usar en cualquier consulta de Prisma sobre modelos que
+ * tienen organizationId. Centralizarlo evita que se escape una consulta sin
+ * filtrar.
+ *
+ *   where: { ...orgScope(user), status: "activo" }
+ */
+export function orgScope(user: AuthUser): { organizationId: string } {
+  return { organizationId: user.organizationId };
+}
+
+/**
+ * Busca un proyecto verificando que sea de la cuenta del usuario.
+ * Devuelve null si no existe o si es de otra cuenta (para el usuario es lo
+ * mismo: no existe).
+ */
+export async function findProjectInOrg(user: AuthUser, projectId: string) {
+  return prisma.project.findFirst({
+    where: { id: projectId, organizationId: user.organizationId },
+  });
+}
+
+/**
+ * Verifica que el usuario pertenezca a la misma cuenta que otro usuario.
+ * Se usa antes de compartir un proyecto o vincular un inversor.
+ */
+export async function findUserInOrg(user: AuthUser, email: string) {
+  return prisma.user.findFirst({
+    where: {
+      email: email.trim().toLowerCase(),
+      organizationId: user.organizationId,
+    },
+  });
 }
 
 /**
@@ -69,7 +134,19 @@ export async function checkProjectAccess(
 
   if (!user) return false;
 
-  // Admin has full access
+  // Barrera de cuenta: pase lo que pase con los roles, un usuario nunca toca un
+  // proyecto de otra organizacion. Este chequeo va PRIMERO, incluso antes del
+  // admin, porque el admin es admin de su cuenta y de ninguna otra.
+  if (!user.organizationId) return false;
+
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { organizationId: true },
+  });
+
+  if (!project || project.organizationId !== user.organizationId) return false;
+
+  // Admin has full access (dentro de su cuenta)
   if (user.role === "admin") return true;
 
   // Non-admin must have ProjectAccess record

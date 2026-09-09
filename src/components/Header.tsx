@@ -330,6 +330,37 @@ export default function Header() {
           )}
         </div>
 
+        {session?.user?.isSuperAdmin && (
+          <Link
+            href="/admin/cuentas"
+            title="Cuentas del sistema"
+            style={{
+              height: 36,
+              padding: "0 12px",
+              borderRadius: 10,
+              background: "var(--surface-2)",
+              border: "1px solid var(--border-default)",
+              display: "flex",
+              alignItems: "center",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text-secondary)",
+              textDecoration: "none",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--surface-3)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--surface-2)";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
+          >
+            Cuentas
+          </Link>
+        )}
+
         {session?.user && (
           <Link
             href="/profile"

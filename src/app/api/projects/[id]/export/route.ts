@@ -20,8 +20,8 @@ export async function GET(
       return NextResponse.json({ error: "Sin acceso" }, { status: 403 });
     }
 
-    const project = await prisma.project.findUnique({
-      where: { id: params.id },
+    const project = await prisma.project.findFirst({
+      where: { id: params.id, organizationId: user.organizationId },
       include: {
         costs: { orderBy: { date: "desc" } },
         expenses: { orderBy: { period: "desc" } },

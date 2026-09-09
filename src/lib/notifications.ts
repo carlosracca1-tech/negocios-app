@@ -32,9 +32,18 @@ export async function notifyProjectUsers(
     // Exclude the user who triggered the action
     if (excludeUserId) userIds.delete(excludeUserId);
 
-    // Get all admin users too
+    // Y los admins... pero SOLO los de la cuenta duena del proyecto.
+    // Antes se notificaba a todos los admins del sistema, lo que hubiera
+    // filtrado el nombre de un proyecto a los admins de otra organizacion.
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { organizationId: true },
+    });
+
+    if (!project?.organizationId) return;
+
     const admins = await prisma.user.findMany({
-      where: { role: "admin" },
+      where: { role: "admin", organizationId: project.organizationId },
       select: { id: true },
     });
     admins.forEach((a) => userIds.add(a.id));

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   getCurrentUser,
-  isAdmin,
   checkProjectAccess,
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
@@ -31,11 +30,12 @@ export async function POST(
 
     const { id: projectId, partidaId } = params;
 
-    if (!isAdmin(user)) {
-      const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
-      if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+    // checkProjectAccess ya deja pasar al admin de la cuenta duena del
+    // proyecto. Antes esto estaba envuelto en `if (!isAdmin(user))`, y eso
+    // hacia que el admin de OTRA cuenta se saltara el chequeo entero.
+    const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (!ANTHROPIC_API_KEY) {
@@ -138,8 +138,17 @@ Responde SOLO con este JSON, sin texto adicional ni markdown:
           data: { aiRecommended: false, aiReasoning: null },
         });
 
-        // Set the recommended one
-        if (parsed.recommendedCotizacionId) {
+        // Set the recommended one.
+        // El id lo devuelve la IA, y el prompt incluye texto que cargo un
+        // usuario (proveedor, notas, alcance). Si no lo validamos contra las
+        // cotizaciones de ESTA partida, un texto malicioso podria hacer que
+        // escribamos en una cotizacion de otro proyecto o de otra cuenta.
+        const idsValidos = partida.cotizaciones.map((c) => c.id);
+
+        if (
+          parsed.recommendedCotizacionId &&
+          idsValidos.includes(parsed.recommendedCotizacionId)
+        ) {
           await tx.cotizacion.update({
             where: { id: parsed.recommendedCotizacionId },
             data: {

@@ -5,6 +5,7 @@ import {
   isAdmin,
   checkProjectAccess,
   grantAccessSchema,
+  findUserInOrg,
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
 
@@ -32,8 +33,8 @@ export async function GET(
     }
 
     // Verify project exists
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, organizationId: user.organizationId },
     });
 
     if (!project) {
@@ -85,8 +86,8 @@ export async function POST(
     const projectId = params.id;
 
     // Verify project exists
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, organizationId: user.organizationId },
     });
 
     if (!project) {
@@ -106,14 +107,13 @@ export async function POST(
 
     const data = validation.data;
 
-    // Find user by email
-    const targetUser = await prisma.user.findUnique({
-      where: { email: data.email },
-    });
+    // Buscar al usuario por email, SOLO dentro de la misma cuenta: no se puede
+    // compartir un proyecto con alguien de otra organizacion.
+    const targetUser = await findUserInOrg(user, data.email);
 
     if (!targetUser) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "No hay ningun usuario de tu cuenta con ese email" },
         { status: 404 }
       );
     }
@@ -197,6 +197,17 @@ export async function DELETE(
     }
 
     const projectId = params.id;
+
+    // El proyecto tiene que ser de la cuenta del usuario.
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, organizationId: user.organizationId },
+      select: { id: true },
+    });
+
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
     const body = await request.json();
     const { userId } = body;
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser, isAdmin, createUserSchema } from "@/lib/api-helpers";
+import { getCurrentUser, isAdmin, createUserSchema, orgScope } from "@/lib/api-helpers";
 import bcrypt from "bcryptjs";
 import { rethrowNextError } from "@/lib/route-utils";
 import { z } from "zod";
@@ -23,7 +23,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Solo los usuarios de la propia cuenta.
     const users = await prisma.user.findMany({
+      where: orgScope(user),
       select: {
         id: true,
         name: true,
@@ -91,13 +93,14 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    // Create user
+    // Create user (siempre dentro de la cuenta de quien lo crea)
     const newUser = await prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
         password: hashedPassword,
         role: data.role,
+        organizationId: user.organizationId,
       },
       select: {
         id: true,
@@ -154,6 +157,16 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { userId, role } = validation.data;
+
+    // El usuario a modificar tiene que ser de la misma cuenta.
+    const target = await prisma.user.findFirst({
+      where: { id: userId, organizationId: user.organizationId },
+      select: { id: true },
+    });
+
+    if (!target) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     // Prevent removing own admin role
     if (userId === user.id && role !== "admin") {

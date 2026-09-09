@@ -7,12 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// Una cuenta del sistema: un owner con sus proyectos y sus usuarios.
+/// Todo lo que se ve en la app esta filtrado por la organizacion del usuario
+/// logueado: dos organizaciones nunca ven los datos de la otra.
+model Organization {
+  id        String   @id @default(cuid())
+  /// Nombre visible de la cuenta (ej: "Charlie", "Estudio Lopez").
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users    User[]
+  projects Project[]
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String
   email         String    @unique
   password      String
   role          String    @default("vista")
+  /// Cuenta a la que pertenece el usuario. Se completa siempre desde el codigo.
+  /// Es opcional en la base solo para que la migracion no rompa filas viejas:
+  /// un usuario sin organizationId no puede operar (ver getCurrentUser).
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  /// Dueno del sistema. Solo puede crear cuentas nuevas; NO ve datos ajenos.
+  isSuperAdmin  Boolean   @default(false)
   /// Cuando se confirmo que el email es real (click en el link del mail).
   /// null = todavia no verificado.
   emailVerified DateTime?
@@ -33,6 +54,8 @@ model User {
   notifications Notification[]
   emailTokens   EmailVerificationToken[]
   resetTokens   PasswordResetToken[]
+
+  @@index([organizationId])
 }
 
 /// Token de un solo uso para confirmar que el email existe de verdad.
@@ -90,6 +113,9 @@ model Session {
 
 model Project {
   id            String   @id @default(cuid())
+  /// Cuenta duena del proyecto. Todas las consultas filtran por este campo.
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
   name          String
   type          String
   status        String   @default("activo")
@@ -114,6 +140,8 @@ model Project {
   access        ProjectAccess[]
   timeline      TimelineEvent[]
   partidas      Partida[]
+
+  @@index([organizationId])
 }
 
 model Cost {

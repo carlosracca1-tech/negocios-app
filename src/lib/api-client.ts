@@ -564,3 +564,32 @@ export const usersApi = {
     return apiPatch("/api/users", { userId, role });
   },
 };
+
+// ============================================================================
+// CUENTAS (SUPERADMIN)
+// ============================================================================
+
+export interface Cuenta {
+  id: string;
+  name: string;
+  createdAt: string;
+  cantidadUsuarios: number;
+  cantidadProyectos: number;
+  admins: { id: string; name: string; email: string }[];
+  esLaMia: boolean;
+}
+
+export const cuentasApi = {
+  async list(): Promise<Cuenta[]> {
+    return apiGet("/api/superadmin/cuentas");
+  },
+
+  async create(data: {
+    nombreCuenta: string;
+    nombreAdmin: string;
+    email: string;
+    password: string;
+  }): Promise<Cuenta> {
+    return apiPost("/api/superadmin/cuentas", data);
+  },
+};

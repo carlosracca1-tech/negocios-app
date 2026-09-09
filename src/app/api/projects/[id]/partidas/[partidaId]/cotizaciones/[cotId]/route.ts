@@ -3,7 +3,6 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   getCurrentUser,
-  isAdmin,
   checkProjectAccess,
   updateCotizacionSchema,
 } from "@/lib/api-helpers";
@@ -23,11 +22,12 @@ export async function PATCH(
 
     const { id: projectId, partidaId, cotId } = params;
 
-    if (!isAdmin(user)) {
-      const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
-      if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+    // checkProjectAccess ya deja pasar al admin de la cuenta duena del
+    // proyecto. Antes esto estaba envuelto en `if (!isAdmin(user))`, y eso
+    // hacia que el admin de OTRA cuenta se saltara el chequeo entero.
+    const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const cot = await prisma.cotizacion.findFirst({
@@ -99,11 +99,12 @@ export async function DELETE(
 
     const { id: projectId, cotId } = params;
 
-    if (!isAdmin(user)) {
-      const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
-      if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+    // checkProjectAccess ya deja pasar al admin de la cuenta duena del
+    // proyecto. Antes esto estaba envuelto en `if (!isAdmin(user))`, y eso
+    // hacia que el admin de OTRA cuenta se saltara el chequeo entero.
+    const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const cot = await prisma.cotizacion.findFirst({

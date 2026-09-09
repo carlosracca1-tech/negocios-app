@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getCurrentUser,
-  isAdmin,
   checkProjectAccess,
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
@@ -109,11 +108,12 @@ export async function POST(
 
     const projectId = params.id;
 
-    if (!isAdmin(user)) {
-      const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
-      if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+    // checkProjectAccess ya deja pasar al admin de la cuenta duena del
+    // proyecto. Antes esto estaba envuelto en `if (!isAdmin(user))`, y eso
+    // hacia que el admin de OTRA cuenta se saltara el chequeo entero.
+    const hasAccess = await checkProjectAccess(user.id, projectId, "interactuar");
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (!ANTHROPIC_API_KEY) {
@@ -123,8 +123,8 @@ export async function POST(
       );
     }
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, organizationId: user.organizationId },
       select: { type: true },
     });
     if (!project) {

@@ -5,6 +5,7 @@ import {
   isAdmin,
   checkProjectAccess,
   createProjectSchema,
+  orgScope,
 } from "@/lib/api-helpers";
 import { computeProjectFinancials, safe } from "@/lib/financial";
 import { rethrowNextError } from "@/lib/route-utils";
@@ -22,8 +23,9 @@ export async function GET(request: NextRequest) {
     let projects;
 
     if (isAdmin(user)) {
-      // Admin sees all projects
+      // El admin ve todos los proyectos DE SU CUENTA (nunca los de otra).
       projects = await prisma.project.findMany({
+        where: orgScope(user),
         include: {
           costs: true,
           expenses: true,
@@ -45,9 +47,10 @@ export async function GET(request: NextRequest) {
         },
       });
     } else {
-      // Regular user sees projects they have access to
+      // Usuario comun: solo los proyectos de su cuenta a los que le dieron acceso
       projects = await prisma.project.findMany({
         where: {
+          ...orgScope(user),
           access: {
             some: {
               userId: user.id,
@@ -141,6 +144,8 @@ export async function POST(request: NextRequest) {
     const project = await prisma.$transaction(async (tx) => {
       const newProject = await tx.project.create({
         data: {
+          // El proyecto nace atado a la cuenta de quien lo crea.
+          organizationId: user.organizationId,
           name: data.name,
           type: data.type,
           buyPrice: data.buyPrice,
