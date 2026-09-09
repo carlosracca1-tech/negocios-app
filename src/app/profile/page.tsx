@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 
@@ -688,6 +688,46 @@ export default function ProfilePage() {
               Actualiza tu contraseña para mantener tu cuenta segura
             </div>
           )}
+        </div>
+
+        {/* Cerrar sesión */}
+        <div
+          style={{
+            marginTop: 24,
+            paddingTop: 24,
+            borderTop: "1px solid var(--border-default)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ fontSize: 14, color: "var(--text-secondary)" }}>
+            Salí de tu cuenta en este dispositivo
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            style={{
+              padding: "12px 24px",
+              background: "transparent",
+              border: "1px solid var(--danger)",
+              borderRadius: 10,
+              color: "var(--danger)",
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--danger-soft)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            Cerrar sesión
+          </button>
         </div>
       </div>
     </main>
