@@ -66,6 +66,25 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
   const fileRef = useRef<HTMLInputElement>(null);
   const categories = categoriesByProjectType[projectType] || categoriesByProjectType.Casa;
 
+  /**
+   * La categoria que sugiere la IA tiene que existir en el <select>. Si no existe,
+   * el select muestra la primera opcion pero el estado queda con un valor invalido
+   * y el POST a /partidas falla con 422. Caemos a la primera categoria valida.
+   */
+  const setCategoriaSegura = useCallback(
+    (sugerida?: string | null) => {
+      const fallback = categories[0]?.value || "Obra";
+      if (!sugerida) return setCategory(fallback);
+      const ok = categories.find((c) => c.value === sugerida);
+      if (!ok) {
+        console.warn(`Categoria sugerida invalida: "${sugerida}" -> "${fallback}"`);
+        return setCategory(fallback);
+      }
+      setCategory(ok.value);
+    },
+    [categories]
+  );
+
   const fetchBlueRate = useCallback(async () => {
     setBlueLoading(true);
     setBlueError("");
@@ -163,7 +182,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
 
       setParsed(result);
       setProvider(result.provider || "");
-      setCategory(result.category || categories[0]?.value || "");
+      setCategoriaSegura(result.category);
       setPartidaName(result.suggestedPartidaName || "");
       setAmount(result.amount || 0);
       setCurrency(result.currency || "USD");
@@ -184,7 +203,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
     setParsed(null);
     setError(null);
     setCurrency("ARS");
-    setCategory(categories[0]?.value || "Obra");
+    setCategoriaSegura(null);
     setStep("extracted");
   };
 
@@ -241,7 +260,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
       setParsed(result);
       const prov = result.provider || "";
       setProvider(prov);
-      setCategory(result.category || categories[0]?.value || "");
+      setCategoriaSegura(result.category);
       // "Albañil Juan #1 - Revoques y contrapisos"
       const desc = (result.suggestedPartidaName || "").trim();
       const n = siguienteNumero(prov);

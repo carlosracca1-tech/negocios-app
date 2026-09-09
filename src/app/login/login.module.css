@@ -147,3 +147,47 @@
   font-weight: 500;
   color: var(--text-tertiary);
 }
+
+/* ── Mensajes y links de las pantallas de recuperación / verificación ── */
+
+.success {
+  background: var(--success-soft, rgba(34, 197, 94, 0.12));
+  border: 1px solid var(--success-border, rgba(34, 197, 94, 0.3));
+  color: var(--success, #22c55e);
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.linkRow {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-family: inherit;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: var(--text-primary);
+}
+
+.centerText {
+  font-size: 14px;
+  color: var(--text-secondary, var(--text-tertiary));
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}

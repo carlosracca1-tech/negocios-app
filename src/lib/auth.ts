@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email.trim().toLowerCase() },
         });
 
         if (!user) {
@@ -36,6 +36,15 @@ export const authOptions: NextAuthOptions = {
 
         if (!passwordMatch) {
           throw new Error("Credenciales invalidas");
+        }
+
+        // Las cuentas creadas desde que existe la verificacion no entran hasta
+        // confirmar el email. Las anteriores tienen requiresVerification=false:
+        // entran igual y solo ven el cartel que les pide verificar.
+        if (user.requiresVerification && !user.emailVerified) {
+          throw new Error(
+            "Falta verificar tu email. Revisá tu casilla o pedí que te reenviemos el mail."
+          );
         }
 
         return {

@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import styles from "./login.module.css";
 
@@ -11,11 +12,32 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // Aparece cuando el login falla por falta de verificacion, para poder pedir
+  // el mail de nuevo sin salir de esta pantalla.
+  const [faltaVerificar, setFaltaVerificar] = useState(false);
+  const [avisoReenvio, setAvisoReenvio] = useState("");
   const router = useRouter();
+
+  const reenviarVerificacion = async () => {
+    setAvisoReenvio("Enviando...");
+    try {
+      const res = await fetch("/api/auth/verify-email/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      setAvisoReenvio(data.message || "Listo, revisá tu casilla.");
+    } catch {
+      setAvisoReenvio("No se pudo reenviar. Probá de nuevo en un rato.");
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+    setAvisoReenvio("");
+    setFaltaVerificar(false);
     setIsLoading(true);
 
     try {
@@ -27,6 +49,7 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError(result.error);
+        setFaltaVerificar(result.error.toLowerCase().includes("verificar"));
       } else if (result?.ok) {
         router.push("/");
       }
@@ -68,6 +91,7 @@ export default function LoginPage() {
         <p className={styles.subtitle}>Sistema de gestión de inversiones</p>
 
         {error && <div className={styles.error}>{error}</div>}
+        {avisoReenvio && <div className={styles.success}>{avisoReenvio}</div>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
@@ -108,6 +132,20 @@ export default function LoginPage() {
             {isLoading ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
+
+        {faltaVerificar && (
+          <div className={styles.linkRow}>
+            <button type="button" onClick={reenviarVerificacion} className={styles.link}>
+              Reenviarme el mail de confirmación
+            </button>
+          </div>
+        )}
+
+        <div className={styles.linkRow}>
+          <Link href="/forgot-password" className={styles.link}>
+            Olvidé mi contraseña
+          </Link>
+        </div>
 
         <div className={styles.hint}>
           <p>Contacta al administrador para obtener una cuenta</p>

@@ -15,11 +15,32 @@ function unwrap<T>(json: { data?: T } | T): T {
   return json as T;
 }
 
+/**
+ * Arma un mensaje legible a partir del cuerpo de error de la API.
+ * Las rutas devuelven { error: "Validation failed", details: <zod flatten> };
+ * sin esto el usuario solo ve "Validation failed" y no que campo fallo.
+ */
+function mensajeDeError(body: any, status: number): string {
+  const base = body?.error || body?.message || `API error: ${status}`;
+  const fieldErrors = body?.details?.fieldErrors;
+  if (fieldErrors && typeof fieldErrors === "object") {
+    const partes = Object.entries(fieldErrors)
+      .map(([campo, msgs]) => `${campo}: ${(msgs as string[])?.join(", ")}`)
+      .filter(Boolean);
+    if (partes.length) return `${base} — ${partes.join(" · ")}`;
+  }
+  const formErrors = body?.details?.formErrors;
+  if (Array.isArray(formErrors) && formErrors.length) {
+    return `${base} — ${formErrors.join(", ")}`;
+  }
+  return base;
+}
+
 export async function apiGet<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.error || error.message || `API error: ${res.status}`);
+    throw new Error(mensajeDeError(error, res.status));
   }
   const json = await res.json();
   return unwrap<T>(json);
@@ -33,7 +54,7 @@ export async function apiPost<T>(url: string, body: Record<string, unknown>): Pr
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.error || error.message || `API error: ${res.status}`);
+    throw new Error(mensajeDeError(error, res.status));
   }
   const json = await res.json();
   return unwrap<T>(json);
@@ -47,7 +68,7 @@ export async function apiPatch<T>(url: string, body: Record<string, unknown>): P
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.error || error.message || `API error: ${res.status}`);
+    throw new Error(mensajeDeError(error, res.status));
   }
   const json = await res.json();
   return unwrap<T>(json);
@@ -61,7 +82,7 @@ export async function apiDelete(url: string, body?: Record<string, unknown>): Pr
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.error || error.message || `API error: ${res.status}`);
+    throw new Error(mensajeDeError(error, res.status));
   }
 }
 

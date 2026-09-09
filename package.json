@@ -18,7 +18,9 @@
     "prisma:seed": "node --require esbuild-register prisma/seed.ts",
     "backfill:tc": "node --require esbuild-register prisma/backfill-tipo-de-cambio.ts",
     "reparar:costo": "node --require esbuild-register prisma/reparar-costo.ts",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "usuarios": "node --require esbuild-register prisma/listar-usuarios.ts",
+    "password": "node --require esbuild-register prisma/cambiar-password.ts"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",

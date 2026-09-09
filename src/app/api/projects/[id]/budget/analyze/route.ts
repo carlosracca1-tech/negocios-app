@@ -20,6 +20,83 @@ export const dynamic = "force-dynamic";
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
+/** Quita acentos y normaliza a minusculas para comparar categorias. */
+function slug(v: string): string {
+  return v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Sinonimos que la IA suele devolver aunque no esten en la lista valida.
+ * Clave = valor canonico de la categoria; valores = como puede llamarla el modelo.
+ */
+const SINONIMOS_CATEGORIA: Record<string, string[]> = {
+  Obra: [
+    "instalaciones", "instalacion", "electricidad", "electrica", "electricista",
+    "plomeria", "plomero", "sanitarios", "gas", "gasista", "albanileria",
+    "mano de obra", "obra gruesa", "construccion", "hormigon", "revoques",
+  ],
+  Estructura: ["techo", "techos", "hierros", "hierro", "losa", "estructural", "carpinteria metalica"],
+  Terminaciones: ["pisos", "piso", "pintura", "pintor", "revestimientos", "ceramicos", "durlock", "yeso", "carpinteria"],
+  Equipamiento: ["electrodomesticos", "muebles", "amoblamiento", "cocina", "artefactos", "griferia"],
+  Exterior: ["jardin", "parquizacion", "piscina", "pileta", "vereda", "paisajismo"],
+  Profesionales: ["arquitecto", "ingeniero", "honorarios", "director de obra", "proyecto"],
+  Servicios: ["luz", "agua", "servicio", "abono", "conexion", "medidor"],
+  Documentacion: ["escritura", "planos", "habilitacion", "municipalidad", "tramite", "tramites", "impuestos"],
+  Mecanica: ["mecanico", "frenos", "embrague", "service"],
+  Motor: ["tren motriz", "caja", "transmision"],
+  Carroceria: ["chapa", "chapa y pintura", "pintura"],
+  Interior: ["tapizado", "tablero", "butacas"],
+  Electronica: ["luces", "audio", "computadora", "sensores"],
+  Neumaticos: ["cubiertas", "gomas", "suspension", "llantas", "tren delantero"],
+};
+
+/**
+ * La IA a veces devuelve una categoria que no esta en la lista valida del proyecto
+ * (ej: "Instalaciones"). Si eso llega al cliente, el <select> muestra la primera opcion
+ * pero el POST manda el valor invalido y la API responde 422. Aca lo normalizamos.
+ */
+function normalizarCategoria(raw: unknown, validas: string[]): string {
+  const fallback = validas[0] ?? "";
+  if (!validas.length) return typeof raw === "string" ? raw : fallback;
+  if (typeof raw !== "string" || !raw.trim()) return fallback;
+
+  const objetivo = slug(raw);
+
+  // 1) Coincidencia exacta (ignorando acentos y mayusculas).
+  const exacta = validas.find((v) => slug(v) === objetivo);
+  if (exacta) return exacta;
+
+  // 2) Coincidencia por sinonimo conocido, solo si la categoria destino es valida.
+  for (const [canonico, sinonimos] of Object.entries(SINONIMOS_CATEGORIA)) {
+    const destino = validas.find((v) => slug(v) === slug(canonico));
+    if (!destino) continue;
+    if (sinonimos.some((s) => objetivo.includes(s) || s.includes(objetivo))) {
+      return destino;
+    }
+  }
+
+  // 3) Coincidencia parcial contra las validas ("terminacion" -> "Terminaciones").
+  const parcial = validas.find(
+    (v) => slug(v).includes(objetivo) || objetivo.includes(slug(v))
+  );
+  if (parcial) return parcial;
+
+  console.warn(`[budget/analyze] categoria invalida de la IA: "${raw}" -> "${fallback}"`);
+  return fallback;
+}
+
+/** Aplica la normalizacion sobre el JSON que devolvio la IA. */
+function sanearParsed(parsed: any, validas: string[]) {
+  if (parsed && typeof parsed === "object") {
+    parsed.category = normalizarCategoria(parsed.category, validas);
+  }
+  return parsed;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -155,7 +232,7 @@ IMPORTANTE:
           { status: 422 }
         );
       }
-      return NextResponse.json({ data: parsedText });
+      return NextResponse.json({ data: sanearParsed(parsedText, validCategories) });
     }
 
     // ==================== MODO DOCUMENTO (PDF / imagen) ====================
@@ -247,7 +324,7 @@ IMPORTANTE:
         { status: 422 }
       );
     }
-    return NextResponse.json({ data: parsed });
+    return NextResponse.json({ data: sanearParsed(parsed, validCategories) });
   } catch (error) {
     rethrowNextError(error);
     console.error("Error analyzing budget:", error);

@@ -13,6 +13,16 @@ model User {
   email         String    @unique
   password      String
   role          String    @default("vista")
+  /// Cuando se confirmo que el email es real (click en el link del mail).
+  /// null = todavia no verificado.
+  emailVerified DateTime?
+  /// Si es true, la cuenta no puede iniciar sesion hasta verificar el email.
+  ///
+  /// El default es false a proposito: asi las cuentas que ya existian cuando se
+  /// agrego la verificacion siguen entrando normal (solo ven el cartel que les
+  /// pide verificar) y nadie queda afuera por la migracion. El registro de
+  /// cuentas nuevas lo pone en true explicitamente.
+  requiresVerification Boolean @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -21,6 +31,35 @@ model User {
   sessions      Session[]
   investments   Investor[]
   notifications Notification[]
+  emailTokens   EmailVerificationToken[]
+  resetTokens   PasswordResetToken[]
+}
+
+/// Token de un solo uso para confirmar que el email existe de verdad.
+/// Se guarda hasheado (SHA-256): si alguien lee la base, no puede usarlo.
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Token de un solo uso para restablecer la contrasena. Tambien hasheado.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Account {
