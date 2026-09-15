@@ -178,9 +178,9 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
 
   return (
     <div
+      className="modal-overlay"
       style={{
         position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-        background: "rgba(0, 0, 0, 0.55)", backdropFilter: "blur(8px)",
         display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
       }}
       onClick={onClose}
@@ -195,9 +195,8 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
         }
       `}</style>
       <div
-        className="modal-content"
+        className="modal-content modal-panel"
         style={{
-          background: "var(--surface-glass)", backdropFilter: "blur(20px)",
           borderRadius: 16, padding: 24, width: 480, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto",
           boxShadow: "0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 189, 248, 0.1), 0 0 40px rgba(56, 189, 248, 0.05)",
           border: "1px solid var(--border-default)",

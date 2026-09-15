@@ -17,6 +17,10 @@
   --surface-3: rgba(255, 255, 255, 0.07);
   --surface-solid: #111114;
   --surface-glass: rgba(20, 20, 23, 0.7);
+  /* Modales: fondos opacos, sin backdrop-filter (ver seccion MODALES) */
+  --overlay-bg: rgba(0, 0, 0, 0.72);
+  --modal-panel-bg: #111114;
+  --modal-input-bg: #17171a;
 
   /* Borders */
   --border-faint: rgba(255, 255, 255, 0.05);
@@ -83,6 +87,9 @@
   --surface-3: #e6dfcd;
   --surface-solid: #fbf8f0;
   --surface-glass: rgba(251, 248, 240, 0.85);
+  --overlay-bg: rgba(30, 24, 10, 0.55);
+  --modal-panel-bg: #fbf8f0;
+  --modal-input-bg: #fbf8f0;
 
   --border-faint: rgba(40, 30, 10, 0.06);
   --border-default: rgba(40, 30, 10, 0.1);
@@ -826,4 +833,38 @@ input:focus, select:focus, textarea:focus {
   color: var(--text-quaternary);
   margin-top: 4px;
   text-align: right;
+}
+
+
+/* ============================================================
+   MODALES — fondos opacos, sin backdrop-filter anidado
+   ------------------------------------------------------------
+   Por que: el modal apilaba TRES niveles de backdrop-filter
+   (overlay blur(8px) -> panel blur(20px) -> cada input blur(8px)),
+   y el panel del medio es el que scrollea. Un backdrop-filter
+   dentro de un contenedor con scroll obliga al compositor a
+   re-muestrear y re-desenfocar todo el fondo en cada frame; con
+   la pagina de atras llena de .glass-card (blur(20px) tambien),
+   el costo por frame se dispara y el modal parpadea — sobre todo
+   al scrollear.
+   Solucion: el overlay tapa con un negro mas denso en vez de
+   desenfocar, y panel e inputs usan color solido. Se ve igual,
+   pero no hay nada que recalcular.
+   ============================================================ */
+.modal-overlay {
+  background: var(--overlay-bg);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.modal-panel {
+  background: var(--modal-panel-bg);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.modal-panel input,
+.modal-panel select,
+.modal-panel textarea {
+  background-color: var(--modal-input-bg);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }

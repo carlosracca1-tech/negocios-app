@@ -33,14 +33,13 @@ export default function ShareModal({ projectId, isOpen, onClose, onSuccess }: Sh
 
   return (
     <div
+      className="modal-overlay"
       style={{
         position: "fixed",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0, 0, 0, 0.55)",
-        backdropFilter: "blur(8px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -50,9 +49,8 @@ export default function ShareModal({ projectId, isOpen, onClose, onSuccess }: Sh
       onClick={onClose}
     >
       <div
+        className="modal-panel"
         style={{
-          background: "var(--surface-glass)",
-          backdropFilter: "blur(20px)",
           borderRadius: 16,
           padding: 24,
           width: 400,
