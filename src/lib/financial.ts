@@ -531,3 +531,50 @@ export function computeRitmoObra(params: {
     alerta: margenAlRitmo != null && margenAlRitmo < 10,
   };
 }
+
+// ============================================================================
+// RENTABILIDAD ANUALIZADA Y DÍAS DE TENENCIA
+// ============================================================================
+
+export interface HoldingMetrics {
+  /** Días desde la compra hasta la venta (o hasta hoy si no está vendido) */
+  daysHeld: number;
+  /** Margen bruto (= margin de computeProjectFinancials) */
+  marginPct: number;
+  /** Rentabilidad anualizada: cuánto rinde al año si se repitiera el flip.
+   *  Fórmula: (1 + resultado/inversión)^(365/días) - 1
+   *  Solo se calcula si hay resultado y > 0 días. */
+  annualizedPct: number | null;
+}
+
+/**
+ * Calcula días de tenencia y rentabilidad anualizada de un flip.
+ *
+ * Un margen del 20% en 6 meses es ~44% anualizado.
+ * Un margen del 20% en 18 meses es ~13% anualizado.
+ * Sin esta métrica, los dos se ven iguales.
+ */
+export function computeHoldingMetrics(params: {
+  buyDate: Date | string | null | undefined;
+  saleDate?: Date | string | null;
+  investment: number;
+  result: number;
+  marginPct: number;
+}): HoldingMetrics {
+  const buyDate = params.buyDate ? new Date(params.buyDate) : null;
+  const endDate = params.saleDate ? new Date(params.saleDate) : new Date();
+
+  const daysHeld =
+    buyDate && !isNaN(buyDate.getTime()) && !isNaN(endDate.getTime())
+      ? Math.max(1, Math.floor((endDate.getTime() - buyDate.getTime()) / 86400000))
+      : 0;
+
+  let annualizedPct: number | null = null;
+  if (daysHeld > 0 && params.investment > 0) {
+    const totalReturn = params.result / params.investment;
+    // (1 + r)^(365/d) - 1
+    annualizedPct = (Math.pow(1 + totalReturn, 365 / daysHeld) - 1) * 100;
+  }
+
+  return { daysHeld, marginPct: params.marginPct, annualizedPct };
+}

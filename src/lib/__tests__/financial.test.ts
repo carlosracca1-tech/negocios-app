@@ -6,6 +6,7 @@ import {
   computeObraProyeccion,
   computeAvancePonderado,
   computeRitmoObra,
+  computeHoldingMetrics,
   semaforoMargen,
   cotizacionUsd,
   costUsd,
@@ -463,6 +464,76 @@ describe("costUsd()", () => {
 
   it("USD sin amountUsd → usa amount", () => {
     expect(costUsd({ amount: 5000, currency: "USD" })).toBe(5000);
+  });
+});
+
+// ============================================================================
+// computeHoldingMetrics()
+// ============================================================================
+
+describe("computeHoldingMetrics()", () => {
+  it("flip de 6 meses con 20% de margen → ~44% anualizado", () => {
+    const r = computeHoldingMetrics({
+      buyDate: "2026-01-01",
+      saleDate: "2026-07-01",
+      investment: 200000,
+      result: 50000, // 25% sobre inversión
+      marginPct: 20,
+    });
+
+    expect(r.daysHeld).toBe(181);
+    // (1 + 50000/200000)^(365/181) - 1 ≈ 56%
+    expect(r.annualizedPct).toBeGreaterThan(40);
+    expect(r.annualizedPct).toBeLessThan(65);
+  });
+
+  it("flip de 18 meses con 20% de margen → ~13% anualizado", () => {
+    const r = computeHoldingMetrics({
+      buyDate: "2025-01-01",
+      saleDate: "2026-07-01",
+      investment: 200000,
+      result: 50000,
+      marginPct: 20,
+    });
+
+    expect(r.daysHeld).toBe(546);
+    expect(r.annualizedPct).toBeGreaterThan(10);
+    expect(r.annualizedPct).toBeLessThan(20);
+  });
+
+  it("sin fecha de compra → daysHeld 0, sin anualizado", () => {
+    const r = computeHoldingMetrics({
+      buyDate: null,
+      investment: 200000,
+      result: 50000,
+      marginPct: 20,
+    });
+
+    expect(r.daysHeld).toBe(0);
+    expect(r.annualizedPct).toBeNull();
+  });
+
+  it("proyecto activo (sin saleDate) → días hasta hoy", () => {
+    const r = computeHoldingMetrics({
+      buyDate: "2026-09-01",
+      investment: 200000,
+      result: 0,
+      marginPct: 0,
+    });
+
+    expect(r.daysHeld).toBeGreaterThan(0);
+  });
+
+  it("proyecto con pérdida → anualizado negativo", () => {
+    const r = computeHoldingMetrics({
+      buyDate: "2026-01-01",
+      saleDate: "2026-07-01",
+      investment: 200000,
+      result: -20000,
+      marginPct: -10,
+    });
+
+    expect(r.annualizedPct).toBeLessThan(0);
   });
 });
 
