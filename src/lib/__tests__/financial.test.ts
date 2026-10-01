@@ -570,6 +570,20 @@ describe("computeHoldingMetrics()", () => {
     expect(r.daysHeld).toBeGreaterThan(0);
   });
 
+  it("vendido sin saleDate → daysHeld 0, sin anualizado", () => {
+    const r = computeHoldingMetrics({
+      buyDate: "2023-12-07",
+      saleDate: null,
+      isVendido: true,
+      investment: 270419.28,
+      result: 19580.72,
+      marginPct: 7.24,
+    });
+
+    expect(r.daysHeld).toBe(0);
+    expect(r.annualizedPct).toBeNull();
+  });
+
   it("proyecto con pérdida → anualizado negativo", () => {
     const r = computeHoldingMetrics({
       buyDate: "2026-01-01",

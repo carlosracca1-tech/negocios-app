@@ -109,6 +109,7 @@ export async function GET(
       const holding = computeHoldingMetrics({
         buyDate: project.buyDate,
         saleDate: project.saleDate,
+        isVendido: project.status === "vendido",
         investment,
         result: result ?? 0,
         marginPct: margin ?? 0,

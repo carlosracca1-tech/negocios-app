@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
       const holding = computeHoldingMetrics({
         buyDate: project.buyDate,
         saleDate: project.saleDate,
+        isVendido: project.status === "vendido",
         investment: financials.investment,
         result: financials.result,
         marginPct: financials.margin,

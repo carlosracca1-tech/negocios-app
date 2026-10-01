@@ -575,15 +575,20 @@ export interface HoldingMetrics {
 export function computeHoldingMetrics(params: {
   buyDate: Date | string | null | undefined;
   saleDate?: Date | string | null;
+  /** true si el proyecto está vendido (para no contar hasta hoy sin fecha) */
+  isVendido?: boolean;
   investment: number;
   result: number;
   marginPct: number;
 }): HoldingMetrics {
   const buyDate = params.buyDate ? new Date(params.buyDate) : null;
-  const endDate = params.saleDate ? new Date(params.saleDate) : new Date();
+  // Vendido sin fecha de venta: no podemos calcular días → endDate null
+  const endDate = params.saleDate
+    ? new Date(params.saleDate)
+    : params.isVendido ? null : new Date();
 
   const daysHeld =
-    buyDate && !isNaN(buyDate.getTime()) && !isNaN(endDate.getTime())
+    buyDate && endDate && !isNaN(buyDate.getTime()) && !isNaN(endDate.getTime())
       ? Math.max(1, Math.floor((endDate.getTime() - buyDate.getTime()) / 86400000))
       : 0;
 
