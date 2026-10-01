@@ -10,6 +10,17 @@ import { useEffect, useRef, useCallback } from "react";
  */
 export function useModalA11y(isOpen: boolean, onClose: () => void) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+
+  // Guardar el elemento que tenía foco al abrir, restaurarlo al cerrar
+  useEffect(() => {
+    if (isOpen) {
+      triggerRef.current = document.activeElement as HTMLElement;
+    } else if (triggerRef.current) {
+      triggerRef.current.focus();
+      triggerRef.current = null;
+    }
+  }, [isOpen]);
 
   // Cierre con Escape
   useEffect(() => {
