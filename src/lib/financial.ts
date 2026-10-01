@@ -3,6 +3,13 @@
  *
  * Single source of truth for all project financial computations.
  * Used by API routes to compute derived fields before sending to the client.
+ *
+ * DEFINICIÓN DE MARGEN (no negociable):
+ *   margen = (precio_de_venta − inversión) / precio_de_venta × 100
+ *
+ * Siempre sobre la VENTA, nunca sobre la inversión. Es el estándar en
+ * real estate ("margin on sale") y coincide con computeObraProyeccion.
+ * Un margen del 20% significa que de cada $100 que entra, $20 es ganancia.
  */
 
 /** Safely convert a nullable/undefined number to a finite number, defaulting to 0 */
@@ -55,9 +62,10 @@ export function computeProjectFinancials(
   const sp = safe(project.salePrice);
   const lp = safe(project.listingPrice);
   const result = sp > 0 ? sp - investment : 0;
-  const margin = sp > 0 && investment > 0 ? (result / investment) * 100 : 0;
+  // Margen SIEMPRE sobre la venta (margin on sale), nunca sobre inversión.
+  const margin = sp > 0 ? (result / sp) * 100 : 0;
   const estimatedMargin =
-    lp > 0 && investment > 0 ? ((lp - investment) / investment) * 100 : 0;
+    lp > 0 ? ((lp - investment) / lp) * 100 : 0;
 
   return { totalCosts, totalExpenses, investment, result, margin, estimatedMargin };
 }
