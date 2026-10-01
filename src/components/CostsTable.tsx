@@ -426,7 +426,7 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
               >
                 <td style={{ padding: "10px 0", color: "var(--text-secondary)", whiteSpace: "nowrap", fontSize: 12 }}>
-                  {new Date(cost.date).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                  {new Date(cost.date).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "2-digit", timeZone: "UTC" })}
                 </td>
                 <td style={{ padding: "10px 8px", color: "var(--text-primary)", fontWeight: 500 }}>
                   {cost.concept}

@@ -51,7 +51,7 @@ export default function Timeline({ events }: TimelineProps) {
               {/* Content */}
               <div style={{ paddingTop: 0 }}>
                 <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 4 }}>
-                  {new Date(event.date).toLocaleDateString("es-AR")}
+                  {new Date(event.date).toLocaleDateString("es-AR", { timeZone: "UTC" })}
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>
                   {event.action}

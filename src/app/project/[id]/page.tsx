@@ -21,7 +21,7 @@ import AddInvestorModal from "@/components/AddInvestorModal";
 import ProjectAlerts from "@/components/ProjectAlerts";
 import PresupuestosPanel from "@/components/PresupuestosPanel";
 import ObraDetalle from "@/components/ObraDetalle";
-import { fmt, fmtSign, fmtPct, daysAgo, safeNum } from "@/lib/format";
+import { fmt, fmtSign, fmtPct, daysAgo, safeNum, fmtFecha } from "@/lib/format";
 import { semaforoMargen } from "@/lib/financial";
 import { statusConfig } from "@/lib/constants";
 
@@ -354,7 +354,7 @@ export default function ProjectPage({ params }: PageProps) {
                   {p.type}
                 </span>
                 {p.address && <span style={{ color: "var(--text-secondary)" }}>{p.address}</span>}
-                <span style={{ color: "var(--text-secondary)" }}>Compra: {new Date(p.buyDate).toLocaleDateString("es-AR")}</span>
+                <span style={{ color: "var(--text-secondary)" }}>Compra: {fmtFecha(p.buyDate)}</span>
                 <span style={{ color: "var(--text-secondary)" }}>{daysActive} días activo</span>
                 <span style={{ color: "var(--text-secondary)" }}>Actualizado {daysAgo(p.lastUpdate)}</span>
               </div>

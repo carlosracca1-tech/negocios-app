@@ -25,7 +25,7 @@ import {
   ETAPAS_LABELS,
   EtapaKey,
 } from "@/lib/financial";
-import { fmtUsd, fmtUsdSign, fmtPctAr, fmtNum, safeNum } from "@/lib/format";
+import { fmtUsd, fmtUsdSign, fmtPctAr, fmtNum, safeNum, fmtFecha } from "@/lib/format";
 import { projectsApi } from "@/lib/api-client";
 
 interface ObraDetalleProps {
@@ -707,7 +707,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                     return (
                       <tr key={c.id}>
                         <td className="mono obra2a-tdFecha">
-                          {new Date(c.date).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" })}
+                          {fmtFecha(c.date, { sinAnio: true })}
                         </td>
                         <td className="obra2a-tdConcepto">{c.concept}</td>
                         <td className="obra2a-tdCat">{c.category}</td>
