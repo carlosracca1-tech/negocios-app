@@ -99,25 +99,25 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
       <div className="kpi-grid-4" style={{ gap: 12, marginBottom: 20 }}>
         <KPICard
           label="Costo proyectado total"
-          value={`USD ${totalProjected.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+          value={`USD ${totalProjected.toLocaleString("de-DE", { maximumFractionDigits: 0 })}`}
           sub={`Cotizaciones elegidas · ${numRubros} rubros`}
           bold
         />
         <KPICard
           label="Ejecutado real"
-          value={`USD ${totalExecuted.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+          value={`USD ${totalExecuted.toLocaleString("de-DE", { maximumFractionDigits: 0 })}`}
           sub={`${pctExecuted.toFixed(0)}% del presupuesto`}
         />
         <KPICard
           label="Desvio acumulado"
-          value={`${deviation >= 0 ? "+" : ""}USD ${Math.abs(deviation).toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+          value={`${deviation >= 0 ? "+" : ""}USD ${Math.abs(deviation).toLocaleString("de-DE", { maximumFractionDigits: 0 })}`}
           sub={deviation >= 0 ? `${totalProjected > 0 ? ((deviation / totalProjected) * 100).toFixed(1) : 0}% bajo lo presupuestado` : "sobre lo presupuestado"}
           color={deviation >= 0 ? "var(--success)" : "var(--danger)"}
           subColor={deviation >= 0 ? "var(--success)" : "var(--danger)"}
         />
         <KPICard
           label="Costo final estimado"
-          value={`USD ${costoFinal.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
+          value={`USD ${costoFinal.toLocaleString("de-DE", { maximumFractionDigits: 0 })}`}
           sub={`Compra ${(buyPrice / 1000).toFixed(0)}k + obra proyectada`}
         />
       </div>
@@ -153,13 +153,13 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
             <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
               {numCots} cotizaciones cargadas en {numRubros} rubros. Costo de obra proyectado:{" "}
               <strong style={{ color: "var(--text-primary)" }}>
-                USD {totalProjected.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                USD {totalProjected.toLocaleString("de-DE", { maximumFractionDigits: 0 })}
               </strong>.
               {deviation > 0 && (
                 <span>
                   {" "}Vas{" "}
                   <strong style={{ color: "var(--success)" }}>
-                    USD {deviation.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                    USD {deviation.toLocaleString("de-DE", { maximumFractionDigits: 0 })}
                   </strong>{" "}
                   por debajo de lo presupuestado.
                 </span>

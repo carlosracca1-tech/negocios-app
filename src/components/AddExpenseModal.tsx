@@ -342,7 +342,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
               />
               {exchangeRate && amount && (
                 <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4 }}>
-                  ≈ U$D {(parseFloat(amount) / parseFloat(exchangeRate)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ≈ U$D {(parseFloat(amount) / parseFloat(exchangeRate)).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               )}
             </div>

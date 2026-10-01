@@ -388,7 +388,7 @@ export default function AddCostModal({
                     AR$ {amountNum.toLocaleString("es-AR")} ÷ {currentRate}
                   </span>
                   <span className="tabular" style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>
-                    ≈ U$D {usdAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ≈ U$D {usdAmount.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               ) : (
@@ -462,7 +462,7 @@ export default function AddCostModal({
                         AR$ {amountNum.toLocaleString("es-AR")} ÷ {blueRate.promedio}
                       </span>
                       <span className="tabular" style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>
-                        ≈ U$D {usdAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ≈ U$D {usdAmount.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                   )}

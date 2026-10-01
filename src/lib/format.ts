@@ -9,19 +9,22 @@ export const safeNum = (n: number | string | null | undefined): number => {
   return isFinite(v) ? v : 0;
 };
 
+/** "USD 270.419" — miles con punto, sin decimales, formato argentino */
 export const fmt = (n: number | null | undefined): string => {
   const v = safeNum(n);
-  return "$" + Math.abs(v).toLocaleString("en-US");
+  return "USD " + Math.round(Math.abs(v)).toLocaleString("de-DE");
 };
 
+/** "+USD 19.581" / "−USD 7.000" */
 export const fmtSign = (n: number | null | undefined): string => {
   const v = safeNum(n);
-  return (v >= 0 ? "+" : "-") + "$" + Math.abs(v).toLocaleString("en-US");
+  return (v >= 0 ? "+" : "−") + "USD " + Math.round(Math.abs(v)).toLocaleString("de-DE");
 };
 
+/** "7,2%" — coma decimal */
 export const fmtPct = (n: number | null | undefined): string => {
   const v = safeNum(n);
-  return v.toFixed(1) + "%";
+  return v.toFixed(1).replace(".", ",") + "%";
 };
 
 export const daysAgo = (dateStr: string | Date): string => {

@@ -652,7 +652,7 @@ export default function ProjectPage({ params }: PageProps) {
                           Total gastos
                         </div>
                         <div className="tabular truncate" style={{ fontSize: "clamp(14px, 2vw, 18px)", fontWeight: 700, color: "var(--text-primary)" }}>
-                          U$D {totalExpensesUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          U$D {totalExpensesUsd.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>
                           {expenseMonths} {expenseMonths === 1 ? "mes" : "meses"}
@@ -669,7 +669,7 @@ export default function ProjectPage({ params }: PageProps) {
                           Promedio mensual
                         </div>
                         <div className="tabular truncate" style={{ fontSize: "clamp(14px, 2vw, 18px)", fontWeight: 700, color: "var(--text-primary)" }}>
-                          U$D {avgMonthlyExpense.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          U$D {avgMonthlyExpense.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>
                           USD/mes
@@ -742,7 +742,7 @@ export default function ProjectPage({ params }: PageProps) {
                                   fontSize: 13, fontWeight: 600, color: "var(--text-primary)",
                                   minWidth: 80, textAlign: "right",
                                 }}>
-                                  U$D {amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  U$D {amount.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                               </div>
                             </div>

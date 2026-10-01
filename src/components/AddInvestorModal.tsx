@@ -328,7 +328,7 @@ export default function AddInvestorModal({
             {amountInvested && (
               <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4 }}>
                 USD{" "}
-                {parseFloat(amountInvested).toLocaleString("en-US", {
+                {parseFloat(amountInvested).toLocaleString("de-DE", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
