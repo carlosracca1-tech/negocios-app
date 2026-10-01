@@ -216,9 +216,9 @@ export default function ObraDetalle(props: ObraDetalleProps) {
       }
     } else if (!tieneFalta && !vendida) {
       out.push({
-        titulo: “Falta estimar cuánto queda”,
-        texto: “Sin el estimado de lo que falta pagar no hay cierre ni margen confiable: el número se calcularía solo con lo ya gastado. Escribilo arriba, en \u201cFalta para terminar\u201d.”,
-        tono: “warn”,
+        titulo: "Falta estimar cuanto queda",
+        texto: 'Sin el estimado de lo que falta pagar no hay cierre ni margen confiable: el numero se calcularia solo con lo ya gastado. Escribilo arriba, en "Falta para terminar".',
+        tono: "warn",
       });
     }
 
@@ -227,22 +227,22 @@ export default function ObraDetalle(props: ObraDetalleProps) {
       if (ritmo.hayDatos) {
         if (ritmo.alerta) {
           out.push({
-            titulo: “El ritmo de gasto se come el margen”,
+            titulo: "El ritmo de gasto se come el margen",
             texto: `Llevás ${fmtUsd(ritmo.costosObra)} con la obra al ${fmtPctAr(ritmo.avancePct, 0)}. Si sigue a este ritmo, la obra completa cuesta ${fmtUsd(ritmo.obraAlRitmo)} y el margen cae a ${fmtPctAr(ritmo.margenAlRitmo)}.`,
-            tono: “warn”,
+            tono: "warn",
           });
         } else {
           out.push({
-            titulo: “El ritmo de gasto cierra bien”,
-            texto: `Con la obra al ${fmtPctAr(ritmo.avancePct, 0)} y ${fmtUsd(ritmo.costosObra)} gastados, seguir a este ritmo deja la obra en ${fmtUsd(ritmo.obraAlRitmo)}${ritmo.margenAlRitmo != null ? ` y el margen en ${fmtPctAr(ritmo.margenAlRitmo)}` : “”}.`,
-            tono: “ok”,
+            titulo: "El ritmo de gasto cierra bien",
+            texto: `Con la obra al ${fmtPctAr(ritmo.avancePct, 0)} y ${fmtUsd(ritmo.costosObra)} gastados, seguir a este ritmo deja la obra en ${fmtUsd(ritmo.obraAlRitmo)}${ritmo.margenAlRitmo != null ? ` y el margen en ${fmtPctAr(ritmo.margenAlRitmo)}` : ""}.`,
+            tono: "ok",
           });
         }
       } else {
         out.push({
-          titulo: “Cargá el avance mensual”,
-          texto: “Actualizar las 5 etapas una vez por mes permite proyectar el costo total de la obra desde el ritmo real de gasto, sin depender del presupuesto.”,
-          tono: “info”,
+          titulo: "Cargá el avance mensual",
+          texto: "Actualizar las 5 etapas una vez por mes permite proyectar el costo total de la obra desde el ritmo real de gasto, sin depender del presupuesto.",
+          tono: "info",
         });
       }
     }
