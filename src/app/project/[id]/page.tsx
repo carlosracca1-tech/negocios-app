@@ -22,7 +22,14 @@ import ProjectAlerts from "@/components/ProjectAlerts";
 import PresupuestosPanel from "@/components/PresupuestosPanel";
 import ObraDetalle from "@/components/ObraDetalle";
 import { fmt, fmtSign, fmtPct, daysAgo, safeNum } from "@/lib/format";
+import { semaforoMargen } from "@/lib/financial";
 import { statusConfig } from "@/lib/constants";
+
+const SEMAFORO_COLOR: Record<string, string> = {
+  verde: "var(--success)",
+  ambar: "var(--warning)",
+  rojo: "var(--danger)",
+};
 
 interface PageProps {
   params: { id: string };
@@ -395,13 +402,13 @@ export default function ProjectPage({ params }: PageProps) {
                 : {
                     label: "Margen est.",
                     value: estMargin !== null ? fmtPct(estMargin) : "—",
-                    color: estMargin !== null ? (estMargin >= 0 ? "var(--success)" : "var(--danger)") : undefined,
+                    color: estMargin !== null ? SEMAFORO_COLOR[semaforoMargen(estMargin)] : undefined,
                   },
               p.salePrice
                 ? {
                     label: "Margen",
                     value: fmtPct(margin!),
-                    color: margin! >= 0 ? "var(--success)" : "var(--danger)",
+                    color: SEMAFORO_COLOR[semaforoMargen(margin!)],
                   }
                 : { label: "", value: "" },
             ] as Array<{ label: string; value: string; color?: string; sub?: string; subColor?: string; bold?: boolean }>

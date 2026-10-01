@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Cost, Expense } from "@/types";
 import { fmt, fmtSign, fmtPct, safeNum } from "@/lib/format";
+import { semaforoMargen } from "@/lib/financial";
 
 /**
  * ProjectSummary — vista del "Resumen" del proyecto.
@@ -157,18 +158,19 @@ export default function ProjectSummary({
     }
 
     if (hasSale && margin !== null) {
-      if (margin >= 15) {
-        arr.push({ kind: "success", title: "📈 Margen final", text: (<><strong>{margin.toFixed(1)}%</strong> — buen resultado, por encima de la meta típica de 15%.</>) });
-      } else if (margin >= 0) {
-        arr.push({ kind: "warning", title: "📉 Margen final", text: (<><strong>{margin.toFixed(1)}%</strong> — positivo pero por debajo del 15% objetivo.</>) });
+      const sem = semaforoMargen(margin);
+      const kind = sem === "verde" ? "success" : sem === "ambar" ? "warning" : "danger";
+      if (margin >= 0) {
+        arr.push({ kind, title: "📈 Margen final", text: (<><strong>{margin.toFixed(1)}%</strong> sobre lo invertido{sem === "verde" ? " — buen resultado." : sem === "ambar" ? " — aceptable, cerca del objetivo." : " — bajo, revisar."}</>) });
       } else {
-        arr.push({ kind: "danger", title: "📉 Resultado negativo", text: (<>Pérdida de <strong>{Math.abs(margin).toFixed(1)}%</strong> sobre la inversión total.</>) });
+        arr.push({ kind: "danger", title: "📉 Resultado negativo", text: (<>Pérdida de <strong>{Math.abs(margin).toFixed(1)}%</strong> sobre lo invertido.</>) });
       }
     } else if (estimatedMargin !== null && listingPrice > 0) {
+      const sem = semaforoMargen(estimatedMargin);
       arr.push({
-        kind: estimatedMargin >= 15 ? "success" : estimatedMargin >= 0 ? "warning" : "danger",
+        kind: sem === "verde" ? "success" : sem === "ambar" ? "warning" : "danger",
         title: "📊 Margen estimado",
-        text: (<>Con el valor de publicación actual, el margen estimado sería <strong>{estimatedMargin.toFixed(1)}%</strong>.</>),
+        text: (<>Con el valor de publicación actual, el margen estimado sería <strong>{estimatedMargin.toFixed(1)}%</strong> sobre lo invertido.</>),
       });
     }
 
@@ -327,7 +329,7 @@ export default function ProjectSummary({
               value={Math.max(0, margin)}
               maxScale={25}
               targetPct={15}
-              color={margin >= 15 ? "good" : margin >= 0 ? "warn" : "danger"}
+              color={semaforoMargen(margin) === "verde" ? "good" : semaforoMargen(margin) === "ambar" ? "warn" : "danger"}
               fillLabel={`${margin.toFixed(1)}%`}
             />
             <CompareRow

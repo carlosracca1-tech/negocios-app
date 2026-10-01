@@ -2,6 +2,13 @@
 
 import { Project } from "@/types";
 import { fmt, fmtPct, safeNum } from "@/lib/format";
+import { semaforoMargen } from "@/lib/financial";
+
+const SEMAFORO_COLOR: Record<string, string> = {
+  verde: "var(--success)",
+  ambar: "var(--warning)",
+  rojo: "var(--danger)",
+};
 
 interface ProjectComparisonProps {
   projects: Project[];
@@ -80,8 +87,10 @@ export default function ProjectComparison({ projects }: ProjectComparisonProps) 
                   <td style={{
                     ...tdRight,
                     color: hasSale
-                      ? margin >= 15 ? "var(--success)" : margin >= 10 ? "var(--warning)" : "var(--danger)"
-                      : "var(--text-tertiary)",
+                      ? SEMAFORO_COLOR[semaforoMargen(margin)]
+                      : p.estimatedMargin
+                        ? SEMAFORO_COLOR[semaforoMargen(safeNum(p.estimatedMargin))]
+                        : "var(--text-tertiary)",
                   }}>
                     {hasSale ? fmtPct(margin) : p.estimatedMargin ? `~${fmtPct(p.estimatedMargin)}` : "—"}
                   </td>
@@ -91,11 +100,11 @@ export default function ProjectComparison({ projects }: ProjectComparisonProps) 
                   <td style={{
                     ...tdRight,
                     fontWeight: 600,
-                    color: annualized != null
-                      ? annualized >= 30 ? "var(--success)" : annualized >= 15 ? "var(--warning)" : "var(--danger)"
+                    color: hasSale && annualized != null
+                      ? SEMAFORO_COLOR[semaforoMargen(annualized)]
                       : "var(--text-tertiary)",
                   }}>
-                    {annualized != null ? fmtPct(annualized) : "—"}
+                    {hasSale && annualized != null ? fmtPct(annualized) : "—"}
                   </td>
                 </tr>
               );
