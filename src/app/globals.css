@@ -30,7 +30,7 @@
   /* Textos */
   --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
+  --text-tertiary: #8b8b94;
   --text-quaternary: #52525b;
 
   /* Accent monocromo */
@@ -97,7 +97,7 @@
 
   --text-primary: #1a1814;
   --text-secondary: #4d4842;
-  --text-tertiary: #7a7468;
+  --text-tertiary: #6b6560;
   --text-quaternary: #a8a397;
 
   --accent: #1a1814;
@@ -867,4 +867,11 @@ input:focus, select:focus, textarea:focus {
   background-color: var(--modal-input-bg);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* Botones interactivos: mínimo 44px para WCAG 2.1 AA táctil */
+.modal-panel button,
+button.btn-primary,
+button.btn-secondary {
+  min-height: 44px;
 }
