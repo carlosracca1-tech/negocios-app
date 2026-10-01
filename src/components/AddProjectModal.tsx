@@ -54,85 +54,58 @@ export default function AddProjectModal({ isOpen, onClose, onSuccess }: AddProje
       aria-modal="true"
       aria-labelledby="addproject-modal-title"
       onKeyDown={handleKeyDown}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-        animation: "fadeIn 0.2s ease",
-      }}
       onClick={onClose}
     >
       <div
         className="modal-panel"
         ref={panelRef}
-        style={{
-          borderRadius: 16,
-          padding: 24,
-          width: 420,
-          maxWidth: "90%",
-          boxShadow: "0 25px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 189, 248, 0.1), 0 0 40px rgba(56, 189, 248, 0.05)",
-          border: "1px solid var(--border-default)",
-          maxHeight: "80vh",
-          overflowY: "auto",
-        }}
+        style={{ width: 420 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="addproject-modal-title" style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>Nuevo proyecto</h2>
+        <h2 id="addproject-modal-title" className="modal-title">Nuevo proyecto</h2>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label htmlFor="addproject-name" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Nombre</label>
+            <label htmlFor="addproject-name" className="modal-label">Nombre</label>
             <input id="addproject-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Casa Núñez" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label htmlFor="addproject-type" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Tipo</label>
+              <label htmlFor="addproject-type" className="modal-label">Tipo</label>
               <select id="addproject-type" value={type} onChange={(e) => setType(e.target.value as "Casa" | "Auto")} style={{ ...inputStyle, cursor: "pointer" }} onFocus={focusInput} onBlur={blurInput}>
                 <option value="Casa">Casa</option>
                 <option value="Auto">Auto</option>
               </select>
             </div>
             <div>
-              <label htmlFor="addproject-buydate" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Fecha compra</label>
+              <label htmlFor="addproject-buydate" className="modal-label">Fecha compra</label>
               <input id="addproject-buydate" type="date" value={buyDate} onChange={(e) => setBuyDate(e.target.value)} style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
           </div>
 
           <div>
-            <label htmlFor="addproject-buyprice" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Precio compra</label>
+            <label htmlFor="addproject-buyprice" className="modal-label">Precio compra</label>
             <input id="addproject-buyprice" type="number" value={buyPrice} onChange={(e) => setBuyPrice(e.target.value)} placeholder="0" step="0.01" min="0" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           {type === "Casa" && (
             <div>
-              <label htmlFor="addproject-address" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Dirección</label>
+              <label htmlFor="addproject-address" className="modal-label">Dirección</label>
               <input id="addproject-address" type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Opcional" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
           )}
 
           <div>
-            <label htmlFor="addproject-listingprice" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Valor de publicación (opcional)</label>
+            <label htmlFor="addproject-listingprice" className="modal-label">Valor de publicación (opcional)</label>
             <input id="addproject-listingprice" type="number" value={listingPrice} onChange={(e) => setListingPrice(e.target.value)} placeholder="0" step="0.01" min="0" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
-          {error && <div style={{ fontSize: 12, color: "var(--danger)", background: "var(--danger-soft)", padding: "10px 12px", borderRadius: 8, border: "1px solid var(--danger-border)" }}>{error}</div>}
+          {error && <div className="modal-error">{error}</div>}
 
-          <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, padding: "10px 16px", borderRadius: 10, border: "1px solid var(--border-default)", background: "transparent", fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", cursor: "pointer", transition: "all 0.2s" }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--surface-1)"; e.currentTarget.style.borderColor = "var(--border-strong)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.borderColor = "rgba(56, 189, 248, 0.12)"; }}>
-              Cancelar
-            </button>
-            <button type="submit" disabled={loading} style={{ flex: 1, padding: "10px 16px", borderRadius: 10, border: "none", background: "var(--accent)", fontSize: 13, fontWeight: 600, color: "var(--accent-on)", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1, boxShadow: "0 2px 12px rgba(56, 189, 248, 0.2)" }}
-              onMouseEnter={(e) => !loading && (e.currentTarget.style.boxShadow = "0 4px 20px rgba(56, 189, 248, 0.35)")}
-              onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(56, 189, 248, 0.2)")}>
+          <div className="modal-actions">
+            <button type="button" className="btn-cancel" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn-submit" disabled={loading}>
               {loading ? "Creando..." : "Crear"}
             </button>
           </div>
