@@ -225,6 +225,58 @@ describe("computeBudgetProjection()", () => {
     const r = computeBudgetProjection(partidas, costs);
     expect(r.byRubro[0].projected).toBe(0);
   });
+
+  it("partida con cotización elegida en ARS y costos en ARS", () => {
+    const partidas = [
+      {
+        id: "p1", name: "Albañil", category: "Obra",
+        cotizaciones: [
+          { amount: 3000000, currency: "ARS", exchangeRate: 1200, amountUsd: 2500, isChosen: true },
+        ],
+      },
+    ];
+    const costs = [
+      { amount: 1500000, currency: "ARS", exchangeRate: 1200, amountUsd: 1250, partidaId: "p1" },
+    ];
+
+    const r = computeBudgetProjection(partidas, costs);
+
+    expect(r.byRubro[0].projectedArs).toBe(3000000);
+    expect(r.byRubro[0].executedArs).toBe(1500000);
+    expect(r.byRubro[0].pctArs).toBeCloseTo(50, 1);
+  });
+
+  it("cotización no elegida → usa la menor en USD", () => {
+    const partidas = [
+      {
+        id: "p1", name: "Pintor", category: "Terminaciones",
+        cotizaciones: [
+          { amount: 3000, currency: "USD", isChosen: false },
+          { amount: 2000, currency: "USD", isChosen: false },
+          { amount: 4000, currency: "USD", isChosen: false },
+        ],
+      },
+    ];
+    const costs: any[] = [];
+
+    const r = computeBudgetProjection(partidas, costs);
+
+    expect(r.byRubro[0].projected).toBe(2000); // min
+  });
+
+  it("sin partidas → totales en 0, todos los costos son huérfanos", () => {
+    const partidas: any[] = [];
+    const costs = [
+      { amount: 5000, currency: "USD", amountUsd: 5000, partidaId: null },
+    ];
+
+    const r = computeBudgetProjection(partidas, costs);
+
+    expect(r.totalProjected).toBe(0);
+    expect(r.totalExecuted).toBe(0);
+    expect(r.unassignedCount).toBe(1);
+    expect(r.unassignedUsd).toBe(5000);
+  });
 });
 
 // ============================================================================
@@ -332,6 +384,32 @@ describe("computeRitmoObra()", () => {
     expect(r.obraAlRitmo).toBeNull();
   });
 
+  it("sin costos pero con avance → hayDatos false", () => {
+    const r = computeRitmoObra({
+      costosObra: 0,
+      buyPrice: 100000,
+      totalExpenses: 0,
+      ventaReferencia: 200000,
+      etapas: { estructura: 50 },
+    });
+    expect(r.hayDatos).toBe(false);
+  });
+
+  it("alerta true cuando margen al ritmo < 10%", () => {
+    // Avance bajo con mucho gastado → obra se encarece
+    const r = computeRitmoObra({
+      costosObra: 80000,
+      buyPrice: 100000,
+      totalExpenses: 10000,
+      ventaReferencia: 200000,
+      // Solo estructura al 50% → 7.5% avance
+      etapas: { estructura: 50 },
+    });
+    expect(r.hayDatos).toBe(true);
+    expect(r.alerta).toBe(true);
+    expect(r.semaforo).toBe("rojo");
+  });
+
   it("avance 50% con 30k gastados → obra cierra en 60k", () => {
     const r = computeRitmoObra({
       costosObra: 30000,
@@ -353,6 +431,38 @@ describe("computeRitmoObra()", () => {
     expect(r.margenAlRitmo).toBeCloseTo(15.59, 0);
     expect(r.semaforo).toBe("verde");
     expect(r.alerta).toBe(false);
+  });
+});
+
+// ============================================================================
+// cotizacionUsd() y costUsd()
+// ============================================================================
+
+describe("cotizacionUsd()", () => {
+  it("ARS con amountUsd → usa amountUsd", () => {
+    expect(cotizacionUsd({ amount: 3000000, currency: "ARS", amountUsd: 2500 })).toBe(2500);
+  });
+
+  it("USD → usa amount directo", () => {
+    expect(cotizacionUsd({ amount: 5000, currency: "USD" })).toBe(5000);
+  });
+
+  it("ARS sin amountUsd → usa amount (fallback)", () => {
+    expect(cotizacionUsd({ amount: 3000000, currency: "ARS", amountUsd: null })).toBe(3000000);
+  });
+});
+
+describe("costUsd()", () => {
+  it("con amountUsd → lo usa directo", () => {
+    expect(costUsd({ amount: 1200000, currency: "ARS", amountUsd: 1000 })).toBe(1000);
+  });
+
+  it("ARS sin amountUsd pero con exchangeRate → calcula", () => {
+    expect(costUsd({ amount: 1200000, currency: "ARS", exchangeRate: 1200 })).toBe(1000);
+  });
+
+  it("USD sin amountUsd → usa amount", () => {
+    expect(costUsd({ amount: 5000, currency: "USD" })).toBe(5000);
   });
 });
 
