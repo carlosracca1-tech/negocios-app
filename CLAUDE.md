@@ -40,13 +40,19 @@ npx prisma format    # Formatear schema
 
 ### Cálculos financieros
 `src/lib/financial.ts` es la **única fuente de verdad**. Nadie más calcula totales, márgenes ni inversión.
-- **Margen** = (venta - inversión) / venta × 100 — siempre sobre la venta
+- **Margen** = ganancia / inversión × 100 — siempre sobre lo invertido
 - **Inversión** = buyPrice + totalCosts + totalExpenses
 - `computeProjectFinancials()` — totales e inversión
 - `computeBudgetProjection()` — presupuesto vs real por rubro
 - `computeObraProyeccion()` — proyección de cierre de obra
 - `computeRitmoObra()` — ritmo de gasto vs avance físico
+- `margenSobreInversion()` — única fórmula de margen (ganancia/inversión)
 - `computeHoldingMetrics()` — días de tenencia y rentabilidad anualizada
+
+### Reglas de moneda y fechas
+- **ARS sin TC no se suma:** si un registro en ARS no tiene `amountUsd` ni `exchangeRate`, se excluye del total (`sinTcCount` lo cuenta)
+- **Fechas solo-fecha:** usar `fmtFecha()` de `src/lib/format.ts` con `timeZone: "UTC"` (buyDate, saleDate, period, paidDate, dueDate)
+- **Formato argentino:** miles con punto, decimales con coma. `fmt()` → "USD 270.419", `fmtPct()` → "7,2%"
 
 ### Imputación automática
 `src/lib/imputacion.ts` — asigna costos a presupuestos por nombre de proveedor. Regla: ante la duda, no imputar. Cascada solo entre presupuestos del mismo proveedor.
