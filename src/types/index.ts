@@ -113,6 +113,8 @@ export interface Expense {
   receiptUrl: string | null;
   receiptName: string | null;
   notes: string | null;
+  /** Fecha de vencimiento (seguros, impuestos, patente) */
+  dueDate?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

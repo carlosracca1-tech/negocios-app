@@ -21,6 +21,7 @@ const createExpenseSchema = z.object({
   receiptUrl: z.string().optional().nullable(),
   receiptName: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  dueDate: z.string().datetime().optional().nullable(),
 });
 
 export async function GET(

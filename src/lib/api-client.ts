@@ -331,6 +331,7 @@ export const expensesApi = {
       receiptUrl?: string | null;
       receiptName?: string | null;
       notes?: string | null;
+      dueDate?: string | null;
     }
   ): Promise<Expense> {
     return apiPost(`/api/projects/${projectId}/expenses`, data);
@@ -347,6 +348,7 @@ export const expensesApi = {
       period: string;
       paidDate: string | null;
       notes: string | null;
+      dueDate: string | null;
     }>
   ): Promise<Expense> {
     return apiPatch(`/api/projects/${projectId}/expenses/${expenseId}`, data);

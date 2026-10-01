@@ -212,6 +212,9 @@ model Expense {
   receiptUrl        String?
   receiptName       String?
   notes             String?
+  /// Fecha de vencimiento del gasto (seguros, impuestos, patente).
+  /// null = sin vencimiento. Se usa para alertas proactivas.
+  dueDate           DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

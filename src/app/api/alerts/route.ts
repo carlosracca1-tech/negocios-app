@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isAdmin, orgScope } from "@/lib/api-helpers";
-import { computeProjectFinancials, safe } from "@/lib/financial";
+import { computeProjectFinancials, computeBudgetProjection, safe } from "@/lib/financial";
 import { rethrowNextError } from "@/lib/route-utils";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
         include: {
           costs: true,
           expenses: true,
+          partidas: { include: { cotizaciones: true } },
         },
       });
     } else {
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
         include: {
           costs: true,
           expenses: true,
+          partidas: { include: { cotizaciones: true } },
         },
       });
     }
@@ -128,6 +130,56 @@ export async function GET(request: NextRequest) {
           color: "#f59e0b",
           data: { estimatedMargin: estimatedMargin.toFixed(2), listingPrice: project.listingPrice },
         });
+      }
+
+      // Alert 5: Budget deviation — rubros que superan el 90% del presupuesto
+      if (project.status === "activo" && project.partidas.length > 0) {
+        const budget = computeBudgetProjection(project.partidas, project.costs);
+        for (const rubro of budget.byRubro) {
+          if (rubro.projected > 0 && rubro.pct >= 90) {
+            const excedido = rubro.pct >= 100;
+            alerts.push({
+              id: `budget-${project.id}-${rubro.partidaId}`,
+              projectId: project.id,
+              projectName: project.name,
+              type: excedido ? "budget_exceeded" : "budget_warning",
+              message: excedido
+                ? `${rubro.name}: excedido (${rubro.pct.toFixed(0)}% del presupuesto)`
+                : `${rubro.name}: al ${rubro.pct.toFixed(0)}% del presupuesto`,
+              priority: excedido ? 1 : 2,
+              color: excedido ? "#ef4444" : "#f59e0b",
+              data: {
+                rubroName: rubro.name,
+                projected: rubro.projected,
+                executed: rubro.executed,
+                pct: rubro.pct.toFixed(1),
+              },
+            });
+          }
+        }
+      }
+
+      // Alert 6: Gastos con vencimiento próximo (si tienen dueDate)
+      for (const expense of project.expenses) {
+        const dueDate = (expense as any).dueDate;
+        if (dueDate) {
+          const due = new Date(dueDate);
+          const daysUntilDue = Math.floor((due.getTime() - now.getTime()) / 86400000);
+          if (daysUntilDue >= 0 && daysUntilDue <= 7) {
+            alerts.push({
+              id: `due-${expense.id}`,
+              projectId: project.id,
+              projectName: project.name,
+              type: "expense_due",
+              message: daysUntilDue === 0
+                ? `${expense.concept} vence hoy`
+                : `${expense.concept} vence en ${daysUntilDue} día${daysUntilDue > 1 ? "s" : ""}`,
+              priority: daysUntilDue <= 2 ? 1 : 2,
+              color: daysUntilDue <= 2 ? "#ef4444" : "#f59e0b",
+              data: { dueDate: due.toISOString(), concept: expense.concept },
+            });
+          }
+        }
       }
     }
 
