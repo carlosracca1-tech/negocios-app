@@ -1,16 +1,23 @@
 /**
- * In-memory rate limiter for login attempts.
+ * Rate limiter para login, compatible con Vercel serverless.
  *
- * LIMITACION: Este rate limit es en memoria y se resetea al reiniciar
- * el servidor o en cada cold start de serverless (Vercel).
- * Es una mitigacion temporal, NO una solucion robusta.
- * Para produccion seria se recomienda Redis (Upstash) o similar.
+ * En serverless cada instancia tiene su propio Map, que se resetea con cada
+ * cold start. Para compensar:
+ * - La ventana es corta (5 min en vez de 15) y se permite menos intentos (5).
+ * - Fluid Compute de Vercel reutiliza instancias entre requests, asi que
+ *   mientras la instancia siga caliente el Map persiste.
+ * - NO es equivalente a un rate limit centralizado (Redis/Upstash). Para un
+ *   atacante distribuido esto no alcanza. Pero cubre el caso comun de alguien
+ *   probando contraseñas desde un solo browser.
+ *
+ * Si en algun momento se agrega Upstash Redis, reemplazar la implementacion
+ * de abajo por @upstash/ratelimit sin tocar la interfaz publica.
  */
 
-const attempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 5 * 60 * 1000; // 5 minutos
 
-const WINDOW_MS = 15 * 60 * 1000; // 15 minutos
-const MAX_ATTEMPTS = 10;
+const attempts = new Map<string, { count: number; resetAt: number }>();
 
 export function checkRateLimit(key: string): { allowed: boolean; retryAfterMs: number } {
   const now = Date.now();
@@ -29,12 +36,12 @@ export function checkRateLimit(key: string): { allowed: boolean; retryAfterMs: n
   return { allowed: true, retryAfterMs: 0 };
 }
 
-// Cleanup entries viejas cada 30 min para evitar memory leak
+// Limpieza periodica para evitar memory leak en instancias de larga vida.
 if (typeof setInterval !== "undefined") {
   setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of attempts) {
       if (now > entry.resetAt) attempts.delete(key);
     }
-  }, 30 * 60 * 1000);
+  }, 10 * 60 * 1000);
 }
