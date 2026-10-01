@@ -16,6 +16,10 @@ interface Blue {
 let cache: { valor: Blue; vence: number } | null = null;
 const TTL_MS = 5 * 60 * 1000;
 
+/** Último TC conocido: se guarda incluso después de que el cache expire,
+ *  para tener un fallback cuando las dos APIs están caídas. */
+let ultimoConocido: Blue | null = null;
+
 async function pedir(url: string, leer: (d: unknown) => Blue | null): Promise<Blue | null> {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
@@ -45,8 +49,21 @@ export async function getBlueRate(): Promise<Blue | null> {
       return armar(x.blue?.value_buy ?? 0, x.blue?.value_sell ?? 0);
     }));
 
-  if (blue) cache = { valor: blue, vence: Date.now() + TTL_MS };
-  return blue;
+  if (blue) {
+    cache = { valor: blue, vence: Date.now() + TTL_MS };
+    ultimoConocido = blue;
+    return blue;
+  }
+
+  // Ambas APIs fallaron: devolver el último valor conocido en vez de null.
+  // Es mejor un TC de hace unos minutos que no tener TC y guardar el costo
+  // sin conversión (quedaría invisible en todos los reportes en USD).
+  if (ultimoConocido) {
+    console.warn("dolar.ts: APIs caídas, usando último TC conocido:", ultimoConocido.promedio);
+    return ultimoConocido;
+  }
+
+  return null;
 }
 
 /**
