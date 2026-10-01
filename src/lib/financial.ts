@@ -46,6 +46,13 @@ export function computeProjectFinancials(
     if (cost.currency === "ARS" && cost.amountUsd != null) {
       return sum + safe(cost.amountUsd);
     }
+    // WARN: si currency es ARS pero no hay amountUsd, se suma el amount en
+    // pesos como si fuera USD. Esto es un fallback para datos legacy; en la
+    // operatoria normal nunca debería pasar porque resolverTipoDeCambio()
+    // siempre completa amountUsd antes de guardar.
+    if (cost.currency === "ARS" && cost.amountUsd == null) {
+      console.warn("financial.ts: costo ARS sin amountUsd, se suma amount directo (posible dato legacy)");
+    }
     return sum + safe(cost.amount);
   }, 0);
 
