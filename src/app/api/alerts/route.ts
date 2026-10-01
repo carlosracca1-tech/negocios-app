@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         where: orgScope(user),
         include: {
           costs: true,
+          expenses: true,
         },
       });
     } else {
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
         },
         include: {
           costs: true,
+          expenses: true,
         },
       });
     }
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     for (const project of projects) {
       const { totalCosts, investment, result, estimatedMargin } =
-        computeProjectFinancials(project, project.costs);
+        computeProjectFinancials(project, project.costs, project.expenses);
       const bp = safe(project.buyPrice);
       const sp = safe(project.salePrice);
 
