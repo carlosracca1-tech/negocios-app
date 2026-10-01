@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
     for (const project of projects) {
-      const { totalCosts, investment, result, estimatedMargin } =
+      const { totalCosts, investment, result, estimatedMargin, sinTcCount } =
         computeProjectFinancials(project, project.costs, project.expenses);
       const bp = safe(project.buyPrice);
       const sp = safe(project.salePrice);
@@ -159,7 +159,21 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Alert 6: Gastos con vencimiento próximo (si tienen dueDate)
+      // Alert 6: Registros en ARS sin tipo de cambio
+      if (sinTcCount > 0) {
+        alerts.push({
+          id: `sin-tc-${project.id}`,
+          projectId: project.id,
+          projectName: project.name,
+          type: "missing_exchange_rate",
+          message: `${sinTcCount} registro${sinTcCount > 1 ? "s" : ""} en pesos sin tipo de cambio — no suman en el total`,
+          priority: 1,
+          color: "#f59e0b",
+          data: { sinTcCount },
+        });
+      }
+
+      // Alert 7: Gastos con vencimiento próximo (si tienen dueDate)
       for (const expense of project.expenses) {
         const dueDate = (expense as any).dueDate;
         if (dueDate) {

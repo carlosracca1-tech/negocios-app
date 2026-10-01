@@ -112,16 +112,37 @@ describe("computeProjectFinancials()", () => {
     expect(r.estimatedMargin).toBe(0);
   });
 
-  it("costo ARS sin amountUsd usa amount directo (fallback defensivo)", () => {
+  it("costo ARS sin amountUsd ni exchangeRate NO se suma al total", () => {
     const project = { buyPrice: 100000, salePrice: null, listingPrice: null };
-    // Costo viejo: currency ARS pero sin amountUsd → usa amount (que está en ARS)
-    // Esto es un caso legacy, el número será incorrecto pero no debe romper
     const costs = [{ amount: 500000, currency: "ARS", amountUsd: null }];
 
     const r = computeProjectFinancials(project, costs);
 
-    // Sin amountUsd, cae al else → usa amount directo (500000)
-    expect(r.totalCosts).toBe(500000);
+    // Sin amountUsd ni exchangeRate, se excluye del total
+    expect(r.totalCosts).toBe(0);
+    expect(r.sinTcCount).toBe(1);
+    expect(r.investment).toBe(100000);
+  });
+
+  it("costo ARS con exchangeRate pero sin amountUsd calcula USD", () => {
+    const project = { buyPrice: 100000, salePrice: null, listingPrice: null };
+    const costs = [{ amount: 1200000, currency: "ARS", amountUsd: null, exchangeRate: 1200 }];
+
+    const r = computeProjectFinancials(project, costs);
+
+    expect(r.totalCosts).toBe(1000); // 1200000 / 1200
+    expect(r.sinTcCount).toBe(0);
+  });
+
+  it("gasto ARS sin TC no se suma", () => {
+    const project = { buyPrice: 100000, salePrice: null, listingPrice: null };
+    const costs: any[] = [];
+    const expenses = [{ amount: 50000, currency: "ARS", amountUsd: null }];
+
+    const r = computeProjectFinancials(project, costs, expenses);
+
+    expect(r.totalExpenses).toBe(0);
+    expect(r.sinTcCount).toBe(1);
   });
 
   it("margen se calcula sobre inversión, no sobre venta", () => {

@@ -34,6 +34,8 @@ export interface ProjectFinancials {
   result: number;
   margin: number;
   estimatedMargin: number;
+  /** Registros en ARS sin tipo de cambio que no se sumaron al total */
+  sinTcCount: number;
 }
 
 /**
@@ -50,29 +52,36 @@ export function computeProjectFinancials(
 ): ProjectFinancials {
   const bp = safe(project.buyPrice);
 
-  // Costs: usar amountUsd si es ARS con conversion, sino amount directo (USD)
+  // Costs: usar amountUsd si es ARS con conversión. Si es ARS sin
+  // amountUsd NI exchangeRate, NO sumar (queda como "sin TC").
+  let sinTcCosts = 0;
   const totalCosts = costs.reduce((sum, cost) => {
-    if (cost.currency === "ARS" && cost.amountUsd != null) {
-      return sum + safe(cost.amountUsd);
-    }
-    // WARN: si currency es ARS pero no hay amountUsd, se suma el amount en
-    // pesos como si fuera USD. Esto es un fallback para datos legacy; en la
-    // operatoria normal nunca debería pasar porque resolverTipoDeCambio()
-    // siempre completa amountUsd antes de guardar.
-    if (cost.currency === "ARS" && cost.amountUsd == null) {
-      console.warn("financial.ts: costo ARS sin amountUsd, se suma amount directo (posible dato legacy)");
+    if (cost.currency === "ARS") {
+      if (cost.amountUsd != null) return sum + safe(cost.amountUsd);
+      const er = (cost as { exchangeRate?: number | null }).exchangeRate;
+      if (er && er > 0) return sum + safe(cost.amount) / er;
+      // ARS sin TC: NO sumar — contarlo como pendiente
+      sinTcCosts++;
+      return sum;
     }
     return sum + safe(cost.amount);
   }, 0);
 
-  // Expenses: misma logica de conversion
+  // Expenses: misma lógica
   const expenseList = expenses || [];
+  let sinTcExpenses = 0;
   const totalExpenses = expenseList.reduce((sum, exp) => {
-    if (exp.currency === "ARS" && exp.amountUsd != null) {
-      return sum + safe(exp.amountUsd);
+    if (exp.currency === "ARS") {
+      if (exp.amountUsd != null) return sum + safe(exp.amountUsd);
+      const er = (exp as { exchangeRate?: number | null }).exchangeRate;
+      if (er && er > 0) return sum + safe(exp.amount) / er;
+      sinTcExpenses++;
+      return sum;
     }
     return sum + safe(exp.amount);
   }, 0);
+
+  const sinTcCount = sinTcCosts + sinTcExpenses;
 
   const investment = bp + totalCosts + totalExpenses;
   const sp = safe(project.salePrice);
@@ -83,7 +92,7 @@ export function computeProjectFinancials(
   const estimatedMargin =
     lp > 0 ? margenSobreInversion(lp - investment, investment) : 0;
 
-  return { totalCosts, totalExpenses, investment, result, margin, estimatedMargin };
+  return { totalCosts, totalExpenses, investment, result, margin, estimatedMargin, sinTcCount };
 }
 
 // ============================================================================
