@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
 import ProjectCard from "@/components/ProjectCard";
+import ProjectComparison from "@/components/ProjectComparison";
 import AddProjectModal from "@/components/AddProjectModal";
 import { useSharedProjects } from "@/contexts/ProjectsContext";
 import { useRouter } from "next/navigation";
@@ -250,6 +251,10 @@ export default function Home() {
               Reintentar
             </button>
           </div>
+        )}
+
+        {!loading && !error && filtered.length >= 2 && (
+          <ProjectComparison projects={filtered} />
         )}
 
         {!loading && !error && filtered.length === 0 && (
