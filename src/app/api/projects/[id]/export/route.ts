@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser, checkProjectAccess } from "@/lib/api-helpers";
+import { getCurrentUser, checkProjectAccess, isAdmin } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { computeProjectFinancials } from "@/lib/financial";
 
@@ -88,7 +88,11 @@ export async function GET(
         period: e.period,
         paidDate: e.paidDate,
       })),
-      investors: project.investors.map((inv) => ({
+      // Inversores: admin ve todos, no-admin ve solo los suyos (mismo filtro que GET proyecto)
+      investors: (isAdmin(user)
+        ? project.investors
+        : project.investors.filter((inv) => inv.userId === user.id)
+      ).map((inv) => ({
         name: inv.name,
         capitalPercentage: inv.capitalPercentage,
         profitPercentage: inv.profitPercentage,
