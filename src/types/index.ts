@@ -42,6 +42,10 @@ export interface Project {
   result?: number;
   margin?: number;
   estimatedMargin?: number;
+  /** Días desde la compra hasta la venta (o hasta hoy) */
+  daysHeld?: number;
+  /** Rentabilidad anualizada (%) */
+  annualizedReturn?: number | null;
   investorCount?: number;
   costCount?: number;
   costs?: Cost[];
