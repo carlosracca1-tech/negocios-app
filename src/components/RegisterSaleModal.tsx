@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useUpdateProject } from "@/hooks/useProjects";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { Investor } from "@/types";
 
 interface RegisterSaleModalProps {
@@ -33,6 +34,7 @@ export default function RegisterSaleModal({
   const [saleDate, setSaleDate] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const { mutate, loading, error } = useUpdateProject();
+  const { panelRef, handleKeyDown } = useModalA11y(isOpen, onClose);
 
   // Prefill with current sale data when editing an already sold project
   useEffect(() => {
@@ -96,6 +98,10 @@ export default function RegisterSaleModal({
   return (
     <div
       className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sale-modal-title"
+      onKeyDown={handleKeyDown}
       style={{
         position: "fixed",
         top: 0,
@@ -112,6 +118,7 @@ export default function RegisterSaleModal({
     >
       <div
         className="modal-panel"
+        ref={panelRef}
         style={{
           borderRadius: 16,
           padding: 24,
@@ -124,7 +131,7 @@ export default function RegisterSaleModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>
+        <h2 id="sale-modal-title" style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>
           {isEditing ? "Editar venta" : "Registrar venta"}
         </h2>
 
@@ -132,6 +139,7 @@ export default function RegisterSaleModal({
           {/* Sale Price */}
           <div>
             <label
+              htmlFor="sale-price"
               style={{
                 display: "block",
                 fontSize: 10,
@@ -145,6 +153,7 @@ export default function RegisterSaleModal({
               Precio de venta
             </label>
             <input
+              id="sale-price"
               type="number"
               value={salePrice}
               onChange={(e) => setSalePrice(e.target.value)}
@@ -178,6 +187,7 @@ export default function RegisterSaleModal({
           {/* Sale Date */}
           <div>
             <label
+              htmlFor="sale-date"
               style={{
                 display: "block",
                 fontSize: 10,
@@ -191,6 +201,7 @@ export default function RegisterSaleModal({
               Fecha de venta (opcional)
             </label>
             <input
+              id="sale-date"
               type="date"
               value={saleDate}
               onChange={(e) => setSaleDate(e.target.value)}
@@ -220,6 +231,7 @@ export default function RegisterSaleModal({
           {/* Buyer Name */}
           <div>
             <label
+              htmlFor="sale-buyer"
               style={{
                 display: "block",
                 fontSize: 10,
@@ -233,6 +245,7 @@ export default function RegisterSaleModal({
               Comprador (opcional)
             </label>
             <input
+              id="sale-buyer"
               type="text"
               value={buyerName}
               onChange={(e) => setBuyerName(e.target.value)}

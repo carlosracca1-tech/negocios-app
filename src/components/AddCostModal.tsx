@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useCreateCost, useUpdateCost } from "@/hooks/useProjects";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { Cost, Partida } from "@/types";
 import { partidaCurrency, partidaProjectedNative, costEn, type Moneda } from "@/lib/financial";
 import {
@@ -160,6 +161,8 @@ export default function AddCostModal({
     setPartidaId(costToEdit.partidaId || "");
   }, [isOpen, costToEdit]);
 
+  const { panelRef, handleKeyDown } = useModalA11y(isOpen, onClose);
+
   const resetForm = () => {
     setConcept("");
     setAmount("");
@@ -263,6 +266,10 @@ export default function AddCostModal({
   return (
     <div
       className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cost-modal-title"
+      onKeyDown={handleKeyDown}
       style={{
         position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -271,6 +278,7 @@ export default function AddCostModal({
       onClick={onClose}
     >
       <div
+        ref={panelRef}
         className="modal-panel"
         style={{
           borderRadius: 16, padding: 24, width: 480, maxWidth: "92%",
@@ -282,7 +290,7 @@ export default function AddCostModal({
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{isEditMode ? "Editar costo" : "Agregar costo"}</h2>
+            <h2 id="cost-modal-title" style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{isEditMode ? "Editar costo" : "Agregar costo"}</h2>
             <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: "4px 0 0" }}>
               Proyecto tipo <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{projectType}</span>
             </p>
@@ -298,7 +306,7 @@ export default function AddCostModal({
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* === SELECTOR DE MONEDA — destacado arriba === */}
           <div>
-            <label style={labelStyle}>Moneda del gasto</label>
+            <label htmlFor="cost-currency" style={labelStyle}>Moneda del gasto</label>
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
               gap: 8, padding: 4,
@@ -337,8 +345,9 @@ export default function AddCostModal({
 
           {/* Concepto */}
           <div>
-            <label style={labelStyle}>Concepto</label>
+            <label htmlFor="cost-concept" style={labelStyle}>Concepto</label>
             <input
+              id="cost-concept"
               type="text" value={concept}
               onChange={(e) => setConcept(e.target.value)}
               placeholder={projectType === "Auto" ? "Ej: Cambio de correa" : "Ej: Pintura interior"}
@@ -348,10 +357,11 @@ export default function AddCostModal({
 
           {/* Monto */}
           <div>
-            <label style={labelStyle}>
+            <label htmlFor="cost-amount" style={labelStyle}>
               Monto en {currency === "USD" ? "dólares (U$D)" : "pesos (AR$)"}
             </label>
             <input
+              id="cost-amount"
               type="text"
               inputMode="decimal"
               value={amount}
@@ -474,7 +484,7 @@ export default function AddCostModal({
 
           {/* Categoría — cards seleccionables */}
           <div>
-            <label style={labelStyle}>Categoría</label>
+            <label id="cost-category" style={labelStyle}>Categoría</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
               {categories.map((cat) => (
                 <button
@@ -549,7 +559,7 @@ export default function AddCostModal({
 
           {/* Presupuesto (partida) — imputacion opcional */}
           <div>
-            <label style={labelStyle}>Imputar a presupuesto</label>
+            <label htmlFor="cost-partida" style={labelStyle}>Imputar a presupuesto</label>
 
             {partidas.length === 0 ? (
               <div style={{
@@ -564,6 +574,7 @@ export default function AddCostModal({
             ) : (
               <>
                 <select
+                  id="cost-partida"
                   value={partidaId}
                   onChange={(e) => setPartidaId(e.target.value)}
                   style={{ ...inputStyle, cursor: "pointer" }}
@@ -649,8 +660,9 @@ export default function AddCostModal({
 
           {/* Fecha */}
           <div>
-            <label style={labelStyle}>Fecha</label>
+            <label htmlFor="cost-date" style={labelStyle}>Fecha</label>
             <input
+              id="cost-date"
               type="date" value={date}
               onChange={(e) => setDate(e.target.value)}
               style={inputStyle} onFocus={focusInput} onBlur={blurInput}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCreateProject } from "@/hooks/useProjects";
 import { modalInputStyle as inputStyle, focusInput, blurInput } from "@/lib/constants";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export default function AddProjectModal({ isOpen, onClose, onSuccess }: AddProje
   const [address, setAddress] = useState("");
   const [listingPrice, setListingPrice] = useState("");
   const { mutate, loading, error } = useCreateProject();
+  const { panelRef, handleKeyDown } = useModalA11y(isOpen, onClose);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +50,10 @@ export default function AddProjectModal({ isOpen, onClose, onSuccess }: AddProje
   return (
     <div
       className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="addproject-modal-title"
+      onKeyDown={handleKeyDown}
       style={{
         position: "fixed",
         top: 0,
@@ -64,6 +70,7 @@ export default function AddProjectModal({ isOpen, onClose, onSuccess }: AddProje
     >
       <div
         className="modal-panel"
+        ref={panelRef}
         style={{
           borderRadius: 16,
           padding: 24,
@@ -76,43 +83,43 @@ export default function AddProjectModal({ isOpen, onClose, onSuccess }: AddProje
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>Nuevo proyecto</h2>
+        <h2 id="addproject-modal-title" style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>Nuevo proyecto</h2>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Nombre</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Casa Núñez" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+            <label htmlFor="addproject-name" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Nombre</label>
+            <input id="addproject-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Casa Núñez" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Tipo</label>
-              <select value={type} onChange={(e) => setType(e.target.value as "Casa" | "Auto")} style={{ ...inputStyle, cursor: "pointer" }} onFocus={focusInput} onBlur={blurInput}>
+              <label htmlFor="addproject-type" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Tipo</label>
+              <select id="addproject-type" value={type} onChange={(e) => setType(e.target.value as "Casa" | "Auto")} style={{ ...inputStyle, cursor: "pointer" }} onFocus={focusInput} onBlur={blurInput}>
                 <option value="Casa">Casa</option>
                 <option value="Auto">Auto</option>
               </select>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Fecha compra</label>
-              <input type="date" value={buyDate} onChange={(e) => setBuyDate(e.target.value)} style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+              <label htmlFor="addproject-buydate" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Fecha compra</label>
+              <input id="addproject-buydate" type="date" value={buyDate} onChange={(e) => setBuyDate(e.target.value)} style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Precio compra</label>
-            <input type="number" value={buyPrice} onChange={(e) => setBuyPrice(e.target.value)} placeholder="0" step="0.01" min="0" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+            <label htmlFor="addproject-buyprice" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Precio compra</label>
+            <input id="addproject-buyprice" type="number" value={buyPrice} onChange={(e) => setBuyPrice(e.target.value)} placeholder="0" step="0.01" min="0" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           {type === "Casa" && (
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Dirección</label>
-              <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Opcional" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+              <label htmlFor="addproject-address" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Dirección</label>
+              <input id="addproject-address" type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Opcional" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
           )}
 
           <div>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Valor de publicación (opcional)</label>
-            <input type="number" value={listingPrice} onChange={(e) => setListingPrice(e.target.value)} placeholder="0" step="0.01" min="0" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+            <label htmlFor="addproject-listingprice" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Valor de publicación (opcional)</label>
+            <input id="addproject-listingprice" type="number" value={listingPrice} onChange={(e) => setListingPrice(e.target.value)} placeholder="0" step="0.01" min="0" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           {error && <div style={{ fontSize: 12, color: "var(--danger)", background: "var(--danger-soft)", padding: "10px 12px", borderRadius: 8, border: "1px solid var(--danger-border)" }}>{error}</div>}

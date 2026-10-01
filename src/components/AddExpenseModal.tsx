@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useCreateExpense, useParseReceipt, useUpdateExpense } from "@/hooks/useProjects";
 import { modalInputStyle as inputStyle, focusInput, blurInput } from "@/lib/constants";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { Expense } from "@/types";
 
 interface AddExpenseModalProps {
@@ -36,6 +37,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
   const { mutate: createExpense, loading: creating, error: createError } = useCreateExpense();
   const { mutate: updateExpense, loading: updating, error: updateError } = useUpdateExpense();
   const { mutate: parseReceipt, loading: parsing, error: parseError } = useParseReceipt();
+  const { panelRef, handleKeyDown } = useModalA11y(isOpen, onClose);
 
   // Auto-fetch dólar blue al abrir el modal (sólo si el campo está vacío y estamos creando)
   useEffect(() => {
@@ -179,6 +181,10 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
   return (
     <div
       className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="expense-modal-title"
+      onKeyDown={handleKeyDown}
       style={{
         position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
         display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
@@ -195,6 +201,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
         }
       `}</style>
       <div
+        ref={panelRef}
         className="modal-content modal-panel"
         style={{
           borderRadius: 16, padding: 24, width: 480, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto",
@@ -203,7 +210,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+        <h2 id="expense-modal-title" style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
           {isEditMode ? "Editar gasto mensual" : "Agregar gasto mensual"}
         </h2>
         <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 20 }}>
@@ -296,18 +303,18 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Concepto</label>
-            <input type="text" value={concept} onChange={(e) => setConcept(e.target.value)} placeholder="Ej: Expensas, Seguro, Patente" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+            <label htmlFor="expense-concept" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Concepto</label>
+            <input id="expense-concept" type="text" value={concept} onChange={(e) => setConcept(e.target.value)} placeholder="Ej: Expensas, Seguro, Patente" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Monto</label>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" step="0.01" min="0" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+              <label htmlFor="expense-amount" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Monto</label>
+              <input id="expense-amount" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" step="0.01" min="0" required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Moneda</label>
-              <select value={currency} onChange={(e) => setCurrency(e.target.value as "ARS" | "USD")} style={{ ...inputStyle, cursor: "pointer" }} onFocus={focusInput} onBlur={blurInput}>
+              <label htmlFor="expense-currency" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Moneda</label>
+              <select id="expense-currency" value={currency} onChange={(e) => setCurrency(e.target.value as "ARS" | "USD")} style={{ ...inputStyle, cursor: "pointer" }} onFocus={focusInput} onBlur={blurInput}>
                 <option value="ARS">ARS (Pesos)</option>
                 <option value="USD">USD (Dólares)</option>
               </select>
@@ -343,18 +350,18 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Período (mes)</label>
-              <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+              <label htmlFor="expense-period" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Período (mes)</label>
+              <input id="expense-period" type="month" value={period} onChange={(e) => setPeriod(e.target.value)} required style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Fecha de pago</label>
-              <input type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+              <label htmlFor="expense-paiddate" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Fecha de pago</label>
+              <input id="expense-paiddate" type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Notas (opcional)</label>
-            <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej: Incluye multa por velocidad" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+            <label htmlFor="expense-notes" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Notas (opcional)</label>
+            <input id="expense-notes" type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej: Incluye multa por velocidad" style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           {(createError || updateError) && (

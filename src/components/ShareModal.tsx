@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useGrantAccess } from "@/hooks/useProjects";
 import { modalInputStyle as inputStyle } from "@/lib/constants";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface ShareModalProps {
   projectId: string;
@@ -15,6 +16,7 @@ export default function ShareModal({ projectId, isOpen, onClose, onSuccess }: Sh
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"ver" | "interactuar">("ver");
   const { mutate, loading, error } = useGrantAccess();
+  const { panelRef, handleKeyDown } = useModalA11y(isOpen, onClose);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +36,9 @@ export default function ShareModal({ projectId, isOpen, onClose, onSuccess }: Sh
   return (
     <div
       className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="share-modal-title"
       style={{
         position: "fixed",
         top: 0,
@@ -47,8 +52,10 @@ export default function ShareModal({ projectId, isOpen, onClose, onSuccess }: Sh
         animation: "fadeIn 0.2s ease",
       }}
       onClick={onClose}
+      onKeyDown={handleKeyDown}
     >
       <div
+        ref={panelRef}
         className="modal-panel"
         style={{
           borderRadius: 16,
@@ -60,14 +67,15 @@ export default function ShareModal({ projectId, isOpen, onClose, onSuccess }: Sh
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>Compartir proyecto</h2>
+        <h2 id="share-modal-title" style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>Compartir proyecto</h2>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>
+            <label htmlFor="share-email" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>
               Email
             </label>
             <input
+              id="share-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -86,10 +94,10 @@ export default function ShareModal({ projectId, isOpen, onClose, onSuccess }: Sh
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>
+            <label htmlFor="share-role" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>
               Rol
             </label>
-            <select value={role} onChange={(e) => setRole(e.target.value as "ver" | "interactuar")} style={{ ...inputStyle, cursor: "pointer" }}
+            <select id="share-role" value={role} onChange={(e) => setRole(e.target.value as "ver" | "interactuar")} style={{ ...inputStyle, cursor: "pointer" }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = "var(--text-primary)";
                 e.currentTarget.style.boxShadow = "0 0 0 3px rgba(56, 189, 248, 0.1)";
