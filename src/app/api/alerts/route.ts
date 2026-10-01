@@ -173,23 +173,34 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Alert 7: Gastos con vencimiento próximo (si tienen dueDate)
+      // Alert 7: Gastos con vencimiento próximo (si tienen dueDate y no están pagados)
       for (const expense of project.expenses) {
+        if ((expense as any).paidDate) continue;
         const dueDate = (expense as any).dueDate;
         if (dueDate) {
           const due = new Date(dueDate);
-          const daysUntilDue = Math.floor((due.getTime() - now.getTime()) / 86400000);
-          if (daysUntilDue >= 0 && daysUntilDue <= 7) {
+          // Días en hora Argentina (UTC-3)
+          const argMs = now.getTime() - 3 * 60 * 60 * 1000;
+          const argNow = new Date(argMs);
+          const hoyUtc = Date.UTC(argNow.getUTCFullYear(), argNow.getUTCMonth(), argNow.getUTCDate());
+          const dueUtc = Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate());
+          const daysUntilDue = Math.round((dueUtc - hoyUtc) / 86400000);
+          if (daysUntilDue >= -7 && daysUntilDue <= 7) {
+            const message = daysUntilDue === 0
+              ? `${expense.concept} vence hoy`
+              : daysUntilDue === 1
+                ? `${expense.concept} vence mañana`
+                : daysUntilDue > 1
+                  ? `${expense.concept} vence en ${daysUntilDue} días`
+                  : `${expense.concept} venció hace ${Math.abs(daysUntilDue)} día${Math.abs(daysUntilDue) > 1 ? "s" : ""}`;
             alerts.push({
               id: `due-${expense.id}`,
               projectId: project.id,
               projectName: project.name,
               type: "expense_due",
-              message: daysUntilDue === 0
-                ? `${expense.concept} vence hoy`
-                : `${expense.concept} vence en ${daysUntilDue} día${daysUntilDue > 1 ? "s" : ""}`,
+              message,
               priority: daysUntilDue <= 2 ? 1 : 2,
-              color: daysUntilDue <= 2 ? "#ef4444" : "#f59e0b",
+              color: daysUntilDue < 0 ? "#ef4444" : daysUntilDue <= 2 ? "#ef4444" : "#f59e0b",
               data: { dueDate: due.toISOString(), concept: expense.concept },
             });
           }

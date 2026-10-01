@@ -28,6 +28,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [paidDate, setPaidDate] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
@@ -82,6 +83,12 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
     } else {
       setPaidDate("");
     }
+    if ((expenseToEdit as any).dueDate) {
+      const d = new Date((expenseToEdit as any).dueDate as string);
+      setDueDate(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`);
+    } else {
+      setDueDate("");
+    }
     setNotes(expenseToEdit.notes || "");
   }, [isOpen, expenseToEdit]);
 
@@ -94,6 +101,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
     const now = new Date();
     setPeriod(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
     setPaidDate("");
+    setDueDate("");
     setNotes("");
     setReceiptFile(null);
     setReceiptPreview(null);
@@ -154,7 +162,8 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
         currency,
         exchangeRate: exchangeRate ? parseFloat(exchangeRate) : null,
         period: periodDate,
-        paidDate: paidDate ? new Date(paidDate).toISOString() : null,
+        paidDate: paidDate ? new Date(paidDate + "T12:00:00Z").toISOString() : null,
+        dueDate: dueDate ? new Date(dueDate + "T12:00:00Z").toISOString() : null,
         notes: notes || null,
       };
 
@@ -357,6 +366,11 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
               <label htmlFor="expense-paiddate" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Fecha de pago</label>
               <input id="expense-paiddate" type="date" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="expense-duedate" style={{ display: "block", fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.8 }}>Vence el (opcional)</label>
+            <input id="expense-duedate" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
           </div>
 
           <div>
