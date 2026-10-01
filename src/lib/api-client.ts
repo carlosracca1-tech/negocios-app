@@ -137,6 +137,11 @@ export const projectsApi = {
   async delete(id: string): Promise<void> {
     return apiDelete(`/api/projects/${id}`);
   },
+
+  /** Descarga el CSV del proyecto (abre en nueva pestaña o descarga) */
+  exportCsvUrl(id: string): string {
+    return `/api/projects/${id}/export?format=csv`;
+  },
 };
 
 // ============================================================================
