@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isAdmin, orgScope } from "@/lib/api-helpers";
-import { computeProjectFinancials, computeBudgetProjection, safe } from "@/lib/financial";
+import { computeProjectFinancials, computeBudgetProjection, safe, margenSobreInversion } from "@/lib/financial";
 import { rethrowNextError } from "@/lib/route-utils";
 
 export const dynamic = "force-dynamic";
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
           message: `Proyecto vendido con pérdida: $${Math.abs(result).toFixed(2)}`,
           priority: 1,
           color: "#ef4444",
-          data: { result, margin: sp > 0 ? ((result / sp) * 100).toFixed(2) : "0" },
+          data: { result, margin: investment > 0 ? margenSobreInversion(result, investment).toFixed(2) : "0" },
         });
       }
 
@@ -118,8 +118,8 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Alert 4: Estimated margin < 10%
-      if (project.listingPrice && estimatedMargin < 10) {
+      // Alert 4: Estimated margin < 10% — solo proyectos activos con precio de publicación
+      if (project.status === "activo" && project.listingPrice && estimatedMargin < 10) {
         alerts.push({
           id: `low-margin-${project.id}`,
           projectId: project.id,

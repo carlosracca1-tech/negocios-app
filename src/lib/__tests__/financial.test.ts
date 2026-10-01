@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   safe,
+  margenSobreInversion,
   computeProjectFinancials,
   computeBudgetProjection,
   computeObraProyeccion,
@@ -34,6 +35,30 @@ describe("safe()", () => {
 });
 
 // ============================================================================
+// margenSobreInversion()
+// ============================================================================
+
+describe("margenSobreInversion()", () => {
+  it("Golfers 3610: venta 290.000, inversión 270.419,28 → 7,24%", () => {
+    const ganancia = 290000 - 270419.28;
+    expect(margenSobreInversion(ganancia, 270419.28)).toBeCloseTo(7.24, 1);
+  });
+
+  it("Golfers 1614: publicación 430.000, inversión 318.271,16 → 35,10%", () => {
+    const ganancia = 430000 - 318271.16;
+    expect(margenSobreInversion(ganancia, 318271.16)).toBeCloseTo(35.10, 1);
+  });
+
+  it("inversión 0 → devuelve 0", () => {
+    expect(margenSobreInversion(50000, 0)).toBe(0);
+  });
+
+  it("ganancia negativa → margen negativo", () => {
+    expect(margenSobreInversion(-10000, 100000)).toBe(-10);
+  });
+});
+
+// ============================================================================
 // computeProjectFinancials()
 // ============================================================================
 
@@ -58,8 +83,8 @@ describe("computeProjectFinancials()", () => {
     // Sin venta → resultado 0
     expect(r.result).toBe(0);
     expect(r.margin).toBe(0);
-    // Margen estimado sobre venta: (300k - 110205.13) / 300k × 100 ≈ 63.3%
-    expect(r.estimatedMargin).toBeCloseTo(63.26, 0);
+    // Margen estimado sobre inversión: (300k - 110205.13) / 110205.13 × 100 ≈ 172.2%
+    expect(r.estimatedMargin).toBeCloseTo(172.2, 0);
   });
 
   it("auto vendido con pérdida", () => {
@@ -71,8 +96,8 @@ describe("computeProjectFinancials()", () => {
 
     expect(r.investment).toBe(27000);
     expect(r.result).toBe(-7000);
-    // Margen sobre venta: -7000 / 20000 × 100 = -35%
-    expect(r.margin).toBeCloseTo(-35, 1);
+    // Margen sobre inversión: -7000 / 27000 × 100 ≈ -25.93%
+    expect(r.margin).toBeCloseTo(-25.93, 1);
   });
 
   it("proyecto sin venta ni listingPrice", () => {
@@ -99,21 +124,21 @@ describe("computeProjectFinancials()", () => {
     expect(r.totalCosts).toBe(500000);
   });
 
-  it("margen se calcula sobre venta, no sobre inversión", () => {
+  it("margen se calcula sobre inversión, no sobre venta", () => {
     // inversión 200k, venta 250k → resultado 50k
-    // sobre inversión sería 25%, sobre venta sería 20%
+    // sobre inversión: 50k/200k = 25%
     const project = { buyPrice: 200000, salePrice: 250000, listingPrice: null };
     const r = computeProjectFinancials(project, []);
     expect(r.result).toBe(50000);
-    expect(r.margin).toBeCloseTo(20, 1); // 50k/250k = 20% (sobre venta)
+    expect(r.margin).toBeCloseTo(25, 1); // 50k/200k = 25% (sobre inversión)
   });
 
-  it("margen estimado se calcula sobre venta", () => {
+  it("margen estimado se calcula sobre inversión", () => {
     // inversión 200k, listingPrice 250k
-    // (250k-200k)/250k = 20%
+    // (250k-200k)/200k = 25%
     const project = { buyPrice: 200000, salePrice: null, listingPrice: 250000 };
     const r = computeProjectFinancials(project, []);
-    expect(r.estimatedMargin).toBeCloseTo(20, 1);
+    expect(r.estimatedMargin).toBeCloseTo(25, 1);
   });
 
   it("expenses undefined → totalExpenses es 0", () => {
@@ -307,8 +332,8 @@ describe("computeObraProyeccion()", () => {
     expect(r.cierreEstimado).toBe(135000);
     // ganancia = 200k - 135k = 65k
     expect(r.ganancia).toBe(65000);
-    // margenProyectado = 65k / 200k × 100 = 32.5% (sobre venta)
-    expect(r.margenProyectado).toBeCloseTo(32.5, 1);
+    // margenProyectado = 65k / 135k × 100 ≈ 48.15% (sobre inversión)
+    expect(r.margenProyectado).toBeCloseTo(48.15, 0);
     expect(r.semaforo).toBe("verde");
   });
 
@@ -428,8 +453,8 @@ describe("computeRitmoObra()", () => {
     expect(r.obraAlRitmo).toBeCloseTo(63829.79, 0);
     // cierreAlRitmo = 100k + 5k + 63829.79 ≈ 168829.79
     expect(r.cierreAlRitmo).toBeCloseTo(168829.79, 0);
-    // margenAlRitmo = (200k - 168829.79) / 200k × 100 ≈ 15.59%
-    expect(r.margenAlRitmo).toBeCloseTo(15.59, 0);
+    // margenAlRitmo = (200k - 168829.79) / 168829.79 × 100 ≈ 18.46% (sobre inversión)
+    expect(r.margenAlRitmo).toBeCloseTo(18.46, 0);
     expect(r.semaforo).toBe("verde");
     expect(r.alerta).toBe(false);
   });

@@ -5,11 +5,10 @@
  * Used by API routes to compute derived fields before sending to the client.
  *
  * DEFINICIÓN DE MARGEN (no negociable):
- *   margen = (precio_de_venta − inversión) / precio_de_venta × 100
+ *   margen = ganancia / inversión × 100
  *
- * Siempre sobre la VENTA, nunca sobre la inversión. Es el estándar en
- * real estate ("margin on sale") y coincide con computeObraProyeccion.
- * Un margen del 20% significa que de cada $100 que entra, $20 es ganancia.
+ * Siempre sobre lo INVERTIDO, nunca sobre la venta. Decisión del dueño.
+ * Un margen del 20% significa que por cada $100 invertidos, ganó $20.
  */
 
 /** Safely convert a nullable/undefined number to a finite number, defaulting to 0 */
@@ -17,6 +16,16 @@ export const safe = (n: number | null | undefined): number => {
   if (n == null || isNaN(n) || !isFinite(n)) return 0;
   return n;
 };
+
+/**
+ * Margen sobre la inversión. Única fórmula de margen en toda la app.
+ * margen = ganancia / inversión × 100
+ * Devuelve 0 si la inversión es 0 (evita división por cero).
+ */
+export function margenSobreInversion(ganancia: number, inversion: number): number {
+  if (inversion === 0) return 0;
+  return (ganancia / inversion) * 100;
+}
 
 export interface ProjectFinancials {
   totalCosts: number;
@@ -69,10 +78,10 @@ export function computeProjectFinancials(
   const sp = safe(project.salePrice);
   const lp = safe(project.listingPrice);
   const result = sp > 0 ? sp - investment : 0;
-  // Margen SIEMPRE sobre la venta (margin on sale), nunca sobre inversión.
-  const margin = sp > 0 ? (result / sp) * 100 : 0;
+  // Margen SIEMPRE sobre lo invertido, nunca sobre la venta.
+  const margin = sp > 0 ? margenSobreInversion(result, investment) : 0;
   const estimatedMargin =
-    lp > 0 ? ((lp - investment) / lp) * 100 : 0;
+    lp > 0 ? margenSobreInversion(lp - investment, investment) : 0;
 
   return { totalCosts, totalExpenses, investment, result, margin, estimatedMargin };
 }
@@ -408,7 +417,7 @@ export interface ObraProyeccion {
   ventaReferencia: number;
   /** ventaReferencia − cierreEstimado */
   ganancia: number;
-  /** ganancia / ventaReferencia × 100 — SIEMPRE sobre la venta, nunca sobre inversión */
+  /** ganancia / cierreEstimado × 100 — SIEMPRE sobre lo invertido */
   margenProyectado: number;
   semaforo: SemaforoMargen;
   /** presupuesto de obra total (Σ proyectado por rubro) */
@@ -422,7 +431,7 @@ export interface ObraProyeccion {
  *   inversionActual  = compra + costosObra + gastosMensuales
  *   cierreEstimado   = inversionActual + faltaParaTerminar
  *   ganancia         = ventaReferencia − cierreEstimado
- *   margenProyectado = ganancia / ventaReferencia
+ *   margenProyectado = ganancia / cierreEstimado (sobre lo invertido)
  *
  * `faltaParaTerminar` es la estimación que el dueño escribe a mano (igual que
  * la venta objetivo). Solo si no está cargada se cae al presupuesto por rubro,
@@ -455,7 +464,7 @@ export function computeObraProyeccion(params: {
   const cierreEstimado = inversionActual + presupuestoRestante;
   const ventaReferencia = safe(params.ventaReferencia);
   const ganancia = ventaReferencia > 0 ? ventaReferencia - cierreEstimado : 0;
-  const margenProyectado = ventaReferencia > 0 ? (ganancia / ventaReferencia) * 100 : 0;
+  const margenProyectado = ventaReferencia > 0 ? margenSobreInversion(ganancia, cierreEstimado) : 0;
 
   return {
     inversionActual,
@@ -522,7 +531,7 @@ export function computeRitmoObra(params: {
   const faltaSegunRitmo = Math.max(0, obraAlRitmo - costosObra);
   const cierreAlRitmo = safe(params.buyPrice) + safe(params.totalExpenses) + obraAlRitmo;
   const venta = safe(params.ventaReferencia);
-  const margenAlRitmo = venta > 0 ? ((venta - cierreAlRitmo) / venta) * 100 : null;
+  const margenAlRitmo = venta > 0 ? margenSobreInversion(venta - cierreAlRitmo, cierreAlRitmo) : null;
   const semaforo = margenAlRitmo != null ? semaforoMargen(margenAlRitmo) : null;
 
   return {

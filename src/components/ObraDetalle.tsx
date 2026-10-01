@@ -10,8 +10,8 @@
  *  4. Lecciones del proyecto (siempre visibles)
  *  5. ── DETALLE OPERATIVO ── (plegable con "Vista socios")
  *
- * Una sola cifra manda: el margen proyectado, SIEMPRE sobre cierreEstimado
- * y expresado sobre la venta objetivo.
+ * Una sola cifra manda: el margen proyectado, SIEMPRE sobre lo invertido
+ * (cierreEstimado).
  */
 
 import { useMemo, useState } from "react";
@@ -20,6 +20,7 @@ import {
   computeObraProyeccion,
   computeRitmoObra,
   semaforoMargen,
+  margenSobreInversion,
   ETAPAS_PESOS,
   ETAPAS_LABELS,
   EtapaKey,
@@ -174,7 +175,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
     ])).sort((a, b) => a - b);
     return precios.map((precio) => {
       const ganancia = precio - proy.cierreEstimado;
-      const margen = precio > 0 ? (ganancia / precio) * 100 : 0;
+      const margen = margenSobreInversion(ganancia, proy.cierreEstimado);
       return { precio, ganancia, margen, esObjetivo: precio === base };
     });
   }, [tieneVenta, vendida, ventaReferencia, proy.cierreEstimado]);
@@ -362,7 +363,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
               </div>
               <div className="obra2a-heroSub">
                 {tieneVenta ? (
-                  <>{fmtUsdSign(proy.ganancia)} sobre {vendida ? "la venta" : "la venta objetivo"} · cierre estimado <span className="mono">{fmtUsd(proy.cierreEstimado)}</span></>
+                  <>{fmtUsdSign(proy.ganancia)} sobre lo invertido · cierre estimado <span className="mono">{fmtUsd(proy.cierreEstimado)}</span></>
                 ) : (
                   <>Sin venta objetivo no hay margen que mirar.</>
                 )}
