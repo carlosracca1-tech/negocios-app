@@ -24,9 +24,15 @@ export const authOptions: NextAuthOptions = {
           throw new Error(`Demasiados intentos. Reintenta en ${mins} minutos.`);
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.trim().toLowerCase() },
-        });
+        let user;
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email.trim().toLowerCase() },
+          });
+        } catch (dbError) {
+          console.error("auth: error de conexión a la base", dbError);
+          throw new Error("No pudimos conectarnos. Probá de nuevo en un minuto.");
+        }
 
         if (!user) {
           throw new Error("Credenciales invalidas");

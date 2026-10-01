@@ -50,11 +50,11 @@ export async function POST(
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Límite de tamaño: 10 MB
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    // Límite de tamaño: 4 MB (Vercel corta a 4,5 MB)
+    const MAX_FILE_SIZE = 4 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: "El archivo es demasiado grande (máximo 10 MB)." },
+        { error: "El archivo es demasiado grande (máximo 4 MB)." },
         { status: 413 }
       );
     }

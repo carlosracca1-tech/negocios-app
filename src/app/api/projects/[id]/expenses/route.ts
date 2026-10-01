@@ -97,7 +97,7 @@ export async function POST(
     // ARS necesita TC — si no viene, lo resolvemos del blue de hoy.
     let exchangeRate = data.exchangeRate ?? null;
     if (data.currency === "ARS") {
-      exchangeRate = await resolverTipoDeCambio(exchangeRate);
+      exchangeRate = await resolverTipoDeCambio(exchangeRate, user.organizationId);
       if (!exchangeRate) {
         return NextResponse.json(
           { error: "No se pudo obtener el tipo de cambio. Ingresalo manualmente." },

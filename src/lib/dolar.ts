@@ -67,13 +67,69 @@ export async function getBlueRate(): Promise<Blue | null> {
 }
 
 /**
+ * Respaldo desde la base: busca el exchangeRate del costo o gasto más reciente
+ * de la cuenta. Se usa cuando las APIs del blue están caídas y no hay nada en
+ * memoria (pasa seguido en Vercel por cold starts).
+ * Devuelve { promedio, fecha } o null.
+ */
+export async function getRespaldoFromDb(organizationId: string): Promise<{ promedio: number; fecha: Date } | null> {
+  try {
+    // Importación dinámica para no crear dependencia circular
+    const { prisma } = await import("./prisma");
+
+    // Buscar el costo más reciente con exchangeRate
+    const cost = await prisma.cost.findFirst({
+      where: {
+        project: { organizationId },
+        exchangeRate: { not: null, gt: 0 },
+      },
+      orderBy: { date: "desc" },
+      select: { exchangeRate: true, date: true },
+    });
+
+    if (cost?.exchangeRate) {
+      return { promedio: cost.exchangeRate, fecha: cost.date };
+    }
+
+    // Si no hay costos, buscar en gastos
+    const expense = await prisma.expense.findFirst({
+      where: {
+        project: { organizationId },
+        exchangeRate: { not: null, gt: 0 },
+      },
+      orderBy: { period: "desc" },
+      select: { exchangeRate: true, period: true },
+    });
+
+    if (expense?.exchangeRate) {
+      return { promedio: expense.exchangeRate, fecha: expense.period };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Completa el TC cuando el cliente no lo mando. Devuelve el que ya venia si es
- * valido; si no, el blue de hoy; si tampoco hay, null (no inventamos un numero).
+ * valido; si no, el blue de hoy; si tampoco hay, busca el último TC de la cuenta
+ * en la base; si tampoco hay, null.
  */
 export async function resolverTipoDeCambio(
-  recibido: number | null | undefined
+  recibido: number | null | undefined,
+  organizationId?: string
 ): Promise<number | null> {
   if (recibido && recibido > 0) return recibido;
   const blue = await getBlueRate();
-  return blue?.promedio ?? null;
+  if (blue?.promedio) return blue.promedio;
+  // Respaldo desde la base
+  if (organizationId) {
+    const respaldo = await getRespaldoFromDb(organizationId);
+    if (respaldo) {
+      console.warn(`dolar.ts: usando TC de respaldo de la base (${respaldo.promedio}, del ${respaldo.fecha.toISOString().split("T")[0]})`);
+      return respaldo.promedio;
+    }
+  }
+  return null;
 }
