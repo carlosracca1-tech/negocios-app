@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { fmtMoney } from "@/lib/format";
 
 interface ProjectAlertsProps {
   buyPrice: number;
@@ -42,7 +43,7 @@ export default function ProjectAlerts({
         id: "costs-exceed",
         severity: "danger",
         title: "Costos superan el precio de compra",
-        message: `Los costos ($${totalCosts.toLocaleString("de-DE")}) representan el ${costRatio.toFixed(1)}% del precio de compra.`,
+        message: `Los costos (${fmtMoney(totalCosts)}) representan el ${costRatio.toFixed(1)}% del precio de compra.`,
       });
     }
 
@@ -52,7 +53,7 @@ export default function ProjectAlerts({
         id: "inv-exceeds-listing",
         severity: "danger",
         title: "Inversión supera el valor de publicación",
-        message: `La inversión total ($${investment.toLocaleString("de-DE")}) es mayor al valor de publicación ($${listingPrice.toLocaleString("de-DE")}).`,
+        message: `La inversión total (${fmtMoney(investment)}) es mayor al valor de publicación (${fmtMoney(listingPrice)}).`,
       });
     }
 
@@ -62,7 +63,7 @@ export default function ProjectAlerts({
         id: "low-margin",
         severity: "warning",
         title: "Margen estimado bajo",
-        message: `${estimatedMargin.toFixed(1)}% de margen${avgMonthlyExpense > 0 ? ` con gastos de $${Math.round(avgMonthlyExpense).toLocaleString("de-DE")}/mes` : ""}. Considerá ajustar el valor de publicación.`,
+        message: `${estimatedMargin.toFixed(1)}% de margen${avgMonthlyExpense > 0 ? ` con gastos de ${fmtMoney(avgMonthlyExpense)}/mes` : ""}. Considerá ajustar el valor de publicación.`,
       });
     }
 

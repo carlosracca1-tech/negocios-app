@@ -5,6 +5,7 @@ import { useCreateExpense, useParseReceipt, useUpdateExpense } from "@/hooks/use
 import { modalInputStyle as inputStyle, focusInput, blurInput } from "@/lib/constants";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { Expense } from "@/types";
+import { fmtMoney } from "@/lib/format";
 
 interface AddExpenseModalProps {
   projectId: string;
@@ -351,7 +352,7 @@ export default function AddExpenseModal({ projectId, isOpen, onClose, onSuccess,
               />
               {exchangeRate && amount && (
                 <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4 }}>
-                  ≈ U$D {(parseFloat(amount) / parseFloat(exchangeRate)).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ≈ {fmtMoney(parseFloat(amount) / parseFloat(exchangeRate), "USD", { decimales: 2 })}
                 </div>
               )}
             </div>

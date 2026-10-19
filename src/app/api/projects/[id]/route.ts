@@ -8,6 +8,7 @@ import {
 } from "@/lib/api-helpers";
 import { computeProjectFinancials, computeHoldingMetrics, safe, computeAvancePonderado, EtapasAvance } from "@/lib/financial";
 import { rethrowNextError } from "@/lib/route-utils";
+import { fmtMoney } from "@/lib/format";
 import { notifyProjectUsers } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
@@ -207,7 +208,7 @@ export async function PATCH(
       timelineEvents.push({
         projectId,
         action: "Falta para terminar actualizado",
-        detail: `Estimado para terminar la obra: $${data.costToFinish.toLocaleString("de-DE")}`,
+        detail: `Estimado para terminar la obra: ${fmtMoney(data.costToFinish, "USD")}`,
       });
     }
 
@@ -219,7 +220,7 @@ export async function PATCH(
       timelineEvents.push({
         projectId,
         action: "Venta objetivo actualizada",
-        detail: `Venta objetivo: $${data.listingPrice.toLocaleString("de-DE")}`,
+        detail: `Venta objetivo: ${fmtMoney(data.listingPrice, "USD")}`,
       });
     }
 

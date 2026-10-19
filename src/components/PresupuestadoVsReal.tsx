@@ -2,22 +2,15 @@
 
 import type { BudgetProjection } from "@/types";
 import { catColors } from "@/lib/constants";
+import { fmtMoney, fmtPct as fmtPctGlobal } from "@/lib/format";
 
 interface Props {
   projection: BudgetProjection;
 }
 
-/** "$1.234.567" — pesos nominales, formato es-AR */
-const fmtArs = (n: number) =>
-  "$" + Math.round(Math.abs(n)).toLocaleString("es-AR", { maximumFractionDigits: 0 });
-
-/** "U$D 2.240" / "$1.234.567" — cada partida en la moneda en que fue pactada */
-const fmtMon = (n: number, moneda: "ARS" | "USD") =>
-  (moneda === "USD" ? "U$D " : "$") +
-  Math.round(Math.abs(n)).toLocaleString("es-AR", { maximumFractionDigits: 0 });
-
-/** "82%" */
-const fmtPct = (n: number) => `${Math.round(n)}%`;
+const fmtArs = (n: number) => fmtMoney(n, "ARS");
+const fmtMon = (n: number, moneda: "ARS" | "USD") => fmtMoney(n, moneda);
+const fmtPct = (n: number) => fmtPctGlobal(n, 0);
 
 const GRID = "1fr 92px 108px 108px 108px";
 

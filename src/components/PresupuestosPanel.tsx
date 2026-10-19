@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Partida, BudgetProjection } from "@/types";
 import { partidasApi, cotizacionesApi, budgetApi } from "@/lib/api-client";
 import { computeBudgetProjection, safe } from "@/lib/financial";
+import { fmtMoney } from "@/lib/format";
 import KPICard from "./KPICard";
 import PartidaCard from "./PartidaCard";
 import PresupuestadoVsReal from "./PresupuestadoVsReal";
@@ -16,12 +17,14 @@ interface Props {
   buyPrice: number;
   totalExpenses: number;
   canEdit: boolean;
+  onChanged?: () => void;
 }
 
-export default function PresupuestosPanel({ projectId, projectType, buyPrice, totalExpenses, canEdit }: Props) {
+export default function PresupuestosPanel({ projectId, projectType, buyPrice, totalExpenses, canEdit, onChanged }: Props) {
   const [partidas, setPartidas] = useState<Partida[]>([]);
   const [projection, setProjection] = useState<BudgetProjection | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [elegirLoading, setElegirLoading] = useState(false);
   const [recomendandoId, setRecomendandoId] = useState<string | null>(null);
@@ -30,19 +33,20 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!hasLoaded) setLoading(true);
       const [p, b] = await Promise.all([
         partidasApi.list(projectId),
         budgetApi.getProjection(projectId),
       ]);
       setPartidas(p);
       setProjection(b);
+      setHasLoaded(true);
     } catch (err) {
       console.error("Error fetching presupuestos:", err);
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, hasLoaded]);
 
   useEffect(() => {
     fetchData();
@@ -53,8 +57,9 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
     try {
       await cotizacionesApi.elegir(projectId, partidaId, cotId);
       await fetchData();
+      onChanged?.();
     } catch (err) {
-      window.alert("Error al elegir cotizacion: " + (err instanceof Error ? err.message : ""));
+      window.alert("Error al elegir cotización: " + (err instanceof Error ? err.message : ""));
     } finally {
       setElegirLoading(false);
     }
@@ -65,8 +70,9 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
     try {
       await budgetApi.recomendar(projectId, partidaId);
       await fetchData();
+      onChanged?.();
     } catch (err) {
-      window.alert("Error al obtener recomendacion: " + (err instanceof Error ? err.message : ""));
+      window.alert("Error al obtener recomendación: " + (err instanceof Error ? err.message : ""));
     } finally {
       setRecomendandoId(null);
     }
@@ -99,25 +105,25 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
       <div className="kpi-grid-4" style={{ gap: 12, marginBottom: 20 }}>
         <KPICard
           label="Costo proyectado total"
-          value={`USD ${totalProjected.toLocaleString("de-DE", { maximumFractionDigits: 0 })}`}
+          value={fmtMoney(totalProjected)}
           sub={`Cotizaciones elegidas · ${numRubros} rubros`}
           bold
         />
         <KPICard
           label="Ejecutado real"
-          value={`USD ${totalExecuted.toLocaleString("de-DE", { maximumFractionDigits: 0 })}`}
+          value={fmtMoney(totalExecuted)}
           sub={`${pctExecuted.toFixed(0)}% del presupuesto`}
         />
         <KPICard
-          label="Desvio acumulado"
-          value={`${deviation >= 0 ? "+" : ""}USD ${Math.abs(deviation).toLocaleString("de-DE", { maximumFractionDigits: 0 })}`}
+          label="Desvío acumulado"
+          value={fmtMoney(deviation, "USD", { signo: true })}
           sub={deviation >= 0 ? `${totalProjected > 0 ? ((deviation / totalProjected) * 100).toFixed(1) : 0}% bajo lo presupuestado` : "sobre lo presupuestado"}
           color={deviation >= 0 ? "var(--success)" : "var(--danger)"}
           subColor={deviation >= 0 ? "var(--success)" : "var(--danger)"}
         />
         <KPICard
           label="Costo final estimado"
-          value={`USD ${costoFinal.toLocaleString("de-DE", { maximumFractionDigits: 0 })}`}
+          value={fmtMoney(costoFinal)}
           sub={`Compra ${(buyPrice / 1000).toFixed(0)}k + obra proyectada`}
         />
       </div>
@@ -153,13 +159,13 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
             <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
               {numCots} cotizaciones cargadas en {numRubros} rubros. Costo de obra proyectado:{" "}
               <strong style={{ color: "var(--text-primary)" }}>
-                USD {totalProjected.toLocaleString("de-DE", { maximumFractionDigits: 0 })}
+                {fmtMoney(totalProjected)}
               </strong>.
               {deviation > 0 && (
                 <span>
                   {" "}Vas{" "}
                   <strong style={{ color: "var(--success)" }}>
-                    USD {deviation.toLocaleString("de-DE", { maximumFractionDigits: 0 })}
+                    {fmtMoney(deviation)}
                   </strong>{" "}
                   por debajo de lo presupuestado.
                 </span>
@@ -331,7 +337,7 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
         partida={editando}
         isOpen={editando !== null}
         onClose={() => setEditando(null)}
-        onSuccess={fetchData}
+        onSuccess={() => { fetchData(); onChanged?.(); }}
       />
 
       <AddPresupuestoModal
@@ -340,7 +346,7 @@ export default function PresupuestosPanel({ projectId, projectType, buyPrice, to
         partidas={partidas}
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        onSuccess={fetchData}
+        onSuccess={() => { fetchData(); onChanged?.(); }}
       />
     </div>
   );

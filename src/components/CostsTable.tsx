@@ -2,13 +2,12 @@
 
 import { Cost, Partida } from "@/types";
 import { useState, useMemo } from "react";
-import { fmt } from "@/lib/format";
+import { fmtMoney } from "@/lib/format";
 import { catColors } from "@/lib/constants";
 import { costArs } from "@/lib/financial";
 
-/** "$1.234.567" — pesos nominales, formato es-AR */
-const fmtArsNum = (n: number) =>
-  "$" + Math.round(n).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+/** Pesos nominales → "ARS 1.234.567" */
+const fmtArsNum = (n: number) => fmtMoney(n, "ARS");
 
 const costTypeLabels: Record<string, string> = {
   material: "Mat",
@@ -164,10 +163,10 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
 
   const fmtArs = (cost: Cost) => {
     if (cost.currency === "ARS") {
-      return `$${cost.amount.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
+      return fmtMoney(cost.amount, "ARS");
     }
     if (cost.exchangeRate) {
-      return `$${(cost.amount * cost.exchangeRate).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
+      return fmtMoney(cost.amount * cost.exchangeRate, "ARS");
     }
     return "—";
   };
@@ -182,7 +181,7 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
     return "—";
   };
 
-  const fmtUsd = (cost: Cost) => fmt(usdValue(cost));
+  const fmtUsd = (cost: Cost) => fmtMoney(usdValue(cost), "USD");
 
   return (
     <div>
@@ -524,14 +523,14 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
               {totalMaterials > 0 && (
                 <span>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--text-primary)", display: "inline-block", marginRight: 4, verticalAlign: "middle" }} />
-                  Mat {fmt(totalMaterials)}
+                  Mat {fmtMoney(totalMaterials, "USD")}
                   <span style={{ color: "var(--text-quaternary)", marginLeft: 5 }}>· {fmtArsNum(totalMaterialsArs)}</span>
                 </span>
               )}
               {totalLabor > 0 && (
                 <span>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--success)", display: "inline-block", marginRight: 4, verticalAlign: "middle" }} />
-                  MO {fmt(totalLabor)}
+                  MO {fmtMoney(totalLabor, "USD")}
                   <span style={{ color: "var(--text-quaternary)", marginLeft: 5 }}>· {fmtArsNum(totalLaborArs)}</span>
                 </span>
               )}
@@ -539,7 +538,7 @@ export default function CostsTable({ costs, partidas = [], onAddClick, onAutoImp
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
-              {fmt(totalFiltered)}
+              {fmtMoney(totalFiltered, "USD")}
             </div>
             <div
               title="Suma de lo que realmente pagaste en pesos, cada gasto al tipo de cambio del día en que se cargó."

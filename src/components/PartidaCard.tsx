@@ -5,6 +5,7 @@ import type { Partida, Cotizacion } from "@/types";
 import { cotizacionUsd } from "@/lib/financial";
 import { catColors } from "@/lib/constants";
 import CotizacionCard from "./CotizacionCard";
+import { fmtMoney } from "@/lib/format";
 
 interface Props {
   partida: Partida;
@@ -37,7 +38,7 @@ export default function PartidaCard({ partida, onElegir, onRecomendar, onEditar,
 
   const fmtK = (n: number) => {
     if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
-    return n.toLocaleString("de-DE", { maximumFractionDigits: 0 });
+    return Math.round(n).toLocaleString("de-DE");
   };
 
   return (
@@ -124,7 +125,7 @@ export default function PartidaCard({ partida, onElegir, onRecomendar, onEditar,
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-tertiary)" }}>Elegido</div>
               <div className="tabular" style={{ fontSize: 14.5, fontWeight: 700, marginTop: 2, color: "var(--success)" }}>
-                USD {cotizacionUsd(chosen).toLocaleString("de-DE", { maximumFractionDigits: 0 })}
+                {fmtMoney(cotizacionUsd(chosen), "USD")}
               </div>
             </div>
           )}

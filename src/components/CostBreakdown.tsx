@@ -2,7 +2,7 @@
 
 import { Cost } from "@/types";
 import { useMemo } from "react";
-import { fmt } from "@/lib/format";
+import { fmtMoney } from "@/lib/format";
 import { catColors } from "@/lib/constants";
 
 interface CostBreakdownProps {
@@ -80,7 +80,7 @@ export default function CostBreakdown({ costs, projectType, totalCosts }: CostBr
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#e8edf5" }}>{cat}</span>
               </div>
               <span style={{ fontSize: 14, fontWeight: 700, color: "#e8edf5" }}>
-                {fmt(data.total)} <span style={{ color: "#5a6b82", fontWeight: 400, fontSize: 11 }}>({catPct.toFixed(0)}%)</span>
+                {fmtMoney(data.total)} <span style={{ color: "#5a6b82", fontWeight: 400, fontSize: 11 }}>({catPct.toFixed(0)}%)</span>
               </span>
             </div>
             <div style={{ height: 5, background: "rgba(56, 189, 248, 0.06)", borderRadius: 3, overflow: "hidden", display: "flex", marginBottom: 8 }}>
@@ -90,12 +90,12 @@ export default function CostBreakdown({ costs, projectType, totalCosts }: CostBr
             <div className="cost-breakdown-amounts" style={{ display: "flex", gap: 16, fontSize: 12, flexWrap: "wrap" }}>
               {data.material > 0 && (
                 <span style={{ color: "#8899b0" }}>
-                  {materialLabel}: <span style={{ fontWeight: 600, color: "#7dd3fc" }}>{fmt(data.material)}</span>
+                  {materialLabel}: <span style={{ fontWeight: 600, color: "#7dd3fc" }}>{fmtMoney(data.material)}</span>
                 </span>
               )}
               {data.labor > 0 && (
                 <span style={{ color: "#8899b0" }}>
-                  Mano de obra: <span style={{ fontWeight: 600, color: "#e8d5b7" }}>{fmt(data.labor)}</span>
+                  Mano de obra: <span style={{ fontWeight: 600, color: "#e8d5b7" }}>{fmtMoney(data.labor)}</span>
                 </span>
               )}
             </div>
@@ -113,14 +113,14 @@ export default function CostBreakdown({ costs, projectType, totalCosts }: CostBr
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12, fontWeight: 600, color: "#5a6b82", flexWrap: "wrap", gap: 4 }}>
             <span>Total general</span>
-            <span style={{ color: "#e8edf5", fontSize: 13 }}>{fmt(totalCosts)}</span>
+            <span style={{ color: "#e8edf5", fontSize: 13 }}>{fmtMoney(totalCosts)}</span>
           </div>
           <div className="cost-breakdown-amounts" style={{ display: "flex", gap: 16, fontSize: 12, color: "#5a6b82", flexWrap: "wrap" }}>
             <span>
-              {materialLabel}: <span style={{ fontWeight: 600, color: "#38bdf8" }}>{fmt(globalMaterialTotal)}</span>
+              {materialLabel}: <span style={{ fontWeight: 600, color: "#38bdf8" }}>{fmtMoney(globalMaterialTotal)}</span>
             </span>
             <span>
-              Mano de obra: <span style={{ fontWeight: 600, color: "#d4a574" }}>{fmt(globalLaborTotal)}</span>
+              Mano de obra: <span style={{ fontWeight: 600, color: "#d4a574" }}>{fmtMoney(globalLaborTotal)}</span>
             </span>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { useCreateCost, useUpdateCost } from "@/hooks/useProjects";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { Cost, Partida } from "@/types";
 import { partidaCurrency, partidaProjectedNative, costEn, type Moneda } from "@/lib/financial";
+import { fmtMoney } from "@/lib/format";
 import {
   modalInputStyle as inputStyle,
   focusInput,
@@ -223,11 +224,8 @@ export default function AddCostModal({
   }, [partidas, costToEdit]);
 
   const partidaSel = partidaOpciones.find((p) => p.id === partidaId) || null;
-  /** Formatea en la moneda del presupuesto: U$D con decimales, AR$ redondeado. */
-  const fmtMon = (n: number, moneda: Moneda) =>
-    moneda === "USD"
-      ? "U$D " + n.toLocaleString("es-AR", { maximumFractionDigits: 0 })
-      : "$" + Math.round(n).toLocaleString("es-AR", { maximumFractionDigits: 0 });
+  /** Formatea en la moneda del presupuesto. */
+  const fmtMon = (n: number, moneda: Moneda) => fmtMoney(Math.round(n), moneda);
 
   const canSubmit =
     concept.trim().length > 0 &&
@@ -315,8 +313,8 @@ export default function AddCostModal({
               border: "1px solid var(--border-default)",
             }}>
               {([
-                { value: "USD", label: "U$D Dólar", sub: "Se guarda tal cual" },
-                { value: "ARS", label: "AR$ Pesos", sub: "Se dolariza al blue" },
+                { value: "USD", label: "USD Dólar", sub: "Se guarda tal cual" },
+                { value: "ARS", label: "ARS Pesos", sub: "Se dolariza al blue" },
               ] as const).map((c) => {
                 const active = currency === c.value;
                 return (
@@ -358,7 +356,7 @@ export default function AddCostModal({
           {/* Monto */}
           <div>
             <label htmlFor="cost-amount" style={labelStyle}>
-              Monto en {currency === "USD" ? "dólares (U$D)" : "pesos (AR$)"}
+              Monto en {currency === "USD" ? "dólares (USD)" : "pesos (ARS)"}
             </label>
             <input
               id="cost-amount"
@@ -385,10 +383,10 @@ export default function AddCostModal({
               {currentRate > 0 ? (
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                    AR$ {amountNum.toLocaleString("es-AR")} ÷ {currentRate}
+                    {fmtMoney(amountNum, "ARS")} ÷ {currentRate}
                   </span>
                   <span className="tabular" style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>
-                    ≈ U$D {usdAmount.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ≈ {fmtMoney(usdAmount, "USD", { decimales: 2 })}
                   </span>
                 </div>
               ) : (
@@ -459,10 +457,10 @@ export default function AddCostModal({
                       display: "flex", justifyContent: "space-between", alignItems: "baseline",
                     }}>
                       <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                        AR$ {amountNum.toLocaleString("es-AR")} ÷ {blueRate.promedio}
+                        {fmtMoney(amountNum, "ARS")} ÷ {blueRate.promedio}
                       </span>
                       <span className="tabular" style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>
-                        ≈ U$D {usdAmount.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ≈ {fmtMoney(usdAmount, "USD", { decimales: 2 })}
                       </span>
                     </div>
                   )}
@@ -717,7 +715,7 @@ export default function AddCostModal({
               {loading
                 ? (isEditMode ? "Guardando…" : "Agregando…")
                 : currency === "ARS" && usdAmount > 0
-                  ? `${isEditMode ? "Guardar" : "Agregar"} (U$D ${usdAmount.toFixed(2)})`
+                  ? `${isEditMode ? "Guardar" : "Agregar"} (${fmtMoney(usdAmount, "USD", { decimales: 2 })})`
                   : (isEditMode ? "Guardar cambios" : "Agregar")}
             </button>
           </div>

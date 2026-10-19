@@ -1,7 +1,7 @@
 "use client";
 
 import { Project } from "@/types";
-import { fmt, fmtSign, fmtPct, daysAgo, safeNum } from "@/lib/format";
+import { fmtMoney, fmtPct, daysAgo, safeNum } from "@/lib/format";
 import { semaforoMargen } from "@/lib/financial";
 import { statusConfig } from "@/lib/constants";
 
@@ -99,24 +99,24 @@ export default function ProjectCard({ project, sharedWith = [], onClick }: Proje
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)", gap: 8, marginBottom: 12 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>Inversión</div>
-            <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: "var(--text-primary)", marginTop: 2 }}>{fmt(inv)}</div>
+            <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: "var(--text-primary)", marginTop: 2 }}>{fmtMoney(inv)}</div>
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>Costos</div>
-            <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: "var(--text-primary)", marginTop: 2 }}>{fmt(totalCosts)}</div>
+            <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: "var(--text-primary)", marginTop: 2 }}>{fmtMoney(totalCosts)}</div>
           </div>
           {sp > 0 ? (
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>Resultado</div>
               <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: result !== null && result >= 0 ? "var(--success)" : "var(--danger)", marginTop: 2 }}>
-                {fmtSign(result)}
+                {fmtMoney(result, "USD", { signo: true })}
               </div>
             </div>
 
           ) : (
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>Valor publ.</div>
-              <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: "var(--text-primary)", marginTop: 2 }}>{lp > 0 ? fmt(lp) : "—"}</div>
+              <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: "var(--text-primary)", marginTop: 2 }}>{lp > 0 ? fmtMoney(lp) : "—"}</div>
             </div>
           )}
         </div>

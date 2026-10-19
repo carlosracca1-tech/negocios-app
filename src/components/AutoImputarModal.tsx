@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { costsApi, type AutoImputarResultado } from "@/lib/api-client";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import { fmtMoney } from "@/lib/format";
 
 interface Props {
   projectId: string;
@@ -58,10 +59,7 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
   if (!isOpen) return null;
 
   /** Cada presupuesto se muestra en la moneda en la que fue pactado. */
-  const fmtMon = (n: number, moneda: "ARS" | "USD") =>
-    moneda === "USD"
-      ? "U$D " + Math.round(n).toLocaleString("es-AR")
-      : "$" + Math.round(n).toLocaleString("es-AR");
+  const fmtMon = (n: number, moneda: "ARS" | "USD") => fmtMoney(Math.round(n), moneda);
 
   // Agrupado por presupuesto, para que se lea de un vistazo.
   const porPartida = new Map<

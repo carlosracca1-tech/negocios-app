@@ -2,6 +2,7 @@
 
 import type { Cotizacion, ScopeItem } from "@/types";
 import { cotizacionUsd } from "@/lib/financial";
+import { fmtMoney } from "@/lib/format";
 
 interface Props {
   cot: Cotizacion;
@@ -98,7 +99,7 @@ export default function CotizacionCard({ cot, minUsd, onElegir, loading }: Props
             className="tabular"
             style={{ fontSize: 21, fontWeight: 700, letterSpacing: -0.5, color: "var(--text-primary)" }}
           >
-            USD {usd.toLocaleString("de-DE", { maximumFractionDigits: 0 })}
+            {fmtMoney(usd, "USD")}
           </span>
           {isMin ? (
             <span
@@ -130,7 +131,7 @@ export default function CotizacionCard({ cot, minUsd, onElegir, loading }: Props
         </div>
         {cot.currency === "ARS" && (
           <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
-            AR$ {cot.amount.toLocaleString("de-DE", { maximumFractionDigits: 0 })}
+            {fmtMoney(cot.amount, "ARS")}
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ import type { ParsedBudget, Partida, ScopeItem } from "@/types";
 import { budgetApi, partidasApi, cotizacionesApi } from "@/lib/api-client";
 import { categoriesByProjectType } from "@/lib/constants";
 import { modalInputStyle, focusInput, blurInput } from "@/lib/constants";
+import { fmtMoney } from "@/lib/format";
 import ModalPortal from "./ModalPortal";
 import { useModalA11y } from "@/hooks/useModalA11y";
 
@@ -724,9 +725,9 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
                         <span style={{ color: "var(--text-tertiary)" }}>Cargando…</span>
                       ) : blueRate ? (
                         <>
-                          <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>${blueRate.promedio.toLocaleString("es-AR")}</span>
+                          <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{fmtMoney(blueRate.promedio, "ARS")}</span>
                           <span style={{ fontSize: 10.5, color: "var(--text-tertiary)" }}>
-                            Compra ${blueRate.compra} · Venta ${blueRate.venta}
+                            Compra {fmtMoney(blueRate.compra, "ARS")} · Venta {fmtMoney(blueRate.venta, "ARS")}
                           </span>
                         </>
                       ) : (
@@ -735,7 +736,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
                     </div>
                     {blueRate && amount > 0 && (
                       <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", marginTop: 4 }}>
-                        ≈ USD {(amount / blueRate.promedio).toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                        ≈ {fmtMoney(amount / blueRate.promedio, "USD")}
                       </div>
                     )}
                   </div>

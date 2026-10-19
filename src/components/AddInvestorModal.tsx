@@ -5,6 +5,7 @@ import { investorsApi, usersApi } from "@/lib/api-client";
 import { User } from "@/types";
 import { modalInputStyle as inputStyle, focusInput, blurInput } from "@/lib/constants";
 import { useModalA11y } from "@/hooks/useModalA11y";
+import { fmtMoney } from "@/lib/format";
 
 interface AddInvestorModalProps {
   projectId: string;
@@ -311,7 +312,7 @@ export default function AddInvestorModal({
                 letterSpacing: 0.8,
               }}
             >
-              Monto invertido ($) — opcional
+              Monto invertido (USD) — opcional
             </label>
             <input
               id="investor-amount"
@@ -327,11 +328,7 @@ export default function AddInvestorModal({
             />
             {amountInvested && (
               <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4 }}>
-                USD{" "}
-                {parseFloat(amountInvested).toLocaleString("de-DE", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                {fmtMoney(parseFloat(amountInvested), "USD", { decimales: 2 })}
               </div>
             )}
           </div>
