@@ -15,7 +15,6 @@ export default function KPICard({ label, value, sub, subColor, color, bold }: KP
       className="kpi-card"
       style={{
         background: "var(--surface-1)",
-        backdropFilter: "blur(12px)",
         borderRadius: 14,
         padding: "16px 18px",
         boxShadow: "var(--shadow-card)",

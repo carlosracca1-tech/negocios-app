@@ -25,7 +25,7 @@ import {
   ETAPAS_LABELS,
   EtapaKey,
 } from "@/lib/financial";
-import { fmtUsd, fmtUsdSign, fmtPctAr, fmtNum, safeNum, fmtFecha } from "@/lib/format";
+import { fmtMoney, fmtPct, fmtNum, safeNum, fmtFecha } from "@/lib/format";
 import { projectsApi } from "@/lib/api-client";
 
 interface ObraDetalleProps {
@@ -204,7 +204,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
       if (peor && peor.exceso > 0) {
         out.push({
           titulo: `${peor.name} se pasó`,
-          texto: `Lleva ${fmtUsd(peor.executed)} contra ${fmtUsd(peor.proj)} presupuestados: ${fmtUsd(peor.exceso)} de más (${fmtPctAr((peor.exceso / peor.proj) * 100, 0)}). Eso es margen que ya no está.`,
+          texto: `Lleva ${fmtMoney(peor.executed)} contra ${fmtMoney(peor.proj)} presupuestados: ${fmtMoney(peor.exceso)} de más (${fmtPct((peor.exceso / peor.proj) * 100, 0)}). Eso es margen que ya no está.`,
           tono: "warn",
         });
       } else {
@@ -228,13 +228,13 @@ export default function ObraDetalle(props: ObraDetalleProps) {
         if (ritmo.alerta) {
           out.push({
             titulo: "El ritmo de gasto se come el margen",
-            texto: `Llevás ${fmtUsd(ritmo.costosObra)} con la obra al ${fmtPctAr(ritmo.avancePct, 0)}. Si sigue a este ritmo, la obra completa cuesta ${fmtUsd(ritmo.obraAlRitmo)} y el margen cae a ${fmtPctAr(ritmo.margenAlRitmo)}.`,
+            texto: `Llevás ${fmtMoney(ritmo.costosObra)} con la obra al ${fmtPct(ritmo.avancePct, 0)}. Si sigue a este ritmo, la obra completa cuesta ${fmtMoney(ritmo.obraAlRitmo)} y el margen cae a ${fmtPct(ritmo.margenAlRitmo)}.`,
             tono: "warn",
           });
         } else {
           out.push({
             titulo: "El ritmo de gasto cierra bien",
-            texto: `Con la obra al ${fmtPctAr(ritmo.avancePct, 0)} y ${fmtUsd(ritmo.costosObra)} gastados, seguir a este ritmo deja la obra en ${fmtUsd(ritmo.obraAlRitmo)}${ritmo.margenAlRitmo != null ? ` y el margen en ${fmtPctAr(ritmo.margenAlRitmo)}` : ""}.`,
+            texto: `Con la obra al ${fmtPct(ritmo.avancePct, 0)} y ${fmtMoney(ritmo.costosObra)} gastados, seguir a este ritmo deja la obra en ${fmtMoney(ritmo.obraAlRitmo)}${ritmo.margenAlRitmo != null ? ` y el margen en ${fmtPct(ritmo.margenAlRitmo)}` : ""}.`,
             tono: "ok",
           });
         }
@@ -256,7 +256,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
     out.push({
       titulo: "Los gastos fijos también comen margen",
       texto: totalExpenses > 0
-        ? `Expensas, impuestos y servicios suman ${fmtUsd(totalExpenses)} (${fmtUsd(promMes)}/mes). Cada mes extra de obra corre el cierre ${fmtUsd(promMes)} más lejos.`
+        ? `Expensas, impuestos y servicios suman ${fmtMoney(totalExpenses)} (${fmtMoney(promMes)}/mes). Cada mes extra de obra corre el cierre ${fmtMoney(promMes)} más lejos.`
         : "Todavía no hay gastos mensuales cargados. Expensas, impuestos y servicios se comen margen mes a mes: conviene registrarlos.",
       tono: totalExpenses > 0 ? "info" : "ok",
     });
@@ -267,7 +267,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
     out.push({
       titulo: "El TC queda escrito",
       texto: costosArs.length > 0
-        ? `El ${fmtPctAr(pctArs, 0)} de los costos se pagó en ARS. Cada registro guarda el TC del día del gasto: el histórico no se recalcula.`
+        ? `El ${fmtPct(pctArs, 0)} de los costos se pagó en ARS. Cada registro guarda el TC del día del gasto: el histórico no se recalcula.`
         : "Todos los costos se cargaron en USD directo. Cuando cargues en ARS, el TC del día queda guardado con el registro.",
       tono: "info",
     });
@@ -325,25 +325,25 @@ export default function ObraDetalle(props: ObraDetalleProps) {
       <p className="obra2a-frase">
         {vendida ? (
           <>
-            La vendimos en <b className="mono">{fmtUsd(ventaReferencia)}</b>. Entre compra, obra y
-            gastos pusimos <b className="mono">{fmtUsd(proy.inversionActual)}</b>: quedaron{" "}
-            <b className="mono" style={{ color: margenColor }}>{fmtUsd(proy.ganancia)}</b> de ganancia
+            La vendimos en <b className="mono">{fmtMoney(ventaReferencia)}</b>. Entre compra, obra y
+            gastos pusimos <b className="mono">{fmtMoney(proy.inversionActual)}</b>: quedaron{" "}
+            <b className="mono" style={{ color: margenColor }}>{fmtMoney(proy.ganancia)}</b> de ganancia
             — un margen realizado del{" "}
-            <b className="mono" style={{ color: margenColor }}>{fmtPctAr(proy.margenProyectado)}</b>.
+            <b className="mono" style={{ color: margenColor }}>{fmtPct(proy.margenProyectado)}</b>.
           </>
         ) : (
           <>
-            Pusimos <b className="mono">{fmtUsd(proy.inversionActual)}</b> entre compra, obra y gastos.
+            Pusimos <b className="mono">{fmtMoney(proy.inversionActual)}</b> entre compra, obra y gastos.
             {tieneFalta ? (
-              <> Calculás <b className="mono">{fmtUsd(proy.presupuestoRestante)}</b> más para terminarla:
-              la obra cerraría en <b className="mono">{fmtUsd(proy.cierreEstimado)}</b>.</>
+              <> Calculás <b className="mono">{fmtMoney(proy.presupuestoRestante)}</b> más para terminarla:
+              la obra cerraría en <b className="mono">{fmtMoney(proy.cierreEstimado)}</b>.</>
             ) : (
               <> Falta definir cuánto más hace falta para terminarla.</>
             )}
             {tieneVenta ? (
-              <> Si la vendemos en <b className="mono">{fmtUsd(ventaReferencia)}</b>, quedan{" "}
-              <b className="mono" style={{ color: margenColor }}>{fmtUsd(proy.ganancia)}</b> de ganancia
-              — un margen del <b className="mono" style={{ color: margenColor }}>{fmtPctAr(proy.margenProyectado)}</b>.</>
+              <> Si la vendemos en <b className="mono">{fmtMoney(ventaReferencia)}</b>, quedan{" "}
+              <b className="mono" style={{ color: margenColor }}>{fmtMoney(proy.ganancia)}</b> de ganancia
+              — un margen del <b className="mono" style={{ color: margenColor }}>{fmtPct(proy.margenProyectado)}</b>.</>
             ) : (
               <> Todavía no definimos a cuánto queremos venderla: cargá la venta objetivo para ver el margen.</>
             )}
@@ -361,11 +361,11 @@ export default function ObraDetalle(props: ObraDetalleProps) {
           <div className="obra2a-heroRow">
             <div>
               <div className="obra2a-heroCifra mono" style={{ color: margenColor }}>
-                {tieneVenta ? fmtPctAr(proy.margenProyectado) : "—"}
+                {tieneVenta ? fmtPct(proy.margenProyectado) : "—"}
               </div>
               <div className="obra2a-heroSub">
                 {tieneVenta ? (
-                  <>{fmtUsdSign(proy.ganancia)} sobre lo invertido · cierre estimado <span className="mono">{fmtUsd(proy.cierreEstimado)}</span></>
+                  <>{fmtMoney(proy.ganancia, "USD", { signo: true })} sobre lo invertido · cierre estimado <span className="mono">{fmtMoney(proy.cierreEstimado)}</span></>
                 ) : (
                   <>Sin venta objetivo no hay margen que mirar.</>
                 )}
@@ -399,13 +399,13 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                     onClick={() => { setFaltaDraft(tieneFalta ? String(Math.round(proy.presupuestoRestante)) : ""); setEditandoFalta(true); }}
                     title={canEdit ? "Cuánto calculás que falta pagar para terminar la obra" : undefined}
                   >
-                    {tieneFalta ? fmtUsd(proy.presupuestoRestante) : "+ Estimar"}
+                    {tieneFalta ? fmtMoney(proy.presupuestoRestante) : "+ Estimar"}
                     {canEdit && <span className="obra2a-lapiz">✎</span>}
                   </button>
                 )}
                 {!editandoFalta && ritmo.hayDatos && ritmo.faltaSegunRitmo != null && (
                   <div className="obra2a-ventaHint mono">
-                    al ritmo actual: {fmtUsd(ritmo.faltaSegunRitmo)}
+                    al ritmo actual: {fmtMoney(ritmo.faltaSegunRitmo)}
                   </div>
                 )}
 
@@ -433,7 +433,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                     onClick={() => { setVentaDraft(tieneVenta ? String(Math.round(ventaReferencia)) : ""); setEditandoVenta(true); }}
                     title={canEdit ? "Cambiar la venta objetivo" : undefined}
                   >
-                    {tieneVenta ? fmtUsd(ventaReferencia) : "+ Definir"}
+                    {tieneVenta ? fmtMoney(ventaReferencia) : "+ Definir"}
                     {canEdit && <span className="obra2a-lapiz">✎</span>}
                   </button>
                 )}
@@ -473,7 +473,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div className="obra2a-kicker">AVANCE DE OBRA</div>
-              <div className="obra2a-avanceCifra mono">{fmtPctAr(avancePonderado, 0)}</div>
+              <div className="obra2a-avanceCifra mono">{fmtPct(avancePonderado, 0)}</div>
             </div>
             {canEdit && !editandoEtapas && (
               <button
@@ -514,7 +514,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                       onChange={(e) => setEtapasDraft((d) => ({ ...d, [k]: e.target.value }))}
                     />
                   ) : (
-                    <span className="obra2a-etapaPct mono">{fmtPctAr(pct, 0)}</span>
+                    <span className="obra2a-etapaPct mono">{fmtPct(pct, 0)}</span>
                   )}
                 </div>
               );
@@ -524,18 +524,18 @@ export default function ObraDetalle(props: ObraDetalleProps) {
           {/* Ritmo de obra: solo costos y avance, nada de presupuesto */}
           {ritmo.hayDatos ? (
             <div className={`obra2a-estado ${ritmo.alerta ? "warn" : ritmo.margenAlRitmo != null ? "ok" : "info"}`}>
-              Llevás <b className="mono">{fmtUsd(ritmo.costosObra)}</b> en obra con el avance
-              al <b className="mono">{fmtPctAr(ritmo.avancePct, 0)}</b>. A este ritmo la obra completa
-              costaría <b className="mono">{fmtUsd(ritmo.obraAlRitmo)}</b> —{" "}
-              <b className="mono">{fmtUsd(ritmo.faltaSegunRitmo)}</b> más que lo ya pagado
+              Llevás <b className="mono">{fmtMoney(ritmo.costosObra)}</b> en obra con el avance
+              al <b className="mono">{fmtPct(ritmo.avancePct, 0)}</b>. A este ritmo la obra completa
+              costaría <b className="mono">{fmtMoney(ritmo.obraAlRitmo)}</b> —{" "}
+              <b className="mono">{fmtMoney(ritmo.faltaSegunRitmo)}</b> más que lo ya pagado
               {ritmo.margenAlRitmo != null && (
                 <> — y el margen quedaría en{" "}
                 <b className="mono" style={{ color: SEMAFORO_VAR[ritmo.semaforo || "rojo"] }}>
-                  {fmtPctAr(ritmo.margenAlRitmo)}
+                  {fmtPct(ritmo.margenAlRitmo)}
                 </b></>
               )}.
               {tieneFalta && ritmo.faltaSegunRitmo != null && ritmo.faltaSegunRitmo > proy.presupuestoRestante * 1.2 && (
-                <> Tu estimado de <b className="mono">{fmtUsd(proy.presupuestoRestante)}</b> puede quedar corto.</>
+                <> Tu estimado de <b className="mono">{fmtMoney(proy.presupuestoRestante)}</b> puede quedar corto.</>
               )}
             </div>
           ) : (
@@ -558,10 +558,10 @@ export default function ObraDetalle(props: ObraDetalleProps) {
               return (
                 <div key={e.precio} className={`obra2a-escenario ${e.esObjetivo ? "objetivo" : ""}`}>
                   {e.esObjetivo && <div className="obra2a-chipObjetivo mono">OBJETIVO ACTUAL</div>}
-                  <div className="obra2a-escenarioPrecio mono">{fmtUsd(e.precio)}</div>
-                  <div className="obra2a-escenarioGan mono" style={{ color: sem }}>{fmtUsdSign(e.ganancia)}</div>
+                  <div className="obra2a-escenarioPrecio mono">{fmtMoney(e.precio)}</div>
+                  <div className="obra2a-escenarioGan mono" style={{ color: sem }}>{fmtMoney(e.ganancia, "USD", { signo: true })}</div>
                   <div className="obra2a-escenarioMargen">
-                    margen <b className="mono" style={{ color: sem }}>{fmtPctAr(e.margen)}</b>
+                    margen <b className="mono" style={{ color: sem }}>{fmtPct(e.margen)}</b>
                   </div>
                 </div>
               );
@@ -616,8 +616,8 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                 {rubros.length === 0 ? (
                   <>Sin presupuesto por rubro todavía. </>
                 ) : (
-                  <>El presupuesto cargado ({fmtUsd(proy.presupuestoTotal)}) cubre solo una parte
-                  de los {fmtUsd(totalCosts)} ya gastados, así que compararlo daría porcentajes
+                  <>El presupuesto cargado ({fmtMoney(proy.presupuestoTotal)}) cubre solo una parte
+                  de los {fmtMoney(totalCosts)} ya gastados, así que compararlo daría porcentajes
                   engañosos. Se muestra cuando esté completo. </>
                 )}
                 <button className="obra2a-link" onClick={onVerPresupuestos}>
@@ -650,13 +650,13 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                       </span>
                       <span className="obra2a-rubroProy mono">/ {r.projected > 0 ? fmtNum(r.projected) : "s/p"}</span>
                       <span className="obra2a-rubroPct mono" style={{ color: excedido ? "var(--warning)" : "var(--text-tertiary)" }}>
-                        {r.projected > 0 ? fmtPctAr(r.pct, 0) : "—"}
+                        {r.projected > 0 ? fmtPct(r.pct, 0) : "—"}
                       </span>
                     </div>
                   );
                 })}
                 <div className="obra2a-rubroTotales mono">
-                  Ejecutado {fmtUsd(proy.ejecutadoEnPresupuesto)} de {fmtUsd(proy.presupuestoTotal)} presupuestados
+                  Ejecutado {fmtMoney(proy.ejecutadoEnPresupuesto)} de {fmtMoney(proy.presupuestoTotal)} presupuestados
                 </div>
               </div>
             )}
@@ -668,13 +668,13 @@ export default function ObraDetalle(props: ObraDetalleProps) {
               <div className="obra2a-kicker">RITMO DE GASTO</div>
               <div className="obra2a-ritmo">
                 <div>
-                  <div className="obra2a-ritmoLabel">Gastado en obra ({fmtPctAr(ritmo.avancePct, 0)} construido)</div>
-                  <div className="obra2a-ritmoVal mono">{fmtUsd(ritmo.costosObra)}</div>
+                  <div className="obra2a-ritmoLabel">Gastado en obra ({fmtPct(ritmo.avancePct, 0)} construido)</div>
+                  <div className="obra2a-ritmoVal mono">{fmtMoney(ritmo.costosObra)}</div>
                 </div>
                 <div>
                   <div className="obra2a-ritmoLabel">Falta, según tu estimado</div>
                   <div className="obra2a-ritmoVal mono">
-                    {tieneFalta ? fmtUsd(proy.presupuestoRestante) : "—"}
+                    {tieneFalta ? fmtMoney(proy.presupuestoRestante) : "—"}
                   </div>
                 </div>
                 <div>
@@ -686,7 +686,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                         ? "var(--warning)" : "var(--text-primary)",
                     }}
                   >
-                    {fmtUsd(ritmo.faltaSegunRitmo)}
+                    {fmtMoney(ritmo.faltaSegunRitmo)}
                   </div>
                 </div>
               </div>
@@ -714,7 +714,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                         <td className="obra2a-tdConcepto">{c.concept}</td>
                         <td className="obra2a-tdCat">{c.category}</td>
                         <td className="mono obra2a-tdMonto">
-                          {fmtUsd(usd)}
+                          {fmtMoney(usd)}
                           {c.currency === "ARS" && (
                             <span className="obra2a-tdArs mono"> ARS {fmtNum(c.amount)}</span>
                           )}

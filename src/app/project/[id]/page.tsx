@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useProject, useDeleteExpense, useDeleteCost } from "@/hooks/useProjects";
-import Header from "@/components/Header";
+import { useSharedProjects } from "@/contexts/ProjectsContext";
 import KPICard from "@/components/KPICard";
 import ProjectSummary from "@/components/ProjectSummary";
 import CostsTable from "@/components/CostsTable";
@@ -21,7 +21,7 @@ import AddInvestorModal from "@/components/AddInvestorModal";
 import ProjectAlerts from "@/components/ProjectAlerts";
 import PresupuestosPanel from "@/components/PresupuestosPanel";
 import ObraDetalle from "@/components/ObraDetalle";
-import { fmt, fmtSign, fmtPct, daysAgo, safeNum, fmtFecha } from "@/lib/format";
+import { fmtMoney, fmtPct, daysAgo, safeNum, fmtFecha } from "@/lib/format";
 import { semaforoMargen } from "@/lib/financial";
 import { statusConfig } from "@/lib/constants";
 
@@ -38,7 +38,7 @@ interface PageProps {
 // === Estilos compartidos de botones (usan variables CSS del tema) ===
 const ghostBtn: React.CSSProperties = {
   background: "var(--surface-2)",
-  backdropFilter: "blur(8px)",
+
   border: "1px solid var(--border-default)",
   borderRadius: 10,
   padding: "7px 14px",
@@ -89,7 +89,8 @@ const successBtn: React.CSSProperties = {
 export default function ProjectPage({ params }: PageProps) {
   const router = useRouter();
   const { data: session } = useSession();
-  const { project, loading, refetch } = useProject(params.id);
+  const { project, loading, refreshing, refetch } = useProject(params.id);
+  const { refetchAll } = useSharedProjects();
   const [activeSection, setActiveSection] = useState("resumen");
   const [showShareModal, setShowShareModal] = useState(false);
   const [showAddCostModal, setShowAddCostModal] = useState(false);
@@ -106,11 +107,16 @@ export default function ProjectPage({ params }: PageProps) {
   const isAdmin = userRole === "admin";
   const canEdit = userRole === "admin" || userRole === "colaborador";
 
-  // Early returns AFTER all hooks (safe: all useX hooks are above this point)
-  if (loading) {
+  // Refetch que también actualiza el contexto global (inicio + alertas)
+  const refetchAndSync = useCallback(() => {
+    refetch();
+    refetchAll();
+  }, [refetch, refetchAll]);
+
+  // Spinner solo en primera carga (no hay datos todavía)
+  if (loading && !project) {
     return (
       <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
-        <Header />
         <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--text-tertiary)" }}>
           <div style={{
             width: 40, height: 40, borderRadius: "50%",
@@ -127,7 +133,6 @@ export default function ProjectPage({ params }: PageProps) {
   if (!project) {
     return (
       <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
-        <Header />
         <div style={{ padding: "60px 20px", textAlign: "center", color: "var(--text-tertiary)" }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" style={{ marginBottom: 16, opacity: 0.3 }}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>Proyecto no encontrado</div>
@@ -158,7 +163,9 @@ export default function ProjectPage({ params }: PageProps) {
   const estMargin = !hasSale && listingPrice > 0 ? safeNum(p?.estimatedMargin) : null;
   const costRatio = buyPrice > 0 ? (totalCosts / buyPrice) * 100 : 0;
   const buyDateRaw = p?.buyDate ? new Date(p.buyDate) : null;
-  const daysActive = buyDateRaw && !isNaN(buyDateRaw.getTime()) ? Math.floor((new Date().getTime() - buyDateRaw.getTime()) / 86400000) : 0;
+  const endDate = hasSale && p?.saleDate ? new Date(p.saleDate) : new Date();
+  const daysActive = buyDateRaw && !isNaN(buyDateRaw.getTime()) && !(hasSale && !p?.saleDate)
+    ? Math.floor((endDate.getTime() - buyDateRaw.getTime()) / 86400000) : 0;
   const costsArray = Array.isArray(p?.costs) ? p.costs : [];
   const expensesArray = Array.isArray(p?.expenses) ? p.expenses : [];
   const investorsArray = Array.isArray(p?.investors) ? p.investors : [];
@@ -185,7 +192,6 @@ export default function ProjectPage({ params }: PageProps) {
   // === SINGLE RETURN — no early returns to avoid hook order issues ===
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <Header />
 
       {/* Project loaded (loading/not-found handled via early returns above) */}
       <>
@@ -197,7 +203,7 @@ export default function ProjectPage({ params }: PageProps) {
               onClick={() => router.back()}
               style={{
                 background: "var(--surface-2)",
-                backdropFilter: "blur(8px)",
+              
                 border: "1px solid var(--border-default)",
                 borderRadius: 10,
                 padding: "6px 14px",
@@ -355,7 +361,15 @@ export default function ProjectPage({ params }: PageProps) {
                 </span>
                 {p.address && <span style={{ color: "var(--text-secondary)" }}>{p.address}</span>}
                 <span style={{ color: "var(--text-secondary)" }}>Compra: {fmtFecha(p.buyDate)}</span>
-                <span style={{ color: "var(--text-secondary)" }}>{daysActive} días activo</span>
+                {hasSale ? (
+                  p.saleDate ? (
+                    <span style={{ color: "var(--text-secondary)" }}>Vendida en {daysActive} días</span>
+                  ) : (
+                    <span style={{ color: "var(--warning)", fontWeight: 500 }}>Falta la fecha de venta</span>
+                  )
+                ) : (
+                  <span style={{ color: "var(--text-secondary)" }}>{daysActive} días activo</span>
+                )}
                 <span style={{ color: "var(--text-secondary)" }}>Actualizado {daysAgo(p.lastUpdate)}</span>
               </div>
             </div>
@@ -374,29 +388,29 @@ export default function ProjectPage({ params }: PageProps) {
         >
           {(
             [
-              { label: "Compra", value: fmt(buyPrice) },
+              { label: "Compra", value: fmtMoney(buyPrice) },
               {
                 label: "Costos",
-                value: fmt(totalCosts),
+                value: fmtMoney(totalCosts),
                 sub: costRatio > 40 ? `${costRatio.toFixed(0)}% de compra` : undefined,
                 subColor: costRatio > 40 ? "var(--warning)" : undefined,
               },
               {
                 label: "Gastos",
-                value: fmt(totalExpensesUsd),
-                sub: avgMonthlyExpense > 0 ? `${fmt(avgMonthlyExpense)}/mes` : undefined,
+                value: fmtMoney(totalExpensesUsd),
+                sub: avgMonthlyExpense > 0 ? `${fmtMoney(avgMonthlyExpense)}/mes` : undefined,
               },
-              { label: "Inversión Total", value: fmt(inv), bold: true },
+              { label: "Inversión Total", value: fmtMoney(inv), bold: true },
               p.salePrice
-                ? { label: "Venta", value: fmt(salePrice) }
+                ? { label: "Venta", value: fmtMoney(salePrice) }
                 : {
                     label: "Valor publicación",
-                    value: p.listingPrice ? fmt(listingPrice) : "—",
+                    value: p.listingPrice ? fmtMoney(listingPrice) : "—",
                   },
               p.salePrice
                 ? {
                     label: "Resultado",
-                    value: fmtSign(result!),
+                    value: fmtMoney(result!, "USD", { signo: true }),
                     color: result! >= 0 ? "var(--success)" : "var(--danger)",
                   }
                 : {
@@ -508,7 +522,7 @@ export default function ProjectPage({ params }: PageProps) {
                 expenses={expensesArray}
                 partidas={p.partidas || []}
                 canEdit={canEdit}
-                onRefetch={() => refetch()}
+                onRefetch={() => refetchAndSync()}
                 onVerCostos={() => setActiveSection("costos")}
                 onVerPresupuestos={() => setActiveSection("presupuestos")}
               />
@@ -652,7 +666,7 @@ export default function ProjectPage({ params }: PageProps) {
                           Total gastos
                         </div>
                         <div className="tabular truncate" style={{ fontSize: "clamp(14px, 2vw, 18px)", fontWeight: 700, color: "var(--text-primary)" }}>
-                          U$D {totalExpensesUsd.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {fmtMoney(totalExpensesUsd)}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>
                           {expenseMonths} {expenseMonths === 1 ? "mes" : "meses"}
@@ -669,7 +683,7 @@ export default function ProjectPage({ params }: PageProps) {
                           Promedio mensual
                         </div>
                         <div className="tabular truncate" style={{ fontSize: "clamp(14px, 2vw, 18px)", fontWeight: 700, color: "var(--text-primary)" }}>
-                          U$D {avgMonthlyExpense.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {fmtMoney(avgMonthlyExpense)}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>
                           USD/mes
@@ -742,7 +756,7 @@ export default function ProjectPage({ params }: PageProps) {
                                   fontSize: 13, fontWeight: 600, color: "var(--text-primary)",
                                   minWidth: 80, textAlign: "right",
                                 }}>
-                                  U$D {amount.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  {fmtMoney(amount)}
                                 </span>
                               </div>
                             </div>
@@ -787,7 +801,7 @@ export default function ProjectPage({ params }: PageProps) {
                 if (!window.confirm(`¿Eliminar el costo "${cost.concept}"? Esta acción no se puede deshacer.`)) return;
                 try {
                   await deleteCost(params.id, cost.id);
-                  refetch();
+                  refetchAndSync();
                 } catch (err) {
                   window.alert("No se pudo eliminar el costo. " + (err instanceof Error ? err.message : ""));
                 }
@@ -806,7 +820,7 @@ export default function ProjectPage({ params }: PageProps) {
                 if (!window.confirm(`¿Eliminar el gasto "${label}"? Esta acción no se puede deshacer.`)) return;
                 try {
                   await deleteExpense(params.id, exp.id);
-                  refetch();
+                  refetchAndSync();
                 } catch (err) {
                   window.alert("No se pudo eliminar el gasto. " + (err instanceof Error ? err.message : ""));
                 }
@@ -822,6 +836,7 @@ export default function ProjectPage({ params }: PageProps) {
               buyPrice={buyPrice}
               totalExpenses={totalExpensesUsd}
               canEdit={canEdit}
+              onChanged={refetchAndSync}
             />
           )}
 
@@ -844,7 +859,7 @@ export default function ProjectPage({ params }: PageProps) {
               projectId={params.id}
               saleResult={hasSale ? result : null}
               onAddInvestor={() => setShowAddInvestorModal(true)}
-              onRefetch={() => refetch()}
+              onRefetch={() => refetchAndSync()}
             />
           )}
         </div>
@@ -854,14 +869,14 @@ export default function ProjectPage({ params }: PageProps) {
         projectId={params.id}
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
-        onSuccess={() => refetch()}
+        onSuccess={() => refetchAndSync()}
       />
 
       <AutoImputarModal
         projectId={params.id}
         isOpen={showAutoImputarModal}
         onClose={() => setShowAutoImputarModal(false)}
-        onSuccess={() => refetch()}
+        onSuccess={() => refetchAndSync()}
       />
 
       <AddCostModal
@@ -870,7 +885,7 @@ export default function ProjectPage({ params }: PageProps) {
         partidas={p.partidas || []}
         isOpen={showAddCostModal}
         onClose={() => { setShowAddCostModal(false); setEditingCost(null); }}
-        onSuccess={() => refetch()}
+        onSuccess={() => refetchAndSync()}
         costToEdit={editingCost}
       />
 
@@ -878,7 +893,7 @@ export default function ProjectPage({ params }: PageProps) {
         projectId={params.id}
         isOpen={showAddExpenseModal}
         onClose={() => { setShowAddExpenseModal(false); setEditingExpense(null); }}
-        onSuccess={() => refetch()}
+        onSuccess={() => refetchAndSync()}
         expenseToEdit={editingExpense}
       />
 
@@ -886,7 +901,7 @@ export default function ProjectPage({ params }: PageProps) {
         projectId={params.id}
         isOpen={showRegisterSaleModal}
         onClose={() => setShowRegisterSaleModal(false)}
-        onSuccess={() => refetch()}
+        onSuccess={() => refetchAndSync()}
         investors={investorsArray}
         totalInvestment={inv}
         initialSalePrice={p.salePrice}
@@ -899,7 +914,7 @@ export default function ProjectPage({ params }: PageProps) {
         projectId={params.id}
         isOpen={showAddInvestorModal}
         onClose={() => setShowAddInvestorModal(false)}
-        onSuccess={() => refetch()}
+        onSuccess={() => refetchAndSync()}
       />
       </>
     </main>

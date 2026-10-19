@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import Header from "@/components/Header";
 import ProjectCard from "@/components/ProjectCard";
 import ProjectComparison from "@/components/ProjectComparison";
 import AddProjectModal from "@/components/AddProjectModal";
@@ -57,7 +56,6 @@ export default function Home() {
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <Header />
 
       <div className="page-container" style={{ padding: "24px", maxWidth: 1400, margin: "0 auto" }}>
         {/* Filter bar */}
@@ -65,7 +63,6 @@ export default function Home() {
           <div style={{
             display: "flex",
             background: "var(--surface-1)",
-            backdropFilter: "blur(12px)",
             borderRadius: 12,
             border: "1px solid var(--border-default)",
             overflow: "hidden",
@@ -105,7 +102,7 @@ export default function Home() {
               border: "1px solid var(--border-default)",
               borderRadius: 12,
               background: "var(--surface-1)",
-              backdropFilter: "blur(12px)",
+
               color: "var(--text-primary)",
               cursor: "pointer",
               outline: "none",
@@ -132,7 +129,7 @@ export default function Home() {
               width: 200,
               minWidth: 0,
               background: "var(--surface-1)",
-              backdropFilter: "blur(12px)",
+
               color: "var(--text-primary)",
             }}
           />
@@ -180,7 +177,7 @@ export default function Home() {
                 onClick={() => setShowAddModal(true)}
                 style={{
                   background: "var(--surface-1)",
-                  backdropFilter: "blur(8px)",
+
                   borderRadius: 16,
                   border: "2px dashed var(--border-default)",
                   display: "flex",

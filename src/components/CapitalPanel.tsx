@@ -1,7 +1,7 @@
 "use client";
 
 import { Investor } from "@/types";
-import { fmt } from "@/lib/format";
+import { fmtMoney } from "@/lib/format";
 
 interface CapitalPanelProps {
   investors: Investor[];
@@ -127,7 +127,7 @@ export default function CapitalPanel({
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {fmt(amount)}
+                  {fmtMoney(amount)}
                 </span>
               </div>
             );
@@ -188,7 +188,7 @@ export default function CapitalPanel({
           >
             Total invertido
           </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>{fmt(totalInvested)}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>{fmtMoney(totalInvested)}</div>
         </div>
         <div
           style={{
@@ -214,7 +214,7 @@ export default function CapitalPanel({
             {totalCapital.toFixed(1)}%
           </div>
           <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
-            {fmt((totalCapital / 100) * totalInvested)}
+            {fmtMoney((totalCapital / 100) * totalInvested)}
           </div>
         </div>
         <div
@@ -361,7 +361,7 @@ export default function CapitalPanel({
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 4 }}>Monto aportado</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{fmt(investor.amountInvested || 0)}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{fmtMoney(investor.amountInvested || 0)}</div>
                 </div>
               </div>
 
@@ -369,7 +369,7 @@ export default function CapitalPanel({
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                    Capital: {investor.capitalPercentage.toFixed(1)}% ({fmt(capitalAmount)} USD)
+                    Capital: {investor.capitalPercentage.toFixed(1)}% ({fmtMoney(capitalAmount)} USD)
                   </span>
                 </div>
                 <div style={{ height: 6, background: "var(--surface-1)", borderRadius: 3, overflow: "hidden" }}>
@@ -425,7 +425,7 @@ export default function CapitalPanel({
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>Total invertido</div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{fmt(totalInvested)}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{fmtMoney(totalInvested)}</div>
       </div>
 
       {/* Dividend distribution section (only when project is vendido and has saleResult) */}
@@ -451,7 +451,7 @@ export default function CapitalPanel({
                   }}
                 >
                   <span style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500 }}>{investor.name}</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--success)" }}>{fmt(profitShare)}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--success)" }}>{fmtMoney(profitShare)}</span>
                 </div>
               );
             })}

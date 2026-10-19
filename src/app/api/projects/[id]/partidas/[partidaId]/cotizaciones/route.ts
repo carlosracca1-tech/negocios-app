@@ -115,7 +115,7 @@ export async function POST(
         },
       });
 
-      const currencyLabel = data.currency === "ARS" ? "AR$" : "USD";
+      const currencyLabel = data.currency === "ARS" ? "ARS" : "USD";
       await tx.timelineEvent.create({
         data: {
           projectId,

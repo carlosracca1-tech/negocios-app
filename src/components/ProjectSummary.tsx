@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { Cost, Expense } from "@/types";
-import { fmt, fmtSign, fmtPct, safeNum } from "@/lib/format";
+import { fmtMoney, fmtPct, safeNum } from "@/lib/format";
 import { semaforoMargen } from "@/lib/financial";
 
 /**
@@ -137,7 +137,7 @@ export default function ProjectSummary({
       arr.push({
         kind: "success",
         title: "📊 Top categoría",
-        text: (<><strong>{top.cat}</strong> fue donde más se gastó: <strong>{fmt(top.total)}</strong> ({pct.toFixed(0)}% del total).</>),
+        text: (<><strong>{top.cat}</strong> fue donde más se gastó: <strong>{fmtMoney(top.total)}</strong> ({pct.toFixed(0)}% del total).</>),
       });
     }
 
@@ -212,21 +212,21 @@ export default function ProjectSummary({
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {/* ============ FILA DE KPIs ============ */}
       <div className="kpi-grid-4">
-        <KpiCard label="Compra" value={fmt(buyPrice)} />
+        <KpiCard label="Compra" value={fmtMoney(buyPrice)} />
         <KpiCard
           label="Inversión total"
-          value={fmt(investment)}
-          sub={totalCosts + totalExpenses > 0 ? `+${fmt(totalCosts + totalExpenses)} en obra` : undefined}
+          value={fmtMoney(investment)}
+          sub={totalCosts + totalExpenses > 0 ? `+${fmtMoney(totalCosts + totalExpenses)} en obra` : undefined}
         />
         {hasSale ? (
-          <KpiCard label="Venta" value={fmt(salePrice)} />
+          <KpiCard label="Venta" value={fmtMoney(salePrice)} />
         ) : (
-          <KpiCard label="Valor publicación" value={listingPrice > 0 ? fmt(listingPrice) : "—"} />
+          <KpiCard label="Valor publicación" value={listingPrice > 0 ? fmtMoney(listingPrice) : "—"} />
         )}
         {hasSale && result !== null ? (
           <KpiCard
             label="Resultado"
-            value={fmtSign(result)}
+            value={fmtMoney(result, "USD", { signo: true })}
             valueColor={result >= 0 ? "var(--success)" : "var(--danger)"}
             labelColor={result >= 0 ? "var(--success)" : "var(--danger)"}
             sub={margin !== null ? `${margin.toFixed(1)}% de margen` : undefined}
@@ -250,13 +250,13 @@ export default function ProjectSummary({
         <div className="pie-grid">
           <PieCard
             title="Por categoría"
-            subtitle={`${fmt(totalCosts)} en ${byCategory.length} ${byCategory.length === 1 ? "área" : "áreas"}`}
+            subtitle={`${fmtMoney(totalCosts)} en ${byCategory.length} ${byCategory.length === 1 ? "área" : "áreas"}`}
             data={byCategory.map(({ cat, total }, i) => ({
               label: cat,
               value: total,
               colorVar: SHADE_VARS[i % SHADE_VARS.length],
             }))}
-            totalLabel={fmt(totalCosts)}
+            totalLabel={fmtMoney(totalCosts)}
           />
           <PieCard
             title="Por tipo de gasto"
@@ -266,7 +266,7 @@ export default function ProjectSummary({
               value: t.value,
               colorVar: t.colorVar,
             }))}
-            totalLabel={fmt(totalCosts)}
+            totalLabel={fmtMoney(totalCosts)}
           />
         </div>
       )}
@@ -338,7 +338,7 @@ export default function ProjectSummary({
               value={Math.abs(result ?? 0)}
               maxScale={Math.abs(result ?? 0) * 1.4 || 100}
               color={(result ?? 0) >= 0 ? "good" : "danger"}
-              fillLabel={fmtSign(result ?? 0)}
+              fillLabel={fmtMoney(result ?? 0, "USD", { signo: true })}
             />
           </>
         ) : estimatedMargin !== null ? (
@@ -419,7 +419,6 @@ function KpiCard({ label, value, sub, valueColor, labelColor, subColor, featured
         boxShadow: featured
           ? "0 1px 0 0 var(--success-border) inset, 0 8px 24px -8px rgba(0,0,0,0.4), 0 0 0 1px var(--success-border), 0 0 40px -10px var(--success-soft)"
           : "var(--shadow-card)",
-        backdropFilter: "blur(20px)",
         transition: "transform 0.2s, box-shadow 0.2s",
         position: "relative",
         overflow: "hidden",
@@ -509,7 +508,7 @@ function DonutChart({ data, totalLabel }: { data: PieDataPoint[]; totalLabel?: s
         Total
       </text>
       <text x={cx} y={cy + 16} textAnchor="middle" fill="var(--text-primary)" fontSize="16" fontWeight="700" letterSpacing="-0.3">
-        {totalLabel || fmt(total)}
+        {totalLabel || fmtMoney(total)}
       </text>
     </svg>
   );
@@ -545,7 +544,7 @@ function PieCard({ title, subtitle, data, totalLabel }: { title: string; subtitl
                   {d.label}
                 </span>
                 <span className="tabular" style={{ color: "var(--text-tertiary)", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>
-                  {fmt(d.value)} · {pct.toFixed(0)}%
+                  {fmtMoney(d.value)} · {pct.toFixed(0)}%
                 </span>
               </div>
             );
@@ -680,7 +679,7 @@ function ResponsiveTreemap({
               </div>
               <div>
                 <div className="tabular truncate" style={{ fontSize: row >= 2 ? 15 : 13, fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.3px" }}>
-                  {fmt(c.total)}
+                  {fmtMoney(c.total)}
                 </div>
                 <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{pct.toFixed(0)}%</div>
               </div>
@@ -710,7 +709,7 @@ function ResponsiveTreemap({
                   <span style={{ fontSize: 9, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.4 }}>{typeLabel}</span>
                 </div>
                 <div className="tabular" style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
-                  {fmt(c.total)} <span style={{ color: "var(--text-tertiary)", fontWeight: 500, fontSize: 11 }}>{pct.toFixed(0)}%</span>
+                  {fmtMoney(c.total)} <span style={{ color: "var(--text-tertiary)", fontWeight: 500, fontSize: 11 }}>{pct.toFixed(0)}%</span>
                 </div>
               </div>
               <div style={{ height: 6, background: "var(--surface-3)", borderRadius: 3, overflow: "hidden" }}>

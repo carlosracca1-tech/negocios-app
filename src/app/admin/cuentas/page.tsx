@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import { cuentasApi, Cuenta } from "@/lib/api-client";
 
 interface Toast {
@@ -14,7 +13,6 @@ interface Toast {
 
 const card: React.CSSProperties = {
   background: "var(--surface-1)",
-  backdropFilter: "blur(12px)",
   borderRadius: 16,
   border: "1px solid var(--border-default)",
 };
@@ -106,7 +104,6 @@ export default function AdminCuentasPage() {
   if (status === "loading") {
     return (
       <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
-        <Header />
         <div style={{ textAlign: "center", padding: 60, color: "var(--text-tertiary)" }}>
           Cargando...
         </div>
@@ -124,8 +121,6 @@ export default function AdminCuentasPage() {
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <Header />
-
       <div style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
         <button
           onClick={() => router.push("/")}

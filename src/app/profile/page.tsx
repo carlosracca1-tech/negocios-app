@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
-
 interface UserData {
   id: string;
   name: string;
@@ -206,7 +204,6 @@ export default function ProfilePage() {
   if (status === "loading" || loading) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-        <Header />
         <div
           style={{
             display: "flex",
@@ -237,7 +234,6 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-        <Header />
         <div
           style={{
             display: "flex",
@@ -261,8 +257,6 @@ export default function ProfilePage() {
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <Header />
-
       <div style={{ padding: "32px 24px", maxWidth: 900, margin: "0 auto" }}>
         {/* Page title */}
         <div style={{ marginBottom: 32 }}>
@@ -278,7 +272,6 @@ export default function ProfilePage() {
         <div
           style={{
             background: "var(--surface-1)",
-            backdropFilter: "blur(12px)",
             borderRadius: 16,
             border: "1px solid var(--border-default)",
             padding: 32,
@@ -469,7 +462,6 @@ export default function ProfilePage() {
         <div
           style={{
             background: "var(--surface-1)",
-            backdropFilter: "blur(12px)",
             borderRadius: 16,
             border: "1px solid var(--border-default)",
             padding: 32,

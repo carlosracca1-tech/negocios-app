@@ -138,7 +138,7 @@ export async function POST(
       });
 
       // Auto-create timeline event
-      const currencyLabel = data.currency === "ARS" ? "AR$" : "$";
+      const currencyLabel = data.currency === "ARS" ? "ARS" : "USD";
       const usdNote = data.currency === "ARS" && amountUsd ? ` (USD ${amountUsd.toFixed(2)})` : "";
       const postSaleNote = project.status === "vendido" ? " [post-venta]" : "";
       await tx.timelineEvent.create({

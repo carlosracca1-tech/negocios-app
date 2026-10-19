@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useSharedProjects } from "@/contexts/ProjectsContext";
-import { fmt, safeNum } from "@/lib/format";
+import { fmtMoney, fmtPct, safeNum } from "@/lib/format";
+import { semaforoMargen } from "@/lib/financial";
 import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
@@ -12,8 +13,22 @@ export default function Header() {
   const { projects, loading: projectsLoading, alerts } = useSharedProjects();
   const [showAlerts, setShowAlerts] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem("negocios-dismissed-alerts");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   const alertsRef = useRef<HTMLDivElement>(null);
+
+  // Persistir alertas descartadas en localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("negocios-dismissed-alerts", JSON.stringify([...dismissedAlerts]));
+    } catch { /* silencioso */ }
+  }, [dismissedAlerts]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -53,7 +68,6 @@ export default function Header() {
       className="header-root"
       style={{
         background: "var(--surface-glass)",
-        backdropFilter: "blur(20px)",
         borderBottom: "1px solid var(--border-default)",
         padding: "0 24px",
         height: 64,
@@ -66,7 +80,7 @@ export default function Header() {
       }}
     >
       {/* Logo */}
-      <a
+      <Link
         href="/"
         className="header-logo"
         aria-label="N$ — Inicio"
@@ -77,13 +91,6 @@ export default function Header() {
           whiteSpace: "nowrap",
           marginRight: 32,
           textDecoration: "none",
-          transition: "filter 0.2s",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.filter = "drop-shadow(0 0 12px var(--accent-glow))";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.filter = "none";
         }}
       >
         <svg width="32" height="26" viewBox="0 0 120 100" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -103,7 +110,7 @@ export default function Header() {
         <span style={{ fontSize: 17, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.3px" }}>
           Seguimiento
         </span>
-      </a>
+      </Link>
 
       {/* KPIs globales (hidden en mobile) */}
       <div className="header-kpis" style={{ display: "flex", gap: 4, flex: 1, minWidth: 0 }}>
@@ -114,9 +121,9 @@ export default function Header() {
             {[
               { label: "ACTIVOS", value: String(activos), color: "var(--text-primary)" },
               { label: "VENDIDOS", value: String(vendidos), color: "var(--success)" },
-              { label: "INVERTIDO", value: fmt(invertido), color: "var(--text-primary)", sublabel: "en activos" },
-              { label: "RESULTADO", value: fmt(resultado), color: resultado >= 0 ? "var(--success)" : "var(--danger)", sublabel: "en vendidos" },
-              { label: "MARGEN PROM.", value: `${margenProm.toFixed(1)}%`, color: margenProm >= 0 ? "var(--success)" : "var(--danger)", sublabel: "en vendidos" },
+              { label: "INVERTIDO", value: fmtMoney(invertido), color: "var(--text-primary)", sublabel: "en activos" },
+              { label: "RESULTADO", value: fmtMoney(resultado), color: resultado >= 0 ? "var(--success)" : "var(--danger)", sublabel: "en vendidos" },
+              { label: "MARGEN PROM.", value: fmtPct(margenProm), color: semaforoMargen(margenProm) === "verde" ? "var(--success)" : semaforoMargen(margenProm) === "ambar" ? "var(--warning)" : "var(--danger)", sublabel: "en vendidos" },
             ].map((kpi, i) => (
               <div
                 key={i}

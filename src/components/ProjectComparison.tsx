@@ -1,7 +1,7 @@
 "use client";
 
 import { Project } from "@/types";
-import { fmt, fmtPct, safeNum } from "@/lib/format";
+import { fmtMoney, fmtPct, safeNum } from "@/lib/format";
 import { semaforoMargen } from "@/lib/financial";
 
 const SEMAFORO_COLOR: Record<string, string> = {
@@ -74,15 +74,15 @@ export default function ProjectComparison({ projects }: ProjectComparisonProps) 
                       {p.status}
                     </span>
                   </td>
-                  <td style={tdRight}>{fmt(p.buyPrice)}</td>
-                  <td style={tdRight}>{fmt(p.investment)}</td>
+                  <td style={tdRight}>{fmtMoney(p.buyPrice)}</td>
+                  <td style={tdRight}>{fmtMoney(p.investment)}</td>
                   <td style={{
                     ...tdRight,
                     color: hasSale
                       ? safeNum(p.result) >= 0 ? "var(--success)" : "var(--danger)"
                       : "var(--text-tertiary)",
                   }}>
-                    {hasSale ? fmt(p.result) : "—"}
+                    {hasSale ? fmtMoney(p.result) : "—"}
                   </td>
                   <td style={{
                     ...tdRight,

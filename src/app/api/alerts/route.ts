@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isAdmin, orgScope } from "@/lib/api-helpers";
 import { computeProjectFinancials, computeBudgetProjection, safe, margenSobreInversion } from "@/lib/financial";
 import { rethrowNextError } from "@/lib/route-utils";
+import { fmtMoney } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
           projectId: project.id,
           projectName: project.name,
           type: "loss",
-          message: `Proyecto vendido con pérdida: $${Math.abs(result).toFixed(2)}`,
+          message: `Proyecto vendido con pérdida: ${fmtMoney(Math.abs(result), "USD", { decimales: 2 })}`,
           priority: 1,
           color: "#ef4444",
           data: { result, margin: investment > 0 ? margenSobreInversion(result, investment).toFixed(2) : "0" },
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
           projectId: project.id,
           projectName: project.name,
           type: "high_costs",
-          message: `Costos muy altos: $${totalCosts.toFixed(2)} (${((totalCosts / bp) * 100).toFixed(1)}% del precio de compra)`,
+          message: `Costos muy altos: ${fmtMoney(totalCosts, "USD", { decimales: 2 })} (${((totalCosts / bp) * 100).toFixed(1)}% del precio de compra)`,
           priority: 1,
           color: "#f59e0b",
           data: {

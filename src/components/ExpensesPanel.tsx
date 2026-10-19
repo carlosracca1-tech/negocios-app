@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Expense } from "@/types";
-import { textoVencimiento } from "@/lib/format";
+import { textoVencimiento, fmtMoney } from "@/lib/format";
 
 interface ExpensesPanelProps {
   expenses: Expense[];
@@ -11,12 +11,6 @@ interface ExpensesPanelProps {
   onDelete?: (expense: Expense) => void;
   canEdit?: boolean;
 }
-
-const fmt = (n: number) =>
-  `$${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-const fmtUsd = (n: number) =>
-  `U$D ${n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const monthNames = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -128,10 +122,10 @@ export default function ExpensesPanel({ expenses, onAddClick, onEditClick, onDel
       {/* KPIs */}
       <div className="kpi-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
         {[
-          { label: "Total USD", value: fmtUsd(stats.totalUsd), sub: `${stats.months} meses` },
-          { label: "Promedio mensual", value: fmtUsd(stats.avgUsd), sub: "USD/mes" },
-          { label: "Mes más alto", value: stats.maxMonth ? fmtUsd(stats.maxMonth.totalUsd) : "—", sub: stats.maxMonth ? formatPeriod(stats.maxMonth.period) : "", color: "var(--danger)" },
-          { label: "Mes más bajo", value: stats.minMonth ? fmtUsd(stats.minMonth.totalUsd) : "—", sub: stats.minMonth ? formatPeriod(stats.minMonth.period) : "", color: "var(--success)" },
+          { label: "Total USD", value: fmtMoney(stats.totalUsd), sub: `${stats.months} meses` },
+          { label: "Promedio mensual", value: fmtMoney(stats.avgUsd), sub: "USD/mes" },
+          { label: "Mes más alto", value: stats.maxMonth ? fmtMoney(stats.maxMonth.totalUsd) : "—", sub: stats.maxMonth ? formatPeriod(stats.maxMonth.period) : "", color: "var(--text-secondary)" },
+          { label: "Mes más bajo", value: stats.minMonth ? fmtMoney(stats.minMonth.totalUsd) : "—", sub: stats.minMonth ? formatPeriod(stats.minMonth.period) : "", color: "var(--text-secondary)" },
         ].map((kpi, i) => (
           <div key={i} className="kpi-card" style={{ background: "var(--surface-2)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--border-default)" }}>
             <div className="kpi-label" style={{ fontSize: 10, fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{kpi.label}</div>
@@ -206,10 +200,10 @@ export default function ExpensesPanel({ expenses, onAddClick, onEditClick, onDel
                 </div>
                 <div className="month-totals" style={{ display: "flex", gap: 16, alignItems: "center" }}>
                   {month.totalArs > 0 && (
-                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{fmt(month.totalArs)}</span>
+                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{fmtMoney(month.totalArs, "ARS")}</span>
                   )}
                   <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
-                    {fmtUsd(month.totalUsd)}
+                    {fmtMoney(month.totalUsd)}
                   </span>
                 </div>
               </div>
@@ -242,10 +236,10 @@ export default function ExpensesPanel({ expenses, onAddClick, onEditClick, onDel
                     )}
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
-                        {exp.currency === "ARS" ? fmt(exp.amount) : fmtUsd(exp.amount)}
+                        {fmtMoney(exp.amount, exp.currency as "USD" | "ARS", { decimales: 2 })}
                       </div>
                       {exp.currency === "ARS" && exp.amountUsd && (
-                        <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{fmtUsd(exp.amountUsd)}</div>
+                        <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{fmtMoney(exp.amountUsd, "USD", { decimales: 2 })}</div>
                       )}
                     </div>
                     {canEdit && (onEditClick || onDelete) && (
@@ -316,10 +310,10 @@ export default function ExpensesPanel({ expenses, onAddClick, onEditClick, onDel
                   </td>
                   <td style={{ padding: "10px 14px", color: "var(--text-primary)", fontWeight: 500 }}>{exp.concept}</td>
                   <td style={{ padding: "10px 14px", textAlign: "right", color: "var(--text-primary)", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                    {exp.currency === "ARS" ? fmt(exp.amount) : fmtUsd(exp.amount)}
+                    {fmtMoney(exp.amount, exp.currency as "USD" | "ARS", { decimales: 2 })}
                   </td>
                   <td style={{ padding: "10px 14px", textAlign: "right", color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>
-                    {exp.amountUsd ? fmtUsd(exp.amountUsd) : "—"}
+                    {exp.amountUsd ? fmtMoney(exp.amountUsd, "USD", { decimales: 2 }) : "—"}
                   </td>
                   <td style={{ padding: "10px 14px", textAlign: "center" }}>
                     {exp.receiptUrl ? (
