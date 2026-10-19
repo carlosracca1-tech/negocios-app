@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Project, Cost, Expense, TimelineEvent, ProjectAccess } from "@/types";
 import { projectsApi, costsApi, expensesApi, timelineApi, accessApi, investorsApi, Alert, alertsApi } from "@/lib/api-client";
 
@@ -18,18 +18,28 @@ export interface ProjectDetail extends Project {
 export function useProjects(type?: string, status?: string, search?: string) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasData = useRef(false);
 
   const fetch = useCallback(async () => {
+    const isRefresh = hasData.current;
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       const data = await projectsApi.list(type, status, search);
       setProjects(data);
+      hasData.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch projects");
+      // En refresh, mantiene los datos viejos
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [type, status, search]);
 
@@ -37,39 +47,38 @@ export function useProjects(type?: string, status?: string, search?: string) {
     fetch();
   }, [fetch]);
 
-  return { projects, loading, error, refetch: fetch };
+  return { projects, loading, refreshing, error, refetch: fetch };
 }
 
 // ============================================================================
 // useProject: Fetch single project with all related data
-// The main /api/projects/[id] endpoint already includes costs, investors,
-// access, and timeline via Prisma includes. We use that as the primary source
-// and only fetch sub-resources as fallbacks to avoid 403 errors from
-// the access endpoint for non-admin users.
 // ============================================================================
 
 export function useProject(id: string) {
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasData = useRef(false);
 
   const fetch = useCallback(async () => {
     if (!id) return;
+    const isRefresh = hasData.current;
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
-      // The main project endpoint already returns costs, investors, access, timeline
       const proj = await projectsApi.get(id);
 
-      // Use data from the main response directly
-      // Only fetch sub-resources if they're missing from the main response
       let costs = proj.costs;
       let expenses = proj.expenses;
       let timeline = proj.timeline;
       let access = proj.access;
 
-      // Fallback: fetch missing sub-resources individually (with error tolerance)
       const promises: Promise<void>[] = [];
 
       if (!costs) {
@@ -98,10 +107,13 @@ export function useProject(id: string) {
       }
 
       setProject({ ...proj, costs: costs || [], expenses: expenses || [], timeline: timeline || [], access: access || [] });
+      hasData.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch project");
+      // En refresh, mantiene los datos viejos
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [id]);
 
@@ -109,7 +121,7 @@ export function useProject(id: string) {
     fetch();
   }, [fetch]);
 
-  return { project, loading, error, refetch: fetch };
+  return { project, loading, refreshing, error, refetch: fetch };
 }
 
 // ============================================================================
@@ -120,13 +132,16 @@ export function useAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasData = useRef(false);
 
   const fetch = useCallback(async () => {
+    const isRefresh = hasData.current;
     try {
-      setLoading(true);
+      if (!isRefresh) setLoading(true);
       setError(null);
       const data = await alertsApi.list();
       setAlerts(data);
+      hasData.current = true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch alerts");
     } finally {
