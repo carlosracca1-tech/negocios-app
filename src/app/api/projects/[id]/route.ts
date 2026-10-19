@@ -6,7 +6,7 @@ import {
   checkProjectAccess,
   updateProjectSchema,
 } from "@/lib/api-helpers";
-import { computeProjectFinancials, safe, computeAvancePonderado, EtapasAvance } from "@/lib/financial";
+import { computeProjectFinancials, computeHoldingMetrics, safe, computeAvancePonderado, EtapasAvance } from "@/lib/financial";
 import { rethrowNextError } from "@/lib/route-utils";
 import { notifyProjectUsers } from "@/lib/notifications";
 
@@ -102,10 +102,21 @@ export async function GET(
       );
     }
 
+    const holding = computeHoldingMetrics({
+      buyDate: project.buyDate,
+      saleDate: project.saleDate,
+      isVendido: project.status === "vendido",
+      investment: financials.investment,
+      result: financials.result,
+      marginPct: financials.margin,
+    });
+
     const projectWithComputed = {
       ...project,
       buyPrice: safe(project.buyPrice),
       ...financials,
+      daysHeld: holding.daysHeld,
+      annualizedReturn: holding.annualizedPct,
       investors: filteredInvestors,
       // Solo admin ve la lista de accesos
       access: userIsAdmin ? project.access : [],

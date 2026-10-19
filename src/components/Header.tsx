@@ -164,6 +164,7 @@ export default function Header() {
 
         <div ref={alertsRef} style={{ position: "relative" }}>
           <button
+            aria-label="Alertas y notificaciones"
             onClick={() => {
               setShowAlerts(!showAlerts);
               if (!showAlerts && notifications.length > 0) {
@@ -221,9 +222,8 @@ export default function Header() {
                 position: "absolute",
                 top: 44,
                 right: 0,
-                background: "var(--surface-glass)",
-                backdropFilter: "blur(20px)",
-                border: "1px solid var(--border-default)",
+                background: "var(--surface-solid)",
+                border: "1px solid var(--border-strong)",
                 borderRadius: 14,
                 boxShadow: "var(--shadow-elevated)",
                 width: 340,

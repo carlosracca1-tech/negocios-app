@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Expense } from "@/types";
+import { textoVencimiento } from "@/lib/format";
 
 interface ExpensesPanelProps {
   expenses: Expense[];
@@ -15,7 +16,7 @@ const fmt = (n: number) =>
   `$${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const fmtUsd = (n: number) =>
-  `U$D ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `U$D ${n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const monthNames = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -223,6 +224,14 @@ export default function ExpensesPanel({ expenses, onAddClick, onEditClick, onDel
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.concept}</div>
                       {exp.notes && <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.notes}</div>}
+                      {(() => {
+                        const due = (exp as any).dueDate;
+                        if (!due || (exp as any).paidDate) return null;
+                        const txt = textoVencimiento(due);
+                        if (!txt) return null;
+                        const vencido = txt.startsWith("venció");
+                        return <div style={{ fontSize: 11, color: vencido ? "var(--danger)" : "var(--warning)", marginTop: 1, fontWeight: 500 }}>{txt}</div>;
+                      })()}
                     </div>
                   </div>
                   <div className="expense-item-amounts" style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>

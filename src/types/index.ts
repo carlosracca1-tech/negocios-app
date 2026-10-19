@@ -42,6 +42,10 @@ export interface Project {
   result?: number;
   margin?: number;
   estimatedMargin?: number;
+  /** Días desde la compra hasta la venta (o hasta hoy) */
+  daysHeld?: number;
+  /** Rentabilidad anualizada (%) */
+  annualizedReturn?: number | null;
   investorCount?: number;
   costCount?: number;
   costs?: Cost[];
@@ -109,6 +113,8 @@ export interface Expense {
   receiptUrl: string | null;
   receiptName: string | null;
   notes: string | null;
+  /** Fecha de vencimiento (seguros, impuestos, patente) */
+  dueDate?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

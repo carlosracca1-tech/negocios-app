@@ -21,8 +21,15 @@ import AddInvestorModal from "@/components/AddInvestorModal";
 import ProjectAlerts from "@/components/ProjectAlerts";
 import PresupuestosPanel from "@/components/PresupuestosPanel";
 import ObraDetalle from "@/components/ObraDetalle";
-import { fmt, fmtSign, fmtPct, daysAgo, safeNum } from "@/lib/format";
+import { fmt, fmtSign, fmtPct, daysAgo, safeNum, fmtFecha } from "@/lib/format";
+import { semaforoMargen } from "@/lib/financial";
 import { statusConfig } from "@/lib/constants";
+
+const SEMAFORO_COLOR: Record<string, string> = {
+  verde: "var(--success)",
+  ambar: "var(--warning)",
+  rojo: "var(--danger)",
+};
 
 interface PageProps {
   params: { id: string };
@@ -246,8 +253,20 @@ export default function ProjectPage({ params }: PageProps) {
                 onMouseLeave={ghostBtnLeave}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>Exportar</span>
+                <span>JSON</span>
               </button>
+            )}
+            {canEdit && (
+              <a
+                href={`/api/projects/${params.id}/export?format=csv`}
+                download
+                style={{ ...ghostBtn, textDecoration: "none" }}
+                onMouseEnter={ghostBtnHover as any}
+                onMouseLeave={ghostBtnLeave as any}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>CSV</span>
+              </a>
             )}
             {/* Compartir */}
             {isAdmin && (
@@ -335,7 +354,7 @@ export default function ProjectPage({ params }: PageProps) {
                   {p.type}
                 </span>
                 {p.address && <span style={{ color: "var(--text-secondary)" }}>{p.address}</span>}
-                <span style={{ color: "var(--text-secondary)" }}>Compra: {new Date(p.buyDate).toLocaleDateString("es-AR")}</span>
+                <span style={{ color: "var(--text-secondary)" }}>Compra: {fmtFecha(p.buyDate)}</span>
                 <span style={{ color: "var(--text-secondary)" }}>{daysActive} días activo</span>
                 <span style={{ color: "var(--text-secondary)" }}>Actualizado {daysAgo(p.lastUpdate)}</span>
               </div>
@@ -383,13 +402,13 @@ export default function ProjectPage({ params }: PageProps) {
                 : {
                     label: "Margen est.",
                     value: estMargin !== null ? fmtPct(estMargin) : "—",
-                    color: estMargin !== null ? (estMargin >= 0 ? "var(--success)" : "var(--danger)") : undefined,
+                    color: estMargin !== null ? SEMAFORO_COLOR[semaforoMargen(estMargin)] : undefined,
                   },
               p.salePrice
                 ? {
                     label: "Margen",
                     value: fmtPct(margin!),
-                    color: margin! >= 0 ? "var(--success)" : "var(--danger)",
+                    color: SEMAFORO_COLOR[semaforoMargen(margin!)],
                   }
                 : { label: "", value: "" },
             ] as Array<{ label: string; value: string; color?: string; sub?: string; subColor?: string; bold?: boolean }>
@@ -633,7 +652,7 @@ export default function ProjectPage({ params }: PageProps) {
                           Total gastos
                         </div>
                         <div className="tabular truncate" style={{ fontSize: "clamp(14px, 2vw, 18px)", fontWeight: 700, color: "var(--text-primary)" }}>
-                          U$D {totalExpensesUsd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          U$D {totalExpensesUsd.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>
                           {expenseMonths} {expenseMonths === 1 ? "mes" : "meses"}
@@ -650,7 +669,7 @@ export default function ProjectPage({ params }: PageProps) {
                           Promedio mensual
                         </div>
                         <div className="tabular truncate" style={{ fontSize: "clamp(14px, 2vw, 18px)", fontWeight: 700, color: "var(--text-primary)" }}>
-                          U$D {avgMonthlyExpense.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          U$D {avgMonthlyExpense.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>
                           USD/mes
@@ -723,7 +742,7 @@ export default function ProjectPage({ params }: PageProps) {
                                   fontSize: 13, fontWeight: 600, color: "var(--text-primary)",
                                   minWidth: 80, textAlign: "right",
                                 }}>
-                                  U$D {amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  U$D {amount.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                               </div>
                             </div>

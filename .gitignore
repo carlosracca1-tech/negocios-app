@@ -26,12 +26,10 @@ yarn-error.log*
 .vscode
 .idea
 
-# Local env files
+# Local env files — .env.example es el único que se versiona
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # Database
 prisma/*.db
@@ -50,5 +48,4 @@ prisma/*.db-journal
 # TypeScript incremental build info
 tsconfig.tsbuildinfo
 .vercel
-.env*
 backups/

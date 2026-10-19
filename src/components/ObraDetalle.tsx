@@ -10,8 +10,8 @@
  *  4. Lecciones del proyecto (siempre visibles)
  *  5. ── DETALLE OPERATIVO ── (plegable con "Vista socios")
  *
- * Una sola cifra manda: el margen proyectado, SIEMPRE sobre cierreEstimado
- * y expresado sobre la venta objetivo.
+ * Una sola cifra manda: el margen proyectado, SIEMPRE sobre lo invertido
+ * (cierreEstimado).
  */
 
 import { useMemo, useState } from "react";
@@ -20,11 +20,12 @@ import {
   computeObraProyeccion,
   computeRitmoObra,
   semaforoMargen,
+  margenSobreInversion,
   ETAPAS_PESOS,
   ETAPAS_LABELS,
   EtapaKey,
 } from "@/lib/financial";
-import { fmtUsd, fmtUsdSign, fmtPctAr, fmtNum, safeNum } from "@/lib/format";
+import { fmtUsd, fmtUsdSign, fmtPctAr, fmtNum, safeNum, fmtFecha } from "@/lib/format";
 import { projectsApi } from "@/lib/api-client";
 
 interface ObraDetalleProps {
@@ -174,7 +175,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
     ])).sort((a, b) => a - b);
     return precios.map((precio) => {
       const ganancia = precio - proy.cierreEstimado;
-      const margen = precio > 0 ? (ganancia / precio) * 100 : 0;
+      const margen = margenSobreInversion(ganancia, proy.cierreEstimado);
       return { precio, ganancia, margen, esObjetivo: precio === base };
     });
   }, [tieneVenta, vendida, ventaReferencia, proy.cierreEstimado]);
@@ -213,35 +214,37 @@ export default function ObraDetalle(props: ObraDetalleProps) {
           tono: "ok",
         });
       }
-    } else if (!tieneFalta) {
+    } else if (!tieneFalta && !vendida) {
       out.push({
-        titulo: "Falta estimar cuánto queda",
-        texto: "Sin el estimado de lo que falta pagar no hay cierre ni margen confiable: el número se calcularía solo con lo ya gastado. Escribilo arriba, en “Falta para terminar”.",
+        titulo: "Falta estimar cuanto queda",
+        texto: 'Sin el estimado de lo que falta pagar no hay cierre ni margen confiable: el numero se calcularia solo con lo ya gastado. Escribilo arriba, en "Falta para terminar".',
         tono: "warn",
       });
     }
 
-    // 2. Ritmo de obra (solo costos y avance)
-    if (ritmo.hayDatos) {
-      if (ritmo.alerta) {
-        out.push({
-          titulo: "El ritmo de gasto se come el margen",
-          texto: `Llevás ${fmtUsd(ritmo.costosObra)} con la obra al ${fmtPctAr(ritmo.avancePct, 0)}. Si sigue a este ritmo, la obra completa cuesta ${fmtUsd(ritmo.obraAlRitmo)} y el margen cae a ${fmtPctAr(ritmo.margenAlRitmo)}.`,
-          tono: "warn",
-        });
+    // 2. Ritmo de obra (solo costos y avance) — no mostrar para vendidos
+    if (!vendida) {
+      if (ritmo.hayDatos) {
+        if (ritmo.alerta) {
+          out.push({
+            titulo: "El ritmo de gasto se come el margen",
+            texto: `Llevás ${fmtUsd(ritmo.costosObra)} con la obra al ${fmtPctAr(ritmo.avancePct, 0)}. Si sigue a este ritmo, la obra completa cuesta ${fmtUsd(ritmo.obraAlRitmo)} y el margen cae a ${fmtPctAr(ritmo.margenAlRitmo)}.`,
+            tono: "warn",
+          });
+        } else {
+          out.push({
+            titulo: "El ritmo de gasto cierra bien",
+            texto: `Con la obra al ${fmtPctAr(ritmo.avancePct, 0)} y ${fmtUsd(ritmo.costosObra)} gastados, seguir a este ritmo deja la obra en ${fmtUsd(ritmo.obraAlRitmo)}${ritmo.margenAlRitmo != null ? ` y el margen en ${fmtPctAr(ritmo.margenAlRitmo)}` : ""}.`,
+            tono: "ok",
+          });
+        }
       } else {
         out.push({
-          titulo: "El ritmo de gasto cierra bien",
-          texto: `Con la obra al ${fmtPctAr(ritmo.avancePct, 0)} y ${fmtUsd(ritmo.costosObra)} gastados, seguir a este ritmo deja la obra en ${fmtUsd(ritmo.obraAlRitmo)}${ritmo.margenAlRitmo != null ? ` y el margen en ${fmtPctAr(ritmo.margenAlRitmo)}` : ""}.`,
-          tono: "ok",
+          titulo: "Cargá el avance mensual",
+          texto: "Actualizar las 5 etapas una vez por mes permite proyectar el costo total de la obra desde el ritmo real de gasto, sin depender del presupuesto.",
+          tono: "info",
         });
       }
-    } else {
-      out.push({
-        titulo: "Cargá el avance mensual",
-        texto: "Actualizar las 5 etapas una vez por mes permite proyectar el costo total de la obra desde el ritmo real de gasto, sin depender del presupuesto.",
-        tono: "info",
-      });
     }
 
     // 3. Peso de los gastos fijos
@@ -362,7 +365,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
               </div>
               <div className="obra2a-heroSub">
                 {tieneVenta ? (
-                  <>{fmtUsdSign(proy.ganancia)} sobre {vendida ? "la venta" : "la venta objetivo"} · cierre estimado <span className="mono">{fmtUsd(proy.cierreEstimado)}</span></>
+                  <>{fmtUsdSign(proy.ganancia)} sobre lo invertido · cierre estimado <span className="mono">{fmtUsd(proy.cierreEstimado)}</span></>
                 ) : (
                   <>Sin venta objetivo no hay margen que mirar.</>
                 )}
@@ -706,7 +709,7 @@ export default function ObraDetalle(props: ObraDetalleProps) {
                     return (
                       <tr key={c.id}>
                         <td className="mono obra2a-tdFecha">
-                          {new Date(c.date).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" })}
+                          {fmtFecha(c.date, { sinAnio: true })}
                         </td>
                         <td className="obra2a-tdConcepto">{c.concept}</td>
                         <td className="obra2a-tdCat">{c.category}</td>

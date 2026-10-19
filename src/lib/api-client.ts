@@ -137,6 +137,11 @@ export const projectsApi = {
   async delete(id: string): Promise<void> {
     return apiDelete(`/api/projects/${id}`);
   },
+
+  /** Descarga el CSV del proyecto (abre en nueva pestaña o descarga) */
+  exportCsvUrl(id: string): string {
+    return `/api/projects/${id}/export?format=csv`;
+  },
 };
 
 // ============================================================================
@@ -326,6 +331,7 @@ export const expensesApi = {
       receiptUrl?: string | null;
       receiptName?: string | null;
       notes?: string | null;
+      dueDate?: string | null;
     }
   ): Promise<Expense> {
     return apiPost(`/api/projects/${projectId}/expenses`, data);
@@ -342,6 +348,7 @@ export const expensesApi = {
       period: string;
       paidDate: string | null;
       notes: string | null;
+      dueDate: string | null;
     }>
   ): Promise<Expense> {
     return apiPatch(`/api/projects/${projectId}/expenses/${expenseId}`, data);

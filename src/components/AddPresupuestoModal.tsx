@@ -6,6 +6,7 @@ import { budgetApi, partidasApi, cotizacionesApi } from "@/lib/api-client";
 import { categoriesByProjectType } from "@/lib/constants";
 import { modalInputStyle, focusInput, blurInput } from "@/lib/constants";
 import ModalPortal from "./ModalPortal";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface Props {
   projectId: string;
@@ -125,6 +126,8 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
       setExchangeRate(blueRate.promedio);
     }
   }, [currency, blueRate]);
+
+  const { panelRef, handleKeyDown } = useModalA11y(isOpen, onClose);
 
   const reset = useCallback(() => {
     setFile(null);
@@ -346,6 +349,10 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
     <ModalPortal>
     <div
       className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="presupuesto-modal-title"
+      onKeyDown={handleKeyDown}
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
       style={{
         position: "fixed", inset: 0, display: "flex", alignItems: "flex-start",
@@ -353,6 +360,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
       }}
     >
       <div
+        ref={panelRef}
         className="modal-panel"
         style={{
           border: "1px solid var(--border-default)",
@@ -366,7 +374,7 @@ export default function AddPresupuestoModal({ projectId, projectType, partidas, 
           display: "flex", alignItems: "center", justifyContent: "space-between",
           flexShrink: 0, background: "var(--surface-solid)",
         }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", gap: 9, color: "var(--text-primary)" }}>
+          <h3 id="presupuesto-modal-title" style={{ fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", gap: 9, color: "var(--text-primary)" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { costsApi, type AutoImputarResultado } from "@/lib/api-client";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface Props {
   projectId: string;
@@ -16,6 +17,7 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
   const [aplicando, setAplicando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [listo, setListo] = useState(false);
+  const { panelRef, handleKeyDown } = useModalA11y(isOpen, onClose);
 
   const pedirPlan = useCallback(async () => {
     setCargando(true);
@@ -87,13 +89,17 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
   return (
     <div
       className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="autoimputar-modal-title"
+      onKeyDown={handleKeyDown}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
         position: "fixed", inset: 0, display: "flex", alignItems: "flex-start",
         justifyContent: "center", zIndex: 60, padding: "24px 16px", overflowY: "auto",
       }}
     >
-      <div className="modal-panel" style={{
+      <div ref={panelRef} className="modal-panel" style={{
         border: "1px solid var(--border-default)",
         borderRadius: 16, width: "100%", maxWidth: 620, maxHeight: "calc(100vh - 48px)",
         margin: "auto", display: "flex", flexDirection: "column", boxShadow: "var(--shadow-elevated)",
@@ -103,10 +109,10 @@ export default function AutoImputarModal({ projectId, isOpen, onClose, onSuccess
           padding: "17px 20px", borderBottom: "1px solid var(--border-default)",
           display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
         }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
+          <h3 id="autoimputar-modal-title" style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
             {listo ? "Listo" : "Imputar costos automáticamente"}
           </h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-tertiary)", fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button aria-label="Cerrar" onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-tertiary)", fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
         </div>
 
         {/* Body */}

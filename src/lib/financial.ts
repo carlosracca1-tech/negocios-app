@@ -3,6 +3,12 @@
  *
  * Single source of truth for all project financial computations.
  * Used by API routes to compute derived fields before sending to the client.
+ *
+ * DEFINICIÓN DE MARGEN (no negociable):
+ *   margen = ganancia / inversión × 100
+ *
+ * Siempre sobre lo INVERTIDO, nunca sobre la venta. Decisión del dueño.
+ * Un margen del 20% significa que por cada $100 invertidos, ganó $20.
  */
 
 /** Safely convert a nullable/undefined number to a finite number, defaulting to 0 */
@@ -11,6 +17,16 @@ export const safe = (n: number | null | undefined): number => {
   return n;
 };
 
+/**
+ * Margen sobre la inversión. Única fórmula de margen en toda la app.
+ * margen = ganancia / inversión × 100
+ * Devuelve 0 si la inversión es 0 (evita división por cero).
+ */
+export function margenSobreInversion(ganancia: number, inversion: number): number {
+  if (inversion === 0) return 0;
+  return (ganancia / inversion) * 100;
+}
+
 export interface ProjectFinancials {
   totalCosts: number;
   totalExpenses: number;
@@ -18,6 +34,8 @@ export interface ProjectFinancials {
   result: number;
   margin: number;
   estimatedMargin: number;
+  /** Registros en ARS sin tipo de cambio que no se sumaron al total */
+  sinTcCount: number;
 }
 
 /**
@@ -34,32 +52,47 @@ export function computeProjectFinancials(
 ): ProjectFinancials {
   const bp = safe(project.buyPrice);
 
-  // Costs: usar amountUsd si es ARS con conversion, sino amount directo (USD)
+  // Costs: usar amountUsd si es ARS con conversión. Si es ARS sin
+  // amountUsd NI exchangeRate, NO sumar (queda como "sin TC").
+  let sinTcCosts = 0;
   const totalCosts = costs.reduce((sum, cost) => {
-    if (cost.currency === "ARS" && cost.amountUsd != null) {
-      return sum + safe(cost.amountUsd);
+    if (cost.currency === "ARS") {
+      if (cost.amountUsd != null) return sum + safe(cost.amountUsd);
+      const er = (cost as { exchangeRate?: number | null }).exchangeRate;
+      if (er && er > 0) return sum + safe(cost.amount) / er;
+      // ARS sin TC: NO sumar — contarlo como pendiente
+      sinTcCosts++;
+      return sum;
     }
     return sum + safe(cost.amount);
   }, 0);
 
-  // Expenses: misma logica de conversion
+  // Expenses: misma lógica
   const expenseList = expenses || [];
+  let sinTcExpenses = 0;
   const totalExpenses = expenseList.reduce((sum, exp) => {
-    if (exp.currency === "ARS" && exp.amountUsd != null) {
-      return sum + safe(exp.amountUsd);
+    if (exp.currency === "ARS") {
+      if (exp.amountUsd != null) return sum + safe(exp.amountUsd);
+      const er = (exp as { exchangeRate?: number | null }).exchangeRate;
+      if (er && er > 0) return sum + safe(exp.amount) / er;
+      sinTcExpenses++;
+      return sum;
     }
     return sum + safe(exp.amount);
   }, 0);
+
+  const sinTcCount = sinTcCosts + sinTcExpenses;
 
   const investment = bp + totalCosts + totalExpenses;
   const sp = safe(project.salePrice);
   const lp = safe(project.listingPrice);
   const result = sp > 0 ? sp - investment : 0;
-  const margin = sp > 0 && investment > 0 ? (result / investment) * 100 : 0;
+  // Margen SIEMPRE sobre lo invertido, nunca sobre la venta.
+  const margin = sp > 0 ? margenSobreInversion(result, investment) : 0;
   const estimatedMargin =
-    lp > 0 && investment > 0 ? ((lp - investment) / investment) * 100 : 0;
+    lp > 0 ? margenSobreInversion(lp - investment, investment) : 0;
 
-  return { totalCosts, totalExpenses, investment, result, margin, estimatedMargin };
+  return { totalCosts, totalExpenses, investment, result, margin, estimatedMargin, sinTcCount };
 }
 
 // ============================================================================
@@ -393,7 +426,7 @@ export interface ObraProyeccion {
   ventaReferencia: number;
   /** ventaReferencia − cierreEstimado */
   ganancia: number;
-  /** ganancia / ventaReferencia × 100 — SIEMPRE sobre la venta, nunca sobre inversión */
+  /** ganancia / cierreEstimado × 100 — SIEMPRE sobre lo invertido */
   margenProyectado: number;
   semaforo: SemaforoMargen;
   /** presupuesto de obra total (Σ proyectado por rubro) */
@@ -407,7 +440,7 @@ export interface ObraProyeccion {
  *   inversionActual  = compra + costosObra + gastosMensuales
  *   cierreEstimado   = inversionActual + faltaParaTerminar
  *   ganancia         = ventaReferencia − cierreEstimado
- *   margenProyectado = ganancia / ventaReferencia
+ *   margenProyectado = ganancia / cierreEstimado (sobre lo invertido)
  *
  * `faltaParaTerminar` es la estimación que el dueño escribe a mano (igual que
  * la venta objetivo). Solo si no está cargada se cae al presupuesto por rubro,
@@ -440,7 +473,7 @@ export function computeObraProyeccion(params: {
   const cierreEstimado = inversionActual + presupuestoRestante;
   const ventaReferencia = safe(params.ventaReferencia);
   const ganancia = ventaReferencia > 0 ? ventaReferencia - cierreEstimado : 0;
-  const margenProyectado = ventaReferencia > 0 ? (ganancia / ventaReferencia) * 100 : 0;
+  const margenProyectado = ventaReferencia > 0 ? margenSobreInversion(ganancia, cierreEstimado) : 0;
 
   return {
     inversionActual,
@@ -507,7 +540,7 @@ export function computeRitmoObra(params: {
   const faltaSegunRitmo = Math.max(0, obraAlRitmo - costosObra);
   const cierreAlRitmo = safe(params.buyPrice) + safe(params.totalExpenses) + obraAlRitmo;
   const venta = safe(params.ventaReferencia);
-  const margenAlRitmo = venta > 0 ? ((venta - cierreAlRitmo) / venta) * 100 : null;
+  const margenAlRitmo = venta > 0 ? margenSobreInversion(venta - cierreAlRitmo, cierreAlRitmo) : null;
   const semaforo = margenAlRitmo != null ? semaforoMargen(margenAlRitmo) : null;
 
   return {
@@ -515,4 +548,56 @@ export function computeRitmoObra(params: {
     obraAlRitmo, faltaSegunRitmo, cierreAlRitmo, margenAlRitmo, semaforo,
     alerta: margenAlRitmo != null && margenAlRitmo < 10,
   };
+}
+
+// ============================================================================
+// RENTABILIDAD ANUALIZADA Y DÍAS DE TENENCIA
+// ============================================================================
+
+export interface HoldingMetrics {
+  /** Días desde la compra hasta la venta (o hasta hoy si no está vendido) */
+  daysHeld: number;
+  /** Margen bruto (= margin de computeProjectFinancials) */
+  marginPct: number;
+  /** Rentabilidad anualizada: cuánto rinde al año si se repitiera el flip.
+   *  Fórmula: (1 + resultado/inversión)^(365/días) - 1
+   *  Solo se calcula si hay resultado y > 0 días. */
+  annualizedPct: number | null;
+}
+
+/**
+ * Calcula días de tenencia y rentabilidad anualizada de un flip.
+ *
+ * Un margen del 20% en 6 meses es ~44% anualizado.
+ * Un margen del 20% en 18 meses es ~13% anualizado.
+ * Sin esta métrica, los dos se ven iguales.
+ */
+export function computeHoldingMetrics(params: {
+  buyDate: Date | string | null | undefined;
+  saleDate?: Date | string | null;
+  /** true si el proyecto está vendido (para no contar hasta hoy sin fecha) */
+  isVendido?: boolean;
+  investment: number;
+  result: number;
+  marginPct: number;
+}): HoldingMetrics {
+  const buyDate = params.buyDate ? new Date(params.buyDate) : null;
+  // Vendido sin fecha de venta: no podemos calcular días → endDate null
+  const endDate = params.saleDate
+    ? new Date(params.saleDate)
+    : params.isVendido ? null : new Date();
+
+  const daysHeld =
+    buyDate && endDate && !isNaN(buyDate.getTime()) && !isNaN(endDate.getTime())
+      ? Math.max(1, Math.floor((endDate.getTime() - buyDate.getTime()) / 86400000))
+      : 0;
+
+  let annualizedPct: number | null = null;
+  if (daysHeld > 0 && params.investment > 0) {
+    const totalReturn = params.result / params.investment;
+    // (1 + r)^(365/d) - 1
+    annualizedPct = (Math.pow(1 + totalReturn, 365 / daysHeld) - 1) * 100;
+  }
+
+  return { daysHeld, marginPct: params.marginPct, annualizedPct };
 }

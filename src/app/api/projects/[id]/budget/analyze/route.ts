@@ -152,6 +152,26 @@ export async function POST(
       );
     }
 
+    // Límite de tamaño: 4 MB (Vercel corta a 4,5 MB)
+    if (file) {
+      const MAX_FILE_SIZE = 4 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: "El archivo es demasiado grande (máximo 4 MB)." },
+          { status: 413 }
+        );
+      }
+
+      const fname = file.name.toLowerCase();
+      const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf"];
+      if (!ALLOWED_EXTENSIONS.some((ext) => fname.endsWith(ext))) {
+        return NextResponse.json(
+          { error: "Tipo de archivo no soportado. Usá JPG, PNG, WEBP o PDF." },
+          { status: 400 }
+        );
+      }
+    }
+
     // Forma del JSON, compartida por los dos modos (documento y texto libre).
     const jsonShape = `{
   "provider": "nombre del proveedor/empresa",

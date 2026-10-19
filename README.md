@@ -22,12 +22,6 @@ npm run dev
 # Abrir http://localhost:3000
 ```
 
-## Credenciales de prueba
-
-- **Admin:** admin@negocios.com / admin123
-- **Usuario 1:** martin@mail.com / user123
-- **Usuario 2:** ana@mail.com / user123
-
 ## Deploy en Vercel + Neon (PostgreSQL)
 
 ### 1. Base de datos (Neon)

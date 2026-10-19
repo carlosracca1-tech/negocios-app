@@ -98,7 +98,7 @@ export default function CotizacionCard({ cot, minUsd, onElegir, loading }: Props
             className="tabular"
             style={{ fontSize: 21, fontWeight: 700, letterSpacing: -0.5, color: "var(--text-primary)" }}
           >
-            USD {usd.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+            USD {usd.toLocaleString("de-DE", { maximumFractionDigits: 0 })}
           </span>
           {isMin ? (
             <span
@@ -130,7 +130,7 @@ export default function CotizacionCard({ cot, minUsd, onElegir, loading }: Props
         </div>
         {cot.currency === "ARS" && (
           <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
-            AR$ {cot.amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+            AR$ {cot.amount.toLocaleString("de-DE", { maximumFractionDigits: 0 })}
           </div>
         )}
       </div>

@@ -6,6 +6,7 @@ import {
 } from "@/lib/api-helpers";
 import { rethrowNextError } from "@/lib/route-utils";
 import { notifyProjectUsers } from "@/lib/notifications";
+import { resolverTipoDeCambio } from "@/lib/dolar";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ const createExpenseSchema = z.object({
   receiptUrl: z.string().optional().nullable(),
   receiptName: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  dueDate: z.string().datetime().optional().nullable(),
 });
 
 export async function GET(
@@ -92,10 +94,22 @@ export async function POST(
 
     const data = validation.data;
 
-    // Calculate USD amount if ARS + exchange rate provided
+    // ARS necesita TC — si no viene, lo resolvemos del blue de hoy.
+    let exchangeRate = data.exchangeRate ?? null;
+    if (data.currency === "ARS") {
+      exchangeRate = await resolverTipoDeCambio(exchangeRate, user.organizationId);
+      if (!exchangeRate) {
+        return NextResponse.json(
+          { error: "No se pudo obtener el tipo de cambio. Ingresalo manualmente." },
+          { status: 422 }
+        );
+      }
+    }
+
+    // Calcular USD
     let amountUsd = data.amountUsd ?? null;
-    if (data.currency === "ARS" && data.exchangeRate && data.exchangeRate > 0) {
-      amountUsd = data.amount / data.exchangeRate;
+    if (data.currency === "ARS" && exchangeRate && exchangeRate > 0) {
+      amountUsd = data.amount / exchangeRate;
     } else if (data.currency === "USD") {
       amountUsd = data.amount;
     }
@@ -107,10 +121,11 @@ export async function POST(
           concept: data.concept,
           amount: data.amount,
           currency: data.currency,
-          exchangeRate: data.exchangeRate ?? null,
+          exchangeRate,
           amountUsd,
           period: new Date(data.period),
           paidDate: data.paidDate ? new Date(data.paidDate) : null,
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
           receiptUrl: data.receiptUrl ?? null,
           receiptName: data.receiptName ?? null,
           notes: data.notes ?? null,

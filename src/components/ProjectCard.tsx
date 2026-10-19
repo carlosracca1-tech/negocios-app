@@ -2,7 +2,14 @@
 
 import { Project } from "@/types";
 import { fmt, fmtSign, fmtPct, daysAgo, safeNum } from "@/lib/format";
+import { semaforoMargen } from "@/lib/financial";
 import { statusConfig } from "@/lib/constants";
+
+const SEMAFORO_COLOR: Record<string, string> = {
+  verde: "var(--success)",
+  ambar: "var(--warning)",
+  rojo: "var(--danger)",
+};
 
 interface ProjectCardProps {
   project: Project;
@@ -105,6 +112,7 @@ export default function ProjectCard({ project, sharedWith = [], onClick }: Proje
                 {fmtSign(result)}
               </div>
             </div>
+
           ) : (
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>Valor publ.</div>
@@ -121,12 +129,11 @@ export default function ProjectCard({ project, sharedWith = [], onClick }: Proje
             </div>
             <div className="tabular" style={{
               fontSize: 16, fontWeight: 700, marginTop: 2,
-              color:
-                (margin !== null && margin >= 0) || (estMargin !== null && estMargin >= 0)
-                  ? "var(--success)"
-                  : (margin !== null || estMargin !== null)
-                    ? "var(--danger)"
-                    : "var(--text-tertiary)",
+              color: margin !== null
+                ? SEMAFORO_COLOR[semaforoMargen(margin)]
+                : estMargin !== null
+                  ? SEMAFORO_COLOR[semaforoMargen(estMargin)]
+                  : "var(--text-tertiary)",
             }}>
               {sp > 0 ? fmtPct(margin) : estMargin !== null ? fmtPct(estMargin) : "—"}
             </div>

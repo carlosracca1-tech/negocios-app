@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
@@ -36,9 +37,21 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { notificationIds } = body;
 
-    if (notificationIds && Array.isArray(notificationIds)) {
+    const schema = z.object({
+      notificationIds: z.array(z.string().min(1)).optional(),
+    });
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Datos inválidos", details: parsed.error.flatten() },
+        { status: 422 }
+      );
+    }
+
+    const { notificationIds } = parsed.data;
+
+    if (notificationIds && notificationIds.length > 0) {
       await prisma.notification.updateMany({
         where: { id: { in: notificationIds }, userId: user.id },
         data: { read: true },

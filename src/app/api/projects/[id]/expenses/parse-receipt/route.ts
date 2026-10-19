@@ -50,12 +50,30 @@ export async function POST(
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    // Límite de tamaño: 4 MB (Vercel corta a 4,5 MB)
+    const MAX_FILE_SIZE = 4 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "El archivo es demasiado grande (máximo 4 MB)." },
+        { status: 413 }
+      );
+    }
+
+    // Validar tipo de archivo por extensión
+    const name = file.name.toLowerCase();
+    const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf"];
+    if (!ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext))) {
+      return NextResponse.json(
+        { error: "Tipo de archivo no soportado. Usá JPG, PNG, WEBP o PDF." },
+        { status: 400 }
+      );
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
     const base64 = buffer.toString("base64");
 
     // Determine media type
     let mediaType = "image/jpeg";
-    const name = file.name.toLowerCase();
     if (name.endsWith(".png")) mediaType = "image/png";
     else if (name.endsWith(".gif")) mediaType = "image/gif";
     else if (name.endsWith(".webp")) mediaType = "image/webp";

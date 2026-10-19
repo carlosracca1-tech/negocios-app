@@ -110,7 +110,7 @@ export async function POST(
     // El TC se guarda SIEMPRE, tambien en cargas USD: sin el, el costo queda
     // invisible para todo lo que se mide en pesos y no se puede reconstruir
     // despues. Si el cliente no lo mando, lo completamos con el blue de hoy.
-    const exchangeRate = await resolverTipoDeCambio(data.exchangeRate);
+    const exchangeRate = await resolverTipoDeCambio(data.exchangeRate, user.organizationId);
 
     // Calcular amountUsd para normalizar a moneda base
     let amountUsd: number | null = null;

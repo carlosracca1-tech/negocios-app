@@ -5,6 +5,7 @@ import type { Partida, Cotizacion } from "@/types";
 import { partidasApi, cotizacionesApi } from "@/lib/api-client";
 import { categoriesByProjectType, modalInputStyle, focusInput, blurInput } from "@/lib/constants";
 import ModalPortal from "./ModalPortal";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface Props {
   projectId: string;
@@ -58,6 +59,7 @@ export default function EditPresupuestoModal({
   const [cots, setCots] = useState<CotDraft[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { panelRef, handleKeyDown } = useModalA11y(isOpen, onClose);
 
   const categories = categoriesByProjectType[projectType] || categoriesByProjectType.Casa;
 
@@ -147,6 +149,10 @@ export default function EditPresupuestoModal({
     <ModalPortal>
     <div
       className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="editpresupuesto-modal-title"
+      onKeyDown={handleKeyDown}
       onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
       style={{
         position: "fixed", inset: 0, display: "flex", alignItems: "flex-start",
@@ -155,6 +161,7 @@ export default function EditPresupuestoModal({
     >
       <div
         className="modal-panel"
+        ref={panelRef}
         style={{
           border: "1px solid var(--border-default)",
           borderRadius: 16, width: "100%", maxWidth: 560, maxHeight: "calc(100vh - 48px)",
@@ -167,7 +174,7 @@ export default function EditPresupuestoModal({
           display: "flex", alignItems: "center", justifyContent: "space-between",
           flexShrink: 0, background: "var(--surface-solid)",
         }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", gap: 9, color: "var(--text-primary)" }}>
+          <h3 id="editpresupuesto-modal-title" style={{ fontSize: 15, fontWeight: 600, display: "flex", alignItems: "center", gap: 9, color: "var(--text-primary)" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 20h9" />
               <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
@@ -186,8 +193,9 @@ export default function EditPresupuestoModal({
         {/* Body */}
         <div style={{ padding: 20, overflowY: "auto", flex: 1, minHeight: 0 }}>
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Nombre del rubro</label>
+            <label htmlFor="editpresupuesto-name" style={labelStyle}>Nombre del rubro</label>
             <input
+              id="editpresupuesto-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onFocus={focusInput}
@@ -198,8 +206,9 @@ export default function EditPresupuestoModal({
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Categoría</label>
+            <label htmlFor="editpresupuesto-category" style={labelStyle}>Categoría</label>
             <select
+              id="editpresupuesto-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               onFocus={focusInput}
@@ -216,8 +225,9 @@ export default function EditPresupuestoModal({
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <label style={labelStyle}>Descripción (opcional)</label>
+            <label htmlFor="editpresupuesto-description" style={labelStyle}>Descripción (opcional)</label>
             <textarea
+              id="editpresupuesto-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}

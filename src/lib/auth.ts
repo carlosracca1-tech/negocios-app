@@ -24,9 +24,15 @@ export const authOptions: NextAuthOptions = {
           throw new Error(`Demasiados intentos. Reintenta en ${mins} minutos.`);
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.trim().toLowerCase() },
-        });
+        let user;
+        try {
+          user = await prisma.user.findUnique({
+            where: { email: credentials.email.trim().toLowerCase() },
+          });
+        } catch (dbError) {
+          console.error("auth: error de conexión a la base", dbError);
+          throw new Error("No pudimos conectarnos. Probá de nuevo en un minuto.");
+        }
 
         if (!user) {
           throw new Error("Credenciales invalidas");
@@ -63,11 +69,11 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 7 * 24 * 60 * 60, // 7 días (antes 30): reduce ventana si roban token o cambian rol
     updateAge: 24 * 60 * 60,
   },
   jwt: {
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 7 * 24 * 60 * 60,
   },
   callbacks: {
     async jwt({ token, user }) {

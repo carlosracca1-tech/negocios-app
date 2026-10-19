@@ -30,7 +30,7 @@
   /* Textos */
   --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
+  --text-tertiary: #8b8b94;
   --text-quaternary: #52525b;
 
   /* Accent monocromo */
@@ -97,7 +97,7 @@
 
   --text-primary: #1a1814;
   --text-secondary: #4d4842;
-  --text-tertiary: #7a7468;
+  --text-tertiary: #6b6560;
   --text-quaternary: #a8a397;
 
   --accent: #1a1814;
@@ -160,6 +160,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s, color 0.3s;
@@ -455,7 +456,7 @@ input:focus, select:focus, textarea:focus {
 
   .kpi-card { padding: 10px 11px !important; border-radius: 10px !important; }
   .kpi-card .kpi-value { font-size: 16px !important; letter-spacing: -0.3px !important; }
-  .kpi-card .kpi-label { font-size: 9px !important; margin-bottom: 4px !important; }
+  .kpi-card .kpi-label { font-size: 11px !important; margin-bottom: 4px !important; }
 
   .project-name { font-size: 18px !important; }
   .breadcrumb-path { display: none !important; }
@@ -476,18 +477,38 @@ input:focus, select:focus, textarea:focus {
   .kpi-card { padding: 9px 10px !important; }
 }
 
+/* Texto mínimo 11px — WCAG AA */
+.kpi-card .kpi-label,
+.obra2a-kicker,
+.obra2a-cascadaVal,
+.obra2a-cascadaLabel,
+.obra2a-etapaPeso,
+.obra2a-tdFecha,
+.obra2a-tdArs,
+.obra2a-rubroProy,
+.obra2a-rubroPct {
+  font-size: max(11px, inherit) !important;
+}
+
+/* Links y botones: mínimo 32px de alto para targets táctiles */
+.obra2a-link {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* ============================================================
    PANTALLA 2a — Detalle de obra (SISTEMA.md)
-   DM Sans para UI, JetBrains Mono para todo número tabular.
+   Una sola tipografía: Inter con tabular-nums.
    Usa las variables del tema para respetar dark/light.
    ============================================================ */
 
 .obra2a {
-  font-family: 'DM Sans', 'Inter', -apple-system, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   animation: fadeIn 0.3s ease;
 }
 .obra2a .mono {
-  font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 
@@ -510,7 +531,7 @@ input:focus, select:focus, textarea:focus {
   padding: 20px 22px;
 }
 .obra2a-kicker {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -852,11 +873,25 @@ input:focus, select:focus, textarea:focus {
    pero no hay nada que recalcular.
    ============================================================ */
 .modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
   background: var(--overlay-bg);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
 .modal-panel {
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 92%;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-elevated), 0 0 0 1px var(--border-default);
+  border: 1px solid var(--border-default);
   background: var(--modal-panel-bg);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -867,4 +902,116 @@ input:focus, select:focus, textarea:focus {
   background-color: var(--modal-input-bg);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+
+.modal-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.modal-actions button {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.modal-actions .btn-cancel {
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+}
+.modal-actions .btn-cancel:hover {
+  background: var(--surface-1);
+  border-color: var(--border-strong);
+}
+.modal-actions .btn-submit {
+  border: none;
+  background: var(--accent);
+  color: var(--accent-on);
+  box-shadow: 0 2px 12px rgba(250, 250, 250, 0.1);
+}
+.modal-actions .btn-submit:hover {
+  box-shadow: 0 4px 20px rgba(250, 250, 250, 0.18);
+}
+.modal-actions .btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-error {
+  font-size: 12px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--danger-border);
+}
+
+/* Empty state genérico */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-tertiary);
+}
+.empty-state svg {
+  margin-bottom: 12px;
+  opacity: 0.3;
+}
+.empty-state h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 6px;
+}
+.empty-state p {
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Botones interactivos: mínimo 44px para WCAG 2.1 AA táctil */
+.modal-panel button,
+button.btn-primary,
+button.btn-secondary {
+  min-height: 44px;
+}
+
+/* Ghost button reutilizable (antes era inline en page.tsx) */
+.ghost-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.ghost-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  background: var(--surface-3);
 }

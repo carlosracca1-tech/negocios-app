@@ -7,7 +7,7 @@ import {
   createProjectSchema,
   orgScope,
 } from "@/lib/api-helpers";
-import { computeProjectFinancials, safe } from "@/lib/financial";
+import { computeProjectFinancials, computeHoldingMetrics, safe } from "@/lib/financial";
 import { rethrowNextError } from "@/lib/route-utils";
 
 export const dynamic = "force-dynamic";
@@ -89,12 +89,23 @@ export async function GET(request: NextRequest) {
         ? project.investors
         : project.investors.filter((inv) => inv.userId === user.id);
 
+      const holding = computeHoldingMetrics({
+        buyDate: project.buyDate,
+        saleDate: project.saleDate,
+        isVendido: project.status === "vendido",
+        investment: financials.investment,
+        result: financials.result,
+        marginPct: financials.margin,
+      });
+
       return {
         ...project,
         buyPrice: safe(project.buyPrice),
         ...financials,
+        daysHeld: holding.daysHeld,
+        annualizedReturn: holding.annualizedPct,
         investors: filteredInvestors,
-        investorCount: project.investors.length, // Count real para KPI
+        investorCount: project.investors.length,
         costCount: project.costs.length,
       };
     });

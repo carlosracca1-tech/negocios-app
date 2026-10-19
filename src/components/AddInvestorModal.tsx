@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { investorsApi, usersApi } from "@/lib/api-client";
 import { User } from "@/types";
 import { modalInputStyle as inputStyle, focusInput, blurInput } from "@/lib/constants";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface AddInvestorModalProps {
   projectId: string;
@@ -27,6 +28,7 @@ export default function AddInvestorModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usersLoading, setUsersLoading] = useState(false);
+  const { panelRef, handleKeyDown } = useModalA11y(isOpen, onClose);
 
   // Fetch users on mount
   useEffect(() => {
@@ -112,6 +114,10 @@ export default function AddInvestorModal({
   return (
     <div
       className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="investor-modal-title"
+      onKeyDown={handleKeyDown}
       style={{
         position: "fixed",
         top: 0,
@@ -126,6 +132,7 @@ export default function AddInvestorModal({
       onClick={onClose}
     >
       <div
+        ref={panelRef}
         className="modal-content modal-panel"
         style={{
           borderRadius: 16,
@@ -140,7 +147,7 @@ export default function AddInvestorModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+        <h2 id="investor-modal-title" style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
           Agregar inversor
         </h2>
         <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 20 }}>
@@ -169,6 +176,7 @@ export default function AddInvestorModal({
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
             <label
+              htmlFor="investor-name"
               style={{
                 display: "block",
                 fontSize: 10,
@@ -182,6 +190,7 @@ export default function AddInvestorModal({
               Nombre del inversor
             </label>
             <input
+              id="investor-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -195,6 +204,7 @@ export default function AddInvestorModal({
 
           <div>
             <label
+              htmlFor="investor-user"
               style={{
                 display: "block",
                 fontSize: 10,
@@ -208,6 +218,7 @@ export default function AddInvestorModal({
               Vincular a usuario (opcional)
             </label>
             <select
+              id="investor-user"
               value={userId || ""}
               onChange={(e) => setUserId(e.target.value || null)}
               style={{ ...inputStyle, cursor: "pointer" }}
@@ -227,6 +238,7 @@ export default function AddInvestorModal({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label
+                htmlFor="investor-capital"
                 style={{
                   display: "block",
                   fontSize: 10,
@@ -240,6 +252,7 @@ export default function AddInvestorModal({
                 Capital (%)
               </label>
               <input
+                id="investor-capital"
                 type="number"
                 value={capitalPercentage}
                 onChange={(e) => setCapitalPercentage(e.target.value)}
@@ -255,6 +268,7 @@ export default function AddInvestorModal({
             </div>
             <div>
               <label
+                htmlFor="investor-profit"
                 style={{
                   display: "block",
                   fontSize: 10,
@@ -268,6 +282,7 @@ export default function AddInvestorModal({
                 Ganancia (%)
               </label>
               <input
+                id="investor-profit"
                 type="number"
                 value={profitPercentage}
                 onChange={(e) => setProfitPercentage(e.target.value)}
@@ -285,6 +300,7 @@ export default function AddInvestorModal({
 
           <div>
             <label
+              htmlFor="investor-amount"
               style={{
                 display: "block",
                 fontSize: 10,
@@ -298,6 +314,7 @@ export default function AddInvestorModal({
               Monto invertido ($) — opcional
             </label>
             <input
+              id="investor-amount"
               type="number"
               value={amountInvested}
               onChange={(e) => setAmountInvested(e.target.value)}
@@ -311,7 +328,7 @@ export default function AddInvestorModal({
             {amountInvested && (
               <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4 }}>
                 USD{" "}
-                {parseFloat(amountInvested).toLocaleString("en-US", {
+                {parseFloat(amountInvested).toLocaleString("de-DE", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
