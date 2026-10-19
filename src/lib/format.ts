@@ -1,5 +1,7 @@
 /**
  * Shared formatting utilities for the Negocios app
+ *
+ * REGLA: todo monto pasa por fmtMoney. Nada de toLocaleString suelto.
  */
 
 /** Safely convert a nullable value to a finite number, defaulting to 0 */
@@ -9,28 +11,53 @@ export const safeNum = (n: number | string | null | undefined): number => {
   return isFinite(v) ? v : 0;
 };
 
-/** "USD 270.419" — miles con punto, sin decimales, formato argentino */
-export const fmt = (n: number | null | undefined): string => {
+/**
+ * Formato único de montos. Miles con punto, decimales con coma.
+ *
+ * - Totales/KPIs: fmtMoney(108458) → "USD 108.458"
+ * - Tablas (2 dec): fmtMoney(1294.5, "USD", { decimales: 2 }) → "USD 1.294,50"
+ * - ARS: fmtMoney(2000000, "ARS") → "ARS 2.000.000"
+ * - Con signo: fmtMoney(63593, "USD", { signo: true }) → "+USD 63.593"
+ * - Negativo con signo: fmtMoney(-1196, "USD", { signo: true }) → "−USD 1.196"
+ */
+export function fmtMoney(
+  n: number | null | undefined,
+  moneda: "USD" | "ARS" = "USD",
+  opts?: { decimales?: number; signo?: boolean }
+): string {
   const v = safeNum(n);
-  return "USD " + Math.round(Math.abs(v)).toLocaleString("de-DE");
+  const abs = Math.abs(v);
+  const dec = opts?.decimales ?? 0;
+
+  let formatted: string;
+  if (dec > 0) {
+    formatted = abs.toLocaleString("de-DE", {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: dec,
+    });
+  } else {
+    formatted = Math.round(abs).toLocaleString("de-DE");
+  }
+
+  const prefix = opts?.signo ? (v >= 0 ? "+" : "\u2212") : "";
+  return `${prefix}${moneda} ${formatted}`;
+}
+
+/** "285.250" — solo el número, miles con punto, sin moneda */
+export const fmtNum = (n: number | null | undefined): string => {
+  return Math.round(Math.abs(safeNum(n))).toLocaleString("de-DE");
 };
 
-/** "+USD 19.581" / "−USD 7.000" */
-export const fmtSign = (n: number | null | undefined): string => {
+/** "7,2%" — coma decimal. Decimales por defecto: 1 */
+export const fmtPct = (n: number | null | undefined, decimales = 1): string => {
   const v = safeNum(n);
-  return (v >= 0 ? "+" : "−") + "USD " + Math.round(Math.abs(v)).toLocaleString("de-DE");
-};
-
-/** "7,2%" — coma decimal */
-export const fmtPct = (n: number | null | undefined): string => {
-  const v = safeNum(n);
-  return v.toFixed(1).replace(".", ",") + "%";
+  return v.toFixed(decimales).replace(".", ",") + "%";
 };
 
 export const daysAgo = (dateStr: string | Date): string => {
-  if (!dateStr) return "—";
+  if (!dateStr) return "\u2014";
   const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return "—";
+  if (isNaN(d.getTime())) return "\u2014";
   const now = new Date();
   const diff = Math.floor((now.getTime() - d.getTime()) / 86400000);
   if (diff === 0) return "hoy";
@@ -38,34 +65,6 @@ export const daysAgo = (dateStr: string | Date): string => {
   if (diff < 7) return `${diff}d`;
   if (diff < 30) return `${Math.floor(diff / 7)}sem`;
   return `${Math.floor(diff / 30)}m`;
-};
-
-// ============================================================================
-// Formato es-AR (pantalla 2a): miles con punto, decimales con coma.
-// USD siempre es el número principal.
-// ============================================================================
-
-/** "USD 285.250" — miles con punto, sin decimales */
-export const fmtUsd = (n: number | null | undefined): string => {
-  const v = safeNum(n);
-  return "USD " + Math.round(Math.abs(v)).toLocaleString("de-DE");
-};
-
-/** "285.250" — solo el número, miles con punto */
-export const fmtNum = (n: number | null | undefined): string => {
-  return Math.round(Math.abs(safeNum(n))).toLocaleString("de-DE");
-};
-
-/** "+USD 41.154" / "−USD 12.000" */
-export const fmtUsdSign = (n: number | null | undefined): string => {
-  const v = safeNum(n);
-  return (v >= 0 ? "+" : "−") + "USD " + Math.round(Math.abs(v)).toLocaleString("de-DE");
-};
-
-/** "12,1%" — un decimal, coma decimal */
-export const fmtPctAr = (n: number | null | undefined, decimals = 1): string => {
-  const v = safeNum(n);
-  return v.toFixed(decimals).replace(".", ",") + "%";
 };
 
 /**
@@ -77,9 +76,9 @@ export const fmtFecha = (
   d: Date | string | null | undefined,
   opts?: { sinAnio?: boolean }
 ): string => {
-  if (!d) return "—";
+  if (!d) return "\u2014";
   const date = typeof d === "string" ? new Date(d) : d;
-  if (isNaN(date.getTime())) return "—";
+  if (isNaN(date.getTime())) return "\u2014";
   if (opts?.sinAnio) {
     return date.toLocaleDateString("es-AR", {
       day: "2-digit",
@@ -117,9 +116,7 @@ export function diasHasta(d: Date | string | null | undefined): number | null {
   if (!d) return null;
   const date = typeof d === "string" ? new Date(d) : d;
   if (isNaN(date.getTime())) return null;
-  // Ambas fechas en UTC para comparar solo la fecha, sin hora
   const ahora = new Date();
-  // Argentina es UTC-3, ajustamos la hora actual
   const argMs = ahora.getTime() - 3 * 60 * 60 * 1000;
   const argDate = new Date(argMs);
   const hoyUtc = Date.UTC(argDate.getUTCFullYear(), argDate.getUTCMonth(), argDate.getUTCDate());

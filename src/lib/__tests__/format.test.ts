@@ -1,9 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { fmtFecha, fmtFechaInput, diasHasta, textoVencimiento, fmtUsd, fmtPctAr } from "../format";
+import { fmtFecha, fmtFechaInput, diasHasta, textoVencimiento, fmtMoney, fmtPct } from "../format";
 
 describe("fmtFecha()", () => {
   it("formatea buyDate sin correrse un día", () => {
-    // 2023-12-07 almacenado como ISO → debe mostrar 07/12/2023
     expect(fmtFecha("2023-12-07T00:00:00.000Z")).toBe("07/12/2023");
   });
 
@@ -13,7 +12,6 @@ describe("fmtFecha()", () => {
 
   it("sinAnio muestra d/m", () => {
     const r = fmtFecha("2026-08-02T00:00:00.000Z", { sinAnio: true });
-    // Dependiendo del locale puede ser "02/08" o "2/8"
     expect(r).toMatch(/2\/8|02\/08/);
   });
 
@@ -44,18 +42,42 @@ describe("textoVencimiento()", () => {
   });
 });
 
-describe("fmtUsd()", () => {
-  it("formatea con punto de miles, sin decimales", () => {
-    expect(fmtUsd(270419)).toBe("USD 270.419");
+describe("fmtMoney()", () => {
+  it("USD sin decimales", () => {
+    expect(fmtMoney(270419)).toBe("USD 270.419");
+  });
+
+  it("USD con 2 decimales", () => {
+    expect(fmtMoney(1294.5, "USD", { decimales: 2 })).toBe("USD 1.294,50");
+  });
+
+  it("ARS sin decimales", () => {
+    expect(fmtMoney(2000000, "ARS")).toBe("ARS 2.000.000");
+  });
+
+  it("con signo positivo", () => {
+    expect(fmtMoney(63593, "USD", { signo: true })).toBe("+USD 63.593");
+  });
+
+  it("con signo negativo", () => {
+    expect(fmtMoney(-1196, "USD", { signo: true })).toBe("\u2212USD 1.196");
+  });
+
+  it("null → USD 0", () => {
+    expect(fmtMoney(null)).toBe("USD 0");
+  });
+
+  it("redondea sin decimales", () => {
+    expect(fmtMoney(108458.3)).toBe("USD 108.458");
   });
 });
 
-describe("fmtPctAr()", () => {
+describe("fmtPct()", () => {
   it("un decimal con coma", () => {
-    expect(fmtPctAr(7.24)).toBe("7,2%");
+    expect(fmtPct(7.24)).toBe("7,2%");
   });
 
   it("sin decimales", () => {
-    expect(fmtPctAr(35.1, 0)).toBe("35%");
+    expect(fmtPct(35.1, 0)).toBe("35%");
   });
 });
