@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import { usersApi } from "@/lib/api-client";
 import { User } from "@/types";
 
@@ -135,8 +134,6 @@ export default function AdminUsersPage() {
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <Header />
-
       <div style={{ padding: "24px", maxWidth: 1200, margin: "0 auto" }}>
         {/* Back button */}
         <button
@@ -188,7 +185,6 @@ export default function AdminUsersPage() {
                 key={item.role}
                 style={{
                   background: "var(--surface-1)",
-                  backdropFilter: "blur(12px)",
                   borderRadius: 12,
                   border: "1px solid var(--border-default)",
                   padding: "12px 16px",
@@ -245,7 +241,6 @@ export default function AdminUsersPage() {
           <div
             style={{
               background: "var(--surface-1)",
-              backdropFilter: "blur(12px)",
               borderRadius: 16,
               border: "1px solid var(--border-default)",
               overflow: "hidden",
@@ -391,7 +386,6 @@ export default function AdminUsersPage() {
                   ? "var(--success)"
                   : "var(--danger)",
               fontWeight: 600,
-              backdropFilter: "blur(12px)",
               boxShadow:
                 toast.type === "success"
                   ? "0 0 12px rgba(52, 211, 153, 0.1)"

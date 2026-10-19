@@ -123,7 +123,6 @@ export const modalInputStyle: React.CSSProperties = {
   outline: "none",
   color: "var(--text-primary)",
   transition: "all 0.25s",
-  backdropFilter: "blur(8px)",
 };
 
 export const focusInput = (
