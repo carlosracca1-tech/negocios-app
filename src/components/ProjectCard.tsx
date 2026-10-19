@@ -95,49 +95,29 @@ export default function ProjectCard({ project, sharedWith = [], onClick }: Proje
           </span>
         </div>
 
-        {/* Financial summary */}
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)", gap: 8, marginBottom: 12 }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>Inversión</div>
-            <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: "var(--text-primary)", marginTop: 2 }}>{fmtMoney(inv)}</div>
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>Costos</div>
-            <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: "var(--text-primary)", marginTop: 2 }}>{fmtMoney(totalCosts)}</div>
-          </div>
-          {sp > 0 ? (
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>Resultado</div>
-              <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: result !== null && result >= 0 ? "var(--success)" : "var(--danger)", marginTop: 2 }}>
-                {fmtMoney(result, "USD", { signo: true })}
-              </div>
-            </div>
-
-          ) : (
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>Valor publ.</div>
-              <div className="tabular truncate" style={{ fontSize: "clamp(13px, 1.8vw, 16px)", fontWeight: 700, color: "var(--text-primary)", marginTop: 2 }}>{lp > 0 ? fmtMoney(lp) : "—"}</div>
-            </div>
-          )}
-        </div>
-
-        {/* Margin row */}
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>
-              {sp > 0 ? "Margen" : "Margen est."}
-            </div>
-            <div className="tabular" style={{
-              fontSize: 16, fontWeight: 700, marginTop: 2,
+        {/* Resumen financiero: una fila por dato, ningun monto se corta */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+          {[
+            { label: "Inversión", value: fmtMoney(inv), color: "var(--text-primary)" },
+            { label: "Costos", value: fmtMoney(totalCosts), color: "var(--text-primary)" },
+            sp > 0
+              ? { label: "Resultado", value: fmtMoney(result, "USD", { signo: true }), color: result !== null && result >= 0 ? "var(--success)" : "var(--danger)" }
+              : { label: "Valor publicación", value: lp > 0 ? fmtMoney(lp) : "—", color: "var(--text-primary)" },
+            {
+              label: sp > 0 ? "Margen" : "Margen est.",
+              value: sp > 0 ? fmtPct(margin) : estMargin !== null ? fmtPct(estMargin) : "—",
               color: margin !== null
                 ? SEMAFORO_COLOR[semaforoMargen(margin)]
                 : estMargin !== null
                   ? SEMAFORO_COLOR[semaforoMargen(estMargin)]
                   : "var(--text-tertiary)",
-            }}>
-              {sp > 0 ? fmtPct(margin) : estMargin !== null ? fmtPct(estMargin) : "—"}
+            },
+          ].map((row) => (
+            <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+              <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>{row.label}</span>
+              <span className="tabular" style={{ fontSize: 16, fontWeight: 700, color: row.color, whiteSpace: "nowrap" }}>{row.value}</span>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Footer */}

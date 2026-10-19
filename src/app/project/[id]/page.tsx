@@ -381,7 +381,7 @@ export default function ProjectPage({ params }: PageProps) {
           className="kpi-grid-7"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(7, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
             gap: 12,
             marginBottom: 16,
           }}
@@ -400,11 +400,11 @@ export default function ProjectPage({ params }: PageProps) {
                 value: fmtMoney(totalExpensesUsd),
                 sub: avgMonthlyExpense > 0 ? `${fmtMoney(avgMonthlyExpense)}/mes` : undefined,
               },
-              { label: "Inversión Total", value: fmtMoney(inv), bold: true },
+              { label: "Inversión", value: fmtMoney(inv), bold: true },
               p.salePrice
                 ? { label: "Venta", value: fmtMoney(salePrice) }
                 : {
-                    label: "Valor publicación",
+                    label: "Publicación",
                     value: p.listingPrice ? fmtMoney(listingPrice) : "—",
                   },
               p.salePrice

@@ -1016,3 +1016,12 @@ button.btn-secondary {
   color: var(--text-primary);
   background: var(--surface-3);
 }
+
+/* Cabecera: los KPIs nunca se parten. Si no entran, primero se van los
+   "en activos / en vendidos" y despues, en pantallas chicas, los KPIs. */
+@media (max-width: 1400px) {
+  .header-kpi-sub { display: none; }
+}
+@media (max-width: 1080px) {
+  .header-kpis { display: none !important; }
+}

@@ -42,10 +42,10 @@ export default function KPICard({ label, value, sub, subColor, color, bold }: KP
       <div
         className="kpi-label"
         style={{
-          fontSize: 10,
+          fontSize: 11,
           color: "var(--text-tertiary)",
           textTransform: "uppercase",
-          letterSpacing: 1,
+          letterSpacing: 0.8,
           marginBottom: 6,
           fontWeight: 600,
           whiteSpace: "nowrap",

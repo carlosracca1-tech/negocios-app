@@ -113,7 +113,7 @@ export default function Header() {
       </Link>
 
       {/* KPIs globales (hidden en mobile) */}
-      <div className="header-kpis" style={{ display: "flex", gap: 4, flex: 1, minWidth: 0 }}>
+      <div className="header-kpis" style={{ display: "flex", gap: 6, flex: "0 1 auto", minWidth: 0, overflow: "hidden" }}>
         {projectsLoading ? (
           <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>Cargando...</div>
         ) : (
@@ -127,6 +127,7 @@ export default function Header() {
             ].map((kpi, i) => (
               <div
                 key={i}
+                title={"sublabel" in kpi && kpi.sublabel ? `${kpi.label} ${kpi.sublabel}` : kpi.label}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -137,7 +138,8 @@ export default function Header() {
                   border: "1px solid var(--border-faint)",
                   transition: "all 0.2s",
                   cursor: "default",
-                  minWidth: 0,
+                  flexShrink: 0,
+                  whiteSpace: "nowrap",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = "var(--surface-2)";
@@ -149,13 +151,13 @@ export default function Header() {
                 }}
               >
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 9, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.8, fontWeight: 600, lineHeight: 1 }}>
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600, lineHeight: 1.1 }}>
                     {kpi.label}
                     {"sublabel" in kpi && kpi.sublabel && (
-                      <span style={{ fontWeight: 400, opacity: 0.7, marginLeft: 3, textTransform: "lowercase", letterSpacing: 0 }}>{kpi.sublabel}</span>
+                      <span className="header-kpi-sub" style={{ fontWeight: 400, opacity: 0.8, marginLeft: 4, textTransform: "lowercase", letterSpacing: 0 }}>{kpi.sublabel}</span>
                     )}
                   </div>
-                  <div className="tabular" style={{ fontSize: 14, fontWeight: 700, color: kpi.color, lineHeight: 1.3 }}>{kpi.value}</div>
+                  <div className="tabular" style={{ fontSize: 15, fontWeight: 700, color: kpi.color, lineHeight: 1.3, whiteSpace: "nowrap" }}>{kpi.value}</div>
                 </div>
               </div>
             ))}
